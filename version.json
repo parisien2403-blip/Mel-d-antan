@@ -1,8 +1,8 @@
 {
-  "version": "1.8",
+  "version": "1.9",
   "date": "2026-10-24",
   "notes": [
-    "La pastille de Mel se range dans la marge : elle ne cache plus aucun bouton",
-    "Les photos s’affichent en entier, sans être recadrées"
+    "Sur téléphone : en-tête lisible, bouton + à côté de la recherche",
+    "Accueil plus joli en mode sombre"
   ]
 }

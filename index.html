@@ -298,6 +298,36 @@ nav.haut .ico-mel{width:22px;height:22px}
 .dessin-mel figcaption{margin-top:8px}
 .saisie label.rond{cursor:pointer}.saisie label.desactive{opacity:.35;cursor:not-allowed}
 .choix-recettes{display:flex;flex-wrap:wrap;gap:8px}
+/* Téléphone : en-tête allégé, bouton « + » à côté de la recherche au lieu du bouton flottant */
+.nouv-inline{display:none}
+@media (max-width:620px){
+  header{gap:8px}
+  header h1{font-size:1.05rem;min-width:0}
+  header .logo{width:38px;height:38px}
+  .bascule{padding:6px 9px}
+  .bascule span{display:none}
+  .num-version{padding:2px 7px;font-size:.7rem}
+  .flottant{display:none}
+  .nouv-inline{display:inline-flex;width:46px;height:46px;padding:0;font-size:1.4rem;flex:none}
+  .acc-chiffres span{white-space:nowrap;font-size:.75rem}
+  .acc-chiffres button{padding:8px 6px}
+}
+/* Mode sombre : le texte des boutons clairs reste couleur caramel (sinon presque invisible) */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.leger{color:var(--cafe)}}
+:root[data-theme="dark"] .btn.leger{color:var(--cafe)}
+/* Téléphone : inventaire sur deux lignes (nom en entier, puis stock et bouton), saisie de Mel plus compacte */
+@media (max-width:620px){
+  .produit{flex-wrap:wrap}
+  .produit .nom{flex:1 1 calc(100% - 40px)}
+  .produit .stock{margin-left:auto}
+  .saisie{gap:6px}
+  .saisie .rond{width:40px;height:40px;font-size:1rem}
+  .saisie textarea{padding:9px 12px;font-size:.95rem}
+  .mel-outils .btn{font-size:.8rem;padding:5px 10px}
+}
+/* Accueil en mode sombre */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}}
+:root[data-theme="dark"] .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}
 /* Pastille et volet de Mel */
 /* Espace en bas de chaque page : les derniers boutons passent au-dessus de la pastille de Mel */
 main{padding-bottom:110px}
@@ -618,7 +648,7 @@ function vRecettes(){
   const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
     .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
-  return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
+  return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:0"><button class="btn nouv-inline" data-act="nouvelle" aria-label="Nouvelle recette">＋</button></div>
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
   ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt="">`:dessin(r,{mini:true})}${r.approuve?`<div class="badge-ok">${tamponHTML("mini")}</div>`:""}</div>
     <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
@@ -1248,7 +1278,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.8";
+const VERSION="1.9";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
