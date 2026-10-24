@@ -35,9 +35,9 @@ Mel a besoin d’un petit serveur (`worker.js`) : l’appli est donc publiée su
 à chaque envoi sur GitHub.
 1. Cloudflare › Workers & Pages › Créer › Importer un dépôt Git › choisir `Mel-d-antan` › Déployer
    (Cloudflare lit `wrangler.jsonc` ; rien à régler).
-2. L’appli est en ligne à `https://mel-dantan.<compte>.workers.dev` : c’est cette adresse à installer sur la tablette.
+2. L’appli est en ligne à `https://mel-d-antan.<compte>.workers.dev` : c’est cette adresse à installer sur la tablette.
    Mel répond tout de suite avec l’IA gratuite de Cloudflare (Workers AI, quota gratuit chaque jour).
-3. Facultatif, dans Workers › mel-dantan › Paramètres › Variables et secrets :
+3. Facultatif, dans Workers › mel-d-antan › Paramètres › Variables et secrets :
    - `ANTHROPIC_API_KEY` : Mel répond avec Claude (meilleures réponses en français ; payant à l’usage,
      quelques centimes par question, clé sur console.anthropic.com) ;
    - `CODE_MEL` : un code que l’appli demande une fois, pour que personne d’autre ne parle à Mel (conseillé avec Claude).
