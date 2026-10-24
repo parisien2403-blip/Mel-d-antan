@@ -21,6 +21,8 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   Pastille de Mel en bas de chaque page : la conversation s’ouvre par-dessus la page en cours (volet à droite en version
   site, panneau du bas en version appli) ; Mel sait quelle page est ouverte et propose des questions à propos.
   La conversation reste sur l’appareil et fait partie de la sauvegarde.
+- **Accueil** : bonjour, chiffres de l’atelier (recettes, approuvées, stocks bas), logo, astuce de Mel du jour.
+- **Version** : « v1.0 » à côté du bouton Version appli / site ; bandeau de Mel et notification quand une mise à jour est prête.
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
 - **Affichage** : l’appli reconnaît l’appareil (Android, iPhone / iPad, ordinateur). Version appli (onglets en bas) sur téléphone
   et sur tablette à la verticale ; version site (menu en haut, page large) sur ordinateur et sur tablette à l’horizontale.
@@ -52,6 +54,11 @@ Il doit être servi en `https://` pour pouvoir être installé sur la tablette :
 - iPad : Safari › Partager › « Sur l'écran d'accueil » ;
 - Android : Chrome › ⋮ › « Installer l'application ».
 
-Nouvelle version : augmenter `CACHE` dans `sw.js`.
+## Publier une nouvelle version
+1. `index.html` : augmenter `VERSION` (ex. 1.0 → 1.1) ; c’est le « v1.1 » affiché en haut.
+2. `sw.js` : même numéro dans `VERSION`.
+3. `version.json` : même numéro, date et nouveautés (affichées dans le bandeau « Mettre à jour »).
+L’appli voit la nouvelle version (à l’ouverture, au retour dans l’appli, toutes les 30 min), affiche le bandeau de Mel
+et, si c’est activé dans Réglages, envoie une notification ; elle s’installe quand Mel touche « Mettre à jour ».
 
 `vendor/jspdf.umd.min.js` : bibliothèque libre jsPDF 2.5.1 (licence MIT, voir `vendor/LICENCE-jspdf.txt`) pour fabriquer les PDF sans internet.

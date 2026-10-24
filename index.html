@@ -39,8 +39,33 @@ h1,h2,h3{font-family:var(--f-titre);font-weight:600;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:var(--tete);color:var(--tete-encre);padding:calc(8px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;gap:12px;box-shadow:var(--ombre);border-bottom:1px solid var(--ligne)}
 header .logo{width:44px;height:44px;border-radius:50%;flex:none;cursor:pointer;box-shadow:0 0 0 1px var(--ligne)}
-.accueil{display:flex;flex-direction:column;align-items:center;margin:4px 0 18px}
-.accueil img{width:min(240px,52vw);aspect-ratio:1;border-radius:50%;box-shadow:0 4px 18px rgba(70,45,25,.18)}
+.accueil{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:22px;margin:0 0 18px;padding:14px 18px 0;border-radius:22px;
+  background:radial-gradient(ellipse at 50% 120%,rgba(136,80,47,.16),transparent 60%),linear-gradient(180deg,rgba(255,250,240,.55),rgba(226,201,162,.35));border:1px solid var(--ligne);overflow:hidden}
+.acc-logo{width:min(230px,40vw);aspect-ratio:1;border-radius:50%;box-shadow:0 4px 18px rgba(70,45,25,.22);margin-bottom:14px}
+.acc-gauche h2{font-family:var(--f-main);font-weight:500;font-size:2.6rem;color:var(--cafe);line-height:1}
+.acc-date{margin:4px 0 14px;color:var(--doux);text-transform:capitalize}
+.acc-chiffres{display:flex;gap:10px;flex-wrap:wrap}
+.acc-chiffres button{border:1px solid var(--ligne);background:var(--carte);border-radius:14px;padding:8px 12px;min-width:84px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;box-shadow:var(--ombre)}
+.acc-chiffres b{font-family:var(--f-titre);font-size:1.6rem;color:var(--encre);line-height:1.1}
+.acc-chiffres span{font-size:.8rem;color:var(--doux)}
+.acc-chiffres .alerte{border-color:var(--alerte)}.acc-chiffres .alerte b{color:var(--alerte)}
+.acc-droite{display:flex;align-items:flex-end;gap:6px;justify-content:flex-end;align-self:stretch}
+.acc-bulle{position:relative;background:var(--carte);border:1px solid var(--ligne);border-radius:18px;padding:10px 14px;max-width:250px;margin-bottom:60px;box-shadow:var(--ombre)}
+.acc-bulle::after{content:"";position:absolute;right:-9px;bottom:22px;width:16px;height:16px;background:var(--carte);border-right:1px solid var(--ligne);border-bottom:1px solid var(--ligne);transform:rotate(-45deg)}
+.acc-bulle small{font-family:var(--f-main);font-size:1.2rem;color:var(--cafe)}
+.acc-bulle p{margin:2px 0 4px;font-size:.9rem;line-height:1.4}
+.lien{background:none;border:0;padding:0;color:var(--cafe);font-weight:600;cursor:pointer;font-size:.85rem}
+.acc-mel{border:0;background:none;padding:0;cursor:pointer;align-self:flex-end;flex:none}
+.acc-mel img{height:200px;display:block}
+/* Tablette à la verticale : logo et bonjour côte à côte, l'astuce et Mel en dessous */
+@media (max-width:1050px){.accueil{grid-template-columns:auto 1fr;grid-template-areas:"logo gauche" "droite droite";gap:6px 26px;padding-top:18px}
+  .acc-logo{grid-area:logo;width:min(200px,30vw)}.acc-gauche{grid-area:gauche}.acc-droite{grid-area:droite;justify-content:center;align-items:flex-end}
+  .acc-bulle{max-width:440px;margin-bottom:40px}.acc-mel img{height:150px}}
+/* Téléphone : tout en colonne, Mel reste dans sa pastille */
+@media (max-width:620px){.accueil{grid-template-columns:1fr;grid-template-areas:"logo" "gauche" "droite";justify-items:center;text-align:center;padding:16px 14px 14px}
+  .acc-logo{width:min(150px,40vw);margin-bottom:4px}.acc-chiffres{justify-content:center}.acc-chiffres button{min-width:0;flex:1;align-items:center}
+  .acc-mel{display:none}.acc-bulle{margin:6px 0 0;max-width:none}.acc-bulle::after{display:none}.acc-gauche h2{font-size:2.2rem}
+  header h1{font-size:1.05rem}}
 header h1{font-size:1.25rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .retour{background:none;border:0;color:var(--cafe);font-size:1.5rem;padding:0 6px 0 0;cursor:pointer}
 main{max-width:1100px;margin:0 auto;padding:16px}
@@ -249,6 +274,14 @@ nav.haut .ico-mel{width:22px;height:22px}
 .saisie .rond{width:46px;height:46px;font-size:1.15rem}
 .btn.rond.ecoute{background:var(--alerte);color:#fff;box-shadow:0 0 0 4px rgba(181,86,47,.25)}
 .mel-outils{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:8px}
+/* Numéro de version et bandeau de mise à jour */
+.num-version{font-size:.75rem;font-weight:700;color:var(--doux);border:1px solid var(--ligne);border-radius:999px;padding:3px 9px;flex:none;background:var(--carte)}
+.maj-bandeau{position:fixed;left:50%;transform:translateX(-50%);top:calc(70px + env(safe-area-inset-top));z-index:9;width:min(720px,calc(100% - 24px));display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--carte);border:2px solid var(--cafe);border-radius:18px;padding:10px 14px;box-shadow:0 10px 28px rgba(70,40,20,.3);animation:apparait .3s}
+.maj-bandeau img{width:44px;height:44px;border-radius:50%;flex:none}
+.maj-bandeau div{flex:1;min-width:180px}
+.maj-bandeau b{display:block;color:var(--cafe)}
+.maj-bandeau small{color:var(--doux)}
+:root.plein .num-version{display:none}
 /* Pastille et volet de Mel */
 .pastille-mel{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:6;border:0;background:var(--carte);border-radius:999px;padding:4px 14px 4px 4px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 6px 18px rgba(70,40,20,.35),0 0 0 2px var(--cafe);font-weight:700;color:var(--cafe);font-family:var(--f-main);font-size:1.35rem}
 .pastille-mel img{width:52px;height:52px;border-radius:50%}
@@ -301,7 +334,8 @@ nav.haut .ico-mel{width:22px;height:22px}
 </style>
 </head>
 <body>
-<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><nav class="haut" id="navHaut"></nav><button class="bascule" id="bascule"></button></header>
+<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><nav class="haut" id="navHaut"></nav><span class="num-version" id="numVersion"></span><button class="bascule" id="bascule"></button></header>
+<div id="majBandeau"></div>
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
@@ -500,6 +534,7 @@ function nav(){
   document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}${l}</button>`).join("");
   document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}<span>${l}</span></button>`).join("");
   const autre=modeActuel()==="site"?"appli":"site";
+  document.getElementById("numVersion").textContent="v"+VERSION;
   const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
   const titres={recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
@@ -522,13 +557,42 @@ addEventListener("popstate",e=>{
   vue=s.vue;courant=s.id;if(vue!=="editer")brouillon=null;if(vue==="editer"&&!brouillon)vue="recettes";rendre();scrollTo(0,0)});
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 
+/* ---------- Accueil : bonjour et chiffres de l'atelier, logo, astuce de Mel ---------- */
+const ASTUCES=["Mélange ton parfum doucement pendant 2 minutes : il se répartit mieux dans la cire.",
+  "Préchauffe un peu tes verres : la cire accroche mieux aux parois et fait moins de vagues.",
+  "Laisse reposer tes bougies 48 heures avant de les allumer (jusqu’à une semaine pour le soja) : le parfum sera plus fort.",
+  "Au premier allumage, laisse fondre toute la surface : c’est ce qui évite l’effet tunnel.",
+  "Recoupe la mèche à 5 mm avant chaque allumage : flamme plus calme et moins de suie.",
+  "Une couche coulée trop chaude fait fondre celle du dessous : attends qu’elle soit bien prise.",
+  "Pour une chantilly bien ferme, fouette la cire quand elle commence à blanchir en refroidissant.",
+  "Note ta température de coulage dans les notes de la recette : c’est le secret pour refaire la même bougie.",
+  "Place les grains de café et les décors loin de la mèche : ils ne doivent jamais toucher la flamme.",
+  "Regarde la fiche de ton parfum : taux maximum conseillé et point d’éclair changent d’un fournisseur à l’autre.",
+  "Un petit trou au centre après refroidissement ? Une deuxième coulée fine de cire chaude le rebouche.",
+  "Photographie chaque création réussie : ton livre de recettes sera bien plus beau."];
+let astuce=Math.floor(Date.now()/864e5)%ASTUCES.length;
+function accueil(){
+  const app=D.recettes.filter(r=>r.approuve).length,bas=D.produits.filter(p=>p.stock!=null&&p.stock!==""&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte).length;
+  const h=new Date().getHours(),salut=h<5||h>=18?"Bonsoir":"Bonjour";
+  const jour=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  return `<section class="accueil">
+   <div class="acc-gauche"><h2>${salut} Mel</h2><p class="acc-date">${jour}</p>
+    <div class="acc-chiffres"><button data-filtre-acc="toutes"><b>${D.recettes.length}</b><span>recette${D.recettes.length>1?"s":""}</span></button>
+     <button data-aller="livre"><b>${app}</b><span>approuvée${app>1?"s":""}</span></button>
+     <button data-aller="inventaire" class="${bas?"alerte":""}"><b>${bas}</b><span>stock${bas>1?"s":""} bas</span></button></div></div>
+   <img class="acc-logo" src="logo.jpg" alt="Mel d’antan">
+   <div class="acc-droite"><div class="acc-bulle"><small>L’astuce de Mel</small><p>${esc(ASTUCES[astuce])}</p><button class="lien" data-act="autreAstuce">Une autre astuce ›</button></div>
+    <button class="acc-mel" data-act="ouvrirVolet" aria-label="Parler à Mel"><img src="mel.webp" alt="Mel"></button></div>
+  </section>`;
+}
+
 /* ---------- Écran : liste des recettes ---------- */
 function vRecettes(){
   const q=recherche.trim().toLowerCase();
   const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
     .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
-  return `${q||filtreContenant?"":`<div class="accueil"><img src="logo.jpg" alt="Mel d’antan"></div>`}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
+  return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
   ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt=""><div class="mini-verre">${dessin(r,{mini:true})}</div>`:dessin(r,{mini:true})}${r.approuve?`<div class="badge-ok">${tamponHTML("mini")}</div>`:""}</div>
     <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
@@ -945,6 +1009,10 @@ function vReglages(){
    <div class="puces" style="margin-top:10px">${[["auto","Automatique"],["appli","Version appli"],["site","Version site"]].map(([k,l])=>`<button class="puce ${prefMode()===k?"on":""}" data-mode-choix="${k}">${l}</button>`).join("")}</div>
    <p class="aide">Automatique : version appli sur téléphone, version site sur ordinateur ; sur tablette, version site à l’horizontale et version appli à la verticale.</p></div>
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
+  <div class="carte"><b>Version</b><p class="aide">Mel d’antan <b>v${VERSION}</b>${majInfo&&!majPlusTard?` · la version ${esc(majInfo.version)} est prête`:""}</p>
+   <div class="ligne" style="margin-top:10px">${majInfo?`<button class="btn" data-act="installerMaj">Mettre à jour maintenant</button>`:`<button class="btn leger" data-act="chercherMaj">Rechercher une mise à jour</button>`}
+    <button class="btn leger" data-act="notifMaj">${notifMaj()?"🔔 Notifications de mise à jour : oui":"🔕 Me prévenir par une notification"}</button></div>
+   <p class="aide">L’appli vérifie toute seule à chaque ouverture et toutes les 30 minutes. Une nouvelle version s’installe quand tu touches « Mettre à jour » ; tes recettes ne bougent pas.</p></div>
   <div class="carte"><b>Installer sur la tablette ou le téléphone</b><p class="aide"><b>iPad / iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
    ${installable?`<button class="btn" data-act="installer" style="margin-top:10px">Installer l’application</button>`:""}</div>`;
 }
@@ -973,7 +1041,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-question-mel],[data-fiche-mel],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -984,6 +1052,7 @@ document.addEventListener("click",e=>{
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}
   if(d.tourner){tourner(+d.tourner);return}
+  if(d.filtreAcc){filtreContenant="";recherche="";rendre();document.querySelector(".grille")?.scrollIntoView({behavior:"smooth",block:"start"});return}
   if(d.questionMel){demanderMel(d.questionMel);return}
   if(d.ficheMel){try{ouvrirFicheMel(JSON.parse(decodeURIComponent(d.ficheMel)))}catch(x){toast("Cette fiche est illisible : demande à Mel de la refaire")}return}
   if(d.livreAller){allerPage(+d.livreAller);return}
@@ -1024,6 +1093,11 @@ document.addEventListener("click",e=>{
   else if(act==="pdfLivre"){const recs=recettesLivre();if(!recs.length){toast("Aucune recette dans le livre");return}fairePdf(recs,true,`mel-dantan-livre-de-recettes.pdf`,"Mon livre de recettes · Mel d’antan")}
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
+  else if(act==="installerMaj")installerMaj();
+  else if(act==="autreAstuce"){astuce=(astuce+1)%ASTUCES.length;const y=scrollY;rendre();scrollTo(0,y)}
+  else if(act==="majPlusTard"){majPlusTard=true;rendreMaj()}
+  else if(act==="chercherMaj")chercherMaj();
+  else if(act==="notifMaj")basculerNotifMaj();
   else if(act==="dicter")dicter();
   else if(act==="ouvrirVolet")ouvrirVolet();
   else if(act==="fermerVolet")fermerVolet();
@@ -1086,7 +1160,51 @@ async function importer(file){
 let invite=null,installable=false;
 addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installable=true;if(vue==="sauvegarde")rendre()});
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
-if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+/* ---------- Version de l'appli et mises à jour ---------- */
+// À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
+const VERSION="1.0";
+let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
+const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
+if("serviceWorker"in navigator&&location.protocol!=="file:"){
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    regSW=reg;
+    if(reg.waiting&&navigator.serviceWorker.controller)nouvelleVersion(reg.waiting);
+    reg.addEventListener("updatefound",()=>{const w=reg.installing;if(w)w.addEventListener("statechange",()=>{if(w.state==="installed"&&navigator.serviceWorker.controller)nouvelleVersion(w)})});
+    // Recherche d'une nouvelle version : à l'ouverture, au retour dans l'appli, puis toutes les 30 minutes
+    setInterval(()=>reg.update().catch(()=>{}),30*60000);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update().catch(()=>{})});
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(majDemandee){majDemandee=false;location.reload()}});
+}
+async function nouvelleVersion(w){
+  swAttente=w;let info={version:"",notes:[]};
+  try{const r=await fetch("version.json",{cache:"no-store"});if(r.ok)info=await r.json()}catch(e){}
+  majInfo=info;majPlusTard=false;rendreMaj();
+  if(regSW&&notifMaj()&&(document.hidden||!document.hasFocus()))
+    regSW.showNotification("Mel d’antan · mise à jour",{body:`La version ${info.version||"nouvelle"} est prête${info.notes&&info.notes[0]?" : "+info.notes[0]:""}. Touche ici pour l’installer.`,icon:"icon-192.png",badge:"favicon-48.png",tag:"maj"}).catch(()=>{});
+}
+function rendreMaj(){
+  const z=document.getElementById("majBandeau");if(!z)return;
+  if(!majInfo||majPlusTard){z.innerHTML="";return}
+  const notes=(majInfo.notes||[]).slice(0,3);
+  z.innerHTML=`<div class="maj-bandeau" role="status"><img src="mel-avatar.png" alt=""><div><b>Mel : la version ${esc(majInfo.version||"nouvelle")} est prête !</b>${notes.length?`<small>${notes.map(esc).join(" · ")}</small>`:""}</div>
+    <button class="btn petit" data-act="installerMaj">Mettre à jour</button><button class="btn leger petit" data-act="majPlusTard">Plus tard</button></div>`;
+}
+function installerMaj(){majDemandee=true;if(swAttente)swAttente.postMessage("activer");else location.reload();setTimeout(()=>location.reload(),4000)}
+async function chercherMaj(){
+  if(!regSW){toast("Les mises à jour se vérifient depuis l’appli en ligne");return}
+  toast("Je regarde s’il y a du nouveau…");
+  try{await regSW.update()}catch(e){toast("Pas d’internet pour vérifier");return}
+  setTimeout(()=>{if(!regSW.waiting&&!regSW.installing)toast(`Tu as la dernière version (v${VERSION})`)},2500);
+}
+async function basculerNotifMaj(){
+  if(notifMaj()){try{localStorage.setItem("carnet.notifMaj","0")}catch(e){}rendre();return}
+  if(!("Notification" in window)){toast(SYSTEME==="ios"?"Installe d’abord l’appli sur l’écran d’accueil pour recevoir les notifications":"Les notifications ne sont pas disponibles ici");return}
+  const p=await Notification.requestPermission();
+  if(p==="granted"){try{localStorage.setItem("carnet.notifMaj","1")}catch(e){}toast("Je te préviendrai à chaque nouvelle version")}
+  else toast("Notifications refusées : tu peux les autoriser dans les réglages de la tablette");
+  rendre();
+}
 
 /* ---------- Premier lancement : un petit inventaire et une recette d'exemple ---------- */
 function exemple(){
