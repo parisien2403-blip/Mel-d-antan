@@ -1,8 +1,8 @@
 {
-  "version": "2.6",
+  "version": "2.7",
   "date": "2026-10-25",
   "notes": [
-    "Les notifications de Mel arrivent même quand l’appli est fermée",
-    "Mel en entier pour te poser ses questions"
+    "On peut écrire à Mel sur téléphone sans que l’écran saute",
+    "Les notifications de Mel arrivent même quand l’appli est fermée"
   ]
 }

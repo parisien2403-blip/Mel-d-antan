@@ -663,13 +663,16 @@ function typeAppareil(){
   return navigator.maxTouchPoints>0&&petit<600?"telephone":"ordinateur";
 }
 const APPAREIL=typeAppareil();
-const paysage=()=>innerWidth>innerHeight;
+// Orientation de l'écran lui-même : le clavier qui s'ouvre réduit la zone visible, mais ne « tourne » pas l'appareil
+const paysage=()=>{const o=screen.orientation&&screen.orientation.type;if(o)return o.startsWith("landscape");if(typeof window.orientation==="number")return Math.abs(window.orientation)===90;return innerWidth>innerHeight};
 const prefMode=()=>{try{return localStorage.getItem("carnet.mode")||"auto"}catch(e){return"auto"}};
 const modeAuto=()=>APPAREIL==="telephone"?"appli":APPAREIL==="ordinateur"?"site":paysage()?"site":"appli";
 const modeActuel=()=>prefMode()==="auto"?modeAuto():prefMode();
 function choisirMode(m){try{localStorage.setItem("carnet.mode",m)}catch(e){}appliquerMode(true)}
 let dernierPaysage=paysage();
 function appliquerMode(forcer){
+  // Pendant la saisie, le clavier change la taille de l'écran visible : on ne bascule pas d'affichage
+  if(!forcer&&APPAREIL==="tablette"&&saisieEnCours())return;
   // Tablette : tourner l'écran repasse en automatique (horizontale = site, verticale = appli)
   if(APPAREIL==="tablette"&&paysage()!==dernierPaysage&&prefMode()!=="auto")try{localStorage.setItem("carnet.mode","auto")}catch(e){}
   dernierPaysage=paysage();
@@ -693,11 +696,15 @@ function nav(){
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
   document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
 }
+// Champ en cours de saisie : gardé (texte, curseur, clavier ouvert) quand l'écran se redessine
+function saisieEnCours(){const e=document.activeElement;return e&&e.id&&(e.tagName==="TEXTAREA"||e.tagName==="INPUT"&&!["checkbox","radio","file","range","color"].includes(e.type))?{id:e.id,v:e.value,d:e.selectionStart,f:e.selectionEnd}:null}
+function remettreSaisie(s){if(!s)return;const e=document.getElementById(s.id);if(!e)return;if(e.value!==s.v)e.value=s.v;try{e.focus({preventScroll:true});e.setSelectionRange(s.d,s.f)}catch(x){}}
 function rendre(){
+  const s=saisieEnCours();
   nav();
   const a=document.getElementById("app");
   a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
-  rendreCalque();rendreVolet();
+  rendreCalque();rendreVolet();remettreSaisie(s);
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
 addEventListener("popstate",e=>{
@@ -1118,12 +1125,12 @@ function rendreVolet(){
   const z=document.getElementById("voletMel");if(!z)return;
   const visible=vue!=="mel"&&!pleinLivre;
   if(!voletMel){z.innerHTML=visible?`<button class="pastille-mel" data-act="ouvrirVolet" aria-label="Parler à Mel"><img src="mel-avatar.png" alt=""><span>Mel</span></button>`:"";return}
-  const avant=document.getElementById("questionMel"),texte=avant?avant.value:"";
+  const avant=document.getElementById("questionMel"),texte=avant?avant.value:"",s=saisieEnCours();
   z.innerHTML=`<div class="voile-mel" data-act="fermerVolet"></div><section class="volet-mel" role="dialog" aria-label="Conversation avec Mel">
     <header><img src="mel-avatar.png" alt=""><div><b>Mel</b><small>${esc(libellePage())}</small></div>
      <button class="btn leger rond" data-act="agrandirMel" aria-label="Ouvrir en grand" title="Ouvrir en grand">⤢</button><button class="btn leger rond" data-act="fermerVolet" aria-label="Fermer">✕</button></header>
     <div class="volet-corps">${corpsMel(true)}</div></section>`;
-  const apres=document.getElementById("questionMel");if(apres&&texte)apres.value=texte;
+  const apres=document.getElementById("questionMel");if(apres&&texte)apres.value=texte;remettreSaisie(s);
 }
 function ouvrirVolet(){voletMel=true;history.pushState({vue,id:courant,volet:1},"");rendreVolet();finFil();if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>document.getElementById("questionMel")?.focus({preventScroll:true}),250)}
 function fermerVolet(retour=true){if(!voletMel)return;voletMel=false;if(ecoute)ecoute.stop();rendreVolet();if(retour&&history.state&&history.state.volet)history.back()}
@@ -1524,7 +1531,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.6";
+const VERSION="2.7";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
