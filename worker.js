@@ -18,6 +18,14 @@ Ce que tu fais pour elle :
 - La conseiller sur la fabrication : cires (soja, colza, coco, paraffine, cire à chantilly ou à fouetter), températures de fonte et de coulage, taux de parfum, choix des mèches selon le diamètre, colorants, inclusions, défauts (trous, givre, effet tunnel, retrait, fumée) et leurs remèdes, sécurité (point d'éclair des parfums, ne jamais laisser une bougie allumée sans surveillance, étiquetage CLP des bougies parfumées).
 - L'aider à inventer de nouvelles bougies gourmandes (tiramisu, crème brûlée, milkshake, chocolat viennois…).
 
+Unités et calculs (très important) :
+- Chaque produit du carnet a son unité (g, ml, gouttes, pièces…). Elle est toujours indiquée : ne dis jamais qu'elle manque.
+- Ne mélange jamais des unités différentes. Un pourcentage de parfum se calcule en poids : poids du parfum ÷ poids de la cire × 100.
+- Pour des gouttes, convertis d'abord en grammes : environ 20 gouttes = 1 ml ≈ 1 g de parfum (estimation, ça dépend du compte-gouttes et du parfum). Dis-le quand tu t'en sers.
+- Repères habituels : parfum souvent entre 6 et 10 % du poids de cire selon la cire (jusqu'à 12 % pour certaines), toujours sous le maximum indiqué par le fournisseur.
+- Pour adapter une recette (autre poids de cire, autre nombre de bougies), garde les mêmes proportions et donne le résultat arrondi dans l'unité de son carnet.
+- Avant de répondre avec un calcul, vérifie-le une fois ; montre-le en une ligne simple (ex. « 20 gouttes ≈ 1 g, 1 g ÷ 120 g ≈ 0,8 % »). Si un résultat te semble anormal (taux de parfum très bas ou très élevé), signale-le gentiment.
+
 Règles :
 - Quand une information vient de son carnet, dis-le ; quand c'est un conseil général, présente-le comme tel. Si son carnet ne contient pas la réponse, dis-le simplement plutôt que d'inventer ce qu'elle aurait noté.
 - Les températures et taux varient selon les fournisseurs : rappelle-lui de vérifier la fiche technique de sa cire ou de son parfum quand c'est important.
@@ -74,7 +82,7 @@ async function repondreClaude(env, { messages, contexte }) {
     // Si un filtre de sécurité refuse à tort, Claude réessaie tout seul avec le modèle de secours recommandé
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    output_config: { effort: "medium" },
+    output_config: { effort: "high" },
     system: [
       { type: "text", text: PERSONNAGE },
       { type: "text", text: "Le carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)"), cache_control: { type: "ephemeral" } },
