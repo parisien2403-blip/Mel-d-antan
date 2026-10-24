@@ -5,6 +5,8 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const MODELE_CLAUDE = "claude-opus-5-5";
 const MODELE_CLOUDFLARE = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const MODELE_IMAGE = "@cf/black-forest-labs/flux-1-schnell";
+const MAX_PHOTO = 2500000;
 const MAX_MESSAGES = 30, MAX_TEXTE = 8000, MAX_CONTEXTE = 150000;
 
 // Qui est Mel : texte fixe, gardé en cache par Claude d'une question à l'autre
@@ -39,7 +41,15 @@ Créer une recette : quand Mel te demande de créer, d'inventer ou de préparer 
 - "texture" : un de lisse, chantilly, mousse, marbre, paillettes, morceaux, granite.
 - Couches du bas vers le haut. "produit" : reprends exactement le nom d'un produit de son inventaire quand il convient, sinon un nom court.
 - "type" : un de cire, colorant, parfum, meche, deco, additif, autre. "unite" : un de g, ml, gouttes, pieces, cuilleres, pincees, pourcent.
-L'appli transforme ce bloc en bouton « Ouvrir dans l'éditeur » : ne parle pas du bloc lui-même dans ton texte.`;
+L'appli transforme ce bloc en bouton « Ouvrir dans l'éditeur » : ne parle pas du bloc lui-même dans ton texte.
+
+Photos : Mel peut t'envoyer une photo de sa bougie ou de son atelier. Regarde-la attentivement et décris ce que tu vois avant de conseiller (surface, couleurs, couches, chantilly, mèche, défauts comme les trous, le givre, les bulles ou le retrait, présentation pour la vente).
+
+Dessiner : quand Mel te demande de dessiner, d'imaginer en image ou de montrer à quoi ressemblerait une bougie, réponds en une ou deux phrases chaleureuses, puis ajoute tout à la fin un bloc exactement de cette forme :
+\`\`\`image
+(description en anglais, détaillée, pour un générateur d'images : la bougie gourmande, son contenant, les couleurs et l'aspect de chaque couche, la décoration du dessus, la mèche, style photo de produit artisanal, fond et lumière douce)
+\`\`\`
+L'appli dessine alors l'image : ne parle pas du bloc lui-même et préviens simplement que l'image est une inspiration, pas une photo exacte.`;
 
 const json = (data, statut = 200) => new Response(JSON.stringify(data), {
   status: statut, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -54,11 +64,16 @@ async function memeCode(a, b) {
 
 const moteur = env => env.ANTHROPIC_API_KEY ? "claude" : env.AI ? "cloudflare" : null;
 
+// Photo jointe par Mel : JPEG, PNG ou WebP en base64, de taille raisonnable
+function photo(p) {
+  const m = typeof p === "string" && p.length <= MAX_PHOTO && p.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  return m ? { type: m[1], data: m[2] } : null;
+}
 function nettoyer(corps) {
   if (!corps || !Array.isArray(corps.messages)) return null;
   const messages = corps.messages.slice(-MAX_MESSAGES)
-    .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
-    .map(m => ({ role: m.role, content: m.content.slice(0, MAX_TEXTE) }));
+    .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && (m.content.trim() || m.image))
+    .map(m => ({ role: m.role, content: m.content.slice(0, MAX_TEXTE) || "Regarde ma photo.", photo: m.role === "user" ? photo(m.image) : null }));
   // La conversation commence par Mel (la créatrice) et finit par sa question
   while (messages.length && messages[0].role !== "user") messages.shift();
   if (!messages.length || messages[messages.length - 1].role !== "user") return null;
@@ -87,7 +102,9 @@ async function repondreClaude(env, { messages, contexte }) {
       { type: "text", text: PERSONNAGE },
       { type: "text", text: "Le carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)"), cache_control: { type: "ephemeral" } },
     ],
-    messages,
+    messages: messages.map(m => m.photo
+      ? { role: "user", content: [{ type: "image", source: { type: "base64", media_type: m.photo.type, data: m.photo.data } }, { type: "text", text: m.content }] }
+      : { role: m.role, content: m.content }),
   });
   // Première lecture avant d'ouvrir le flux : une clé refusée devient un message clair
   const iterateur = stream[Symbol.asyncIterator]();
@@ -114,6 +131,8 @@ function erreurClaude(e) {
 }
 
 async function repondreCloudflare(env, { messages, contexte }) {
+  if (messages.some(m => m.photo)) throw Object.assign(new Error("Pour regarder tes photos, Mel a besoin de Claude (clé ANTHROPIC_API_KEY dans Cloudflare)."), { statut: 400 });
+  messages = messages.map(({ role, content }) => ({ role, content }));
   const sortie = await env.AI.run(MODELE_CLOUDFLARE, {
     messages: [{ role: "system", content: PERSONNAGE + "\n\nLe carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)") }, ...messages],
     stream: true, max_tokens: 2048,
@@ -137,12 +156,29 @@ async function repondreCloudflare(env, { messages, contexte }) {
   });
 }
 
+// Mel dessine : image d'inspiration créée par l'IA d'images gratuite de Cloudflare (Workers AI)
+async function dessiner(env, request) {
+  if (!env.AI) return json({ erreur: "Pour dessiner, Mel a besoin de Workers AI dans Cloudflare." }, 503);
+  let description = "";
+  try { description = String((JSON.parse(await request.text()) || {}).description || "").trim().slice(0, 1500); } catch { /* vide */ }
+  if (!description) return json({ erreur: "Rien à dessiner." }, 400);
+  try {
+    const r = await env.AI.run(MODELE_IMAGE, { prompt: `${description}. Handmade artisanal scented candle, gourmet dessert candle, vintage French patisserie style, soft natural light, warm cream and coffee tones, professional product photo, highly detailed.`, steps: 6 });
+    if (!r || !r.image) throw new Error("image vide");
+    return json({ image: "data:image/jpeg;base64," + r.image });
+  } catch (e) {
+    console.error(e);
+    return json({ erreur: "Mel n'a pas réussi à dessiner cette fois (quota du jour atteint ou service occupé). Réessaie un peu plus tard." }, 502);
+  }
+}
+
 async function api(request, env, chemin) {
   const m = moteur(env);
   if (chemin === "mel/etat") return json({ actif: !!m, moteur: m, code: !!env.CODE_MEL });
-  if (chemin !== "mel" || request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
+  if ((chemin !== "mel" && chemin !== "mel/image") || request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
   if (!m) return json({ erreur: "Mel n'est pas encore branchée : ajoute Workers AI ou la clé ANTHROPIC_API_KEY dans Cloudflare." }, 503);
   if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+  if (chemin === "mel/image") return dessiner(env, request);
   let corps;
   try { corps = nettoyer(JSON.parse(await request.text())); } catch { corps = null; }
   if (!corps) return json({ erreur: "Question illisible." }, 400);

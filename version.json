@@ -1,9 +1,9 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "date": "2026-10-24",
   "notes": [
-    "Mel, ton assistante, s’ouvre depuis sa pastille sur chaque page",
-    "Le livre s’ouvre comme un vrai livre, couverture d’abord",
-    "Numéro de version et alerte quand une mise à jour est prête"
+    "Envoie une photo de ta bougie à Mel : elle la regarde et te conseille",
+    "Demande à Mel de dessiner une idée de bougie",
+    "Mel calcule mieux les quantités de parfum"
   ]
 }
