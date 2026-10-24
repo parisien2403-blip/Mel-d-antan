@@ -298,6 +298,11 @@ nav.haut .ico-mel{width:22px;height:22px}
 .dessin-mel figcaption{margin-top:8px}
 .saisie label.rond{cursor:pointer}.saisie label.desactive{opacity:.35;cursor:not-allowed}
 .choix-recettes{display:flex;flex-wrap:wrap;gap:8px}
+/* Bouton « Nouvelle recette » dans l'en-tête en version appli (toujours visible, ne cache rien) ; flottant en version site */
+.nouv-tete{flex:none;padding:7px 14px;font-size:.9rem}
+:root[data-mode="site"] .nouv-tete{display:none}
+:root[data-mode="appli"] .flottant{display:none}
+@media (max-width:620px){.nouv-tete{padding:0;width:40px;height:40px;font-size:1.3rem}.nouv-tete span{display:none}}
 /* Téléphone : en-tête allégé, bouton « + » à côté de la recherche au lieu du bouton flottant */
 .nouv-inline{display:none}
 @media (max-width:620px){
@@ -390,7 +395,7 @@ main{padding-bottom:110px}
 </style>
 </head>
 <body>
-<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><nav class="haut" id="navHaut"></nav><span class="num-version" id="numVersion"></span><button class="bascule" id="bascule"></button></header>
+<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><button class="btn nouv-tete" id="nouvTete" data-act="nouvelle" hidden>＋ <span>Nouvelle recette</span></button><nav class="haut" id="navHaut"></nav><span class="num-version" id="numVersion"></span><button class="bascule" id="bascule"></button></header>
 <div id="majBandeau"></div>
 <div id="syncBandeau"></div>
 <main id="app"></main>
@@ -594,6 +599,7 @@ function nav(){
   document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}<span>${l}</span></button>`).join("");
   const autre=modeActuel()==="site"?"appli":"site";
   document.getElementById("numVersion").textContent="v"+VERSION;
+  document.getElementById("nouvTete").hidden=vue!=="recettes";
   const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
   const titres={recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
@@ -651,7 +657,7 @@ function vRecettes(){
   const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
     .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
-  return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:0"><button class="btn nouv-inline" data-act="nouvelle" aria-label="Nouvelle recette">＋</button></div>
+  return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:0"></div>
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
   ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt="">`:dessin(r,{mini:true})}${r.approuve?`<div class="badge-ok">${tamponHTML("mini")}</div>`:""}</div>
     <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
@@ -1397,7 +1403,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.0";
+const VERSION="2.1";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

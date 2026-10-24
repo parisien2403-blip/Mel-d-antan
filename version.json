@@ -1,8 +1,8 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "date": "2026-10-25",
   "notes": [
-    "Ton carnet est le même sur le PC, la tablette et le téléphone (recettes, photos, stock)",
-    "Sur téléphone : en-tête lisible, bouton + à côté de la recherche"
+    "Sur téléphone et tablette : « Nouvelle recette » en haut, à côté du titre",
+    "Ton carnet est le même sur tous tes appareils (recettes, photos, stock)"
   ]
 }
