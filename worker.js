@@ -102,7 +102,8 @@ async function repondreClaude(env, { messages, contexte }) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
   const stream = client.beta.messages.stream({
     model: MODELE_CLAUDE,
-    max_tokens: 4000,
+    // La réflexion de Claude compte aussi dans cette limite : marge large, la longueur du texte est réglée par les consignes
+    max_tokens: 12000,
     // Si un filtre de sécurité refuse à tort, Claude réessaie tout seul avec le modèle de secours recommandé
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
