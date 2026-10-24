@@ -1,8 +1,8 @@
 {
-  "version": "1.4",
+  "version": "1.6",
   "date": "2026-10-24",
   "notes": [
-    "Couverture du livre épurée : juste le titre",
-    "La photo d’une recette prend la place du dessin dans sa fiche"
+    "Fiche recette : la photo en haut, le dessin du contenant en grand juste en dessous",
+    "Dans ton livre : partage une seule recette, ou celles de ton choix, en PDF"
   ]
 }
