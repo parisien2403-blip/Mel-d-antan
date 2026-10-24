@@ -1341,7 +1341,7 @@ function vReglages(){
    <div class="ligne" style="margin-top:10px">${majInfo?`<button class="btn" data-act="installerMaj">Mettre à jour maintenant</button>`:`<button class="btn leger" data-act="chercherMaj">Rechercher une mise à jour</button>`}
     </div>
    <p class="aide">L’appli vérifie toute seule à chaque ouverture et toutes les 30 minutes. Une nouvelle version s’installe quand tu touches « Mettre à jour » ; tes recettes ne bougent pas.</p></div>
-  <div class="carte"><b>Notifications de Mel</b><p class="aide">Mel te prévient quand un produit passe sous son seuil d’alerte (réglé dans l’inventaire, « M’alerter sous »), et quand une nouvelle version de l’appli est prête.</p>
+  <div class="carte"><b>Notifications de Mel</b><p class="aide">Mel te prévient quand un produit passe sous son seuil d’alerte (réglé dans l’inventaire, « M’alerter sous »), et quand une nouvelle version de l’appli est prête.${notifMaj()?(pushActif()?" ✓ Elles arrivent même quand l’appli est fermée.":" Elles n’arrivent que quand l’appli est ouverte ou en arrière-plan."):""}</p>
    <div class="ligne" style="margin-top:10px"><button class="btn ${notifMaj()?"leger":""}" data-act="notifMaj">${notifMaj()?"🔔 Notifications activées":"🔔 Activer les notifications"}</button>${notifMaj()?`<button class="btn leger" data-act="essaiNotif">Essayer</button>`:""}</div>
    ${stockBas().length?`<p class="aide">En ce moment : ${stockBas().map(p=>esc(p.nom)).join(", ")} sous le seuil.</p>`:""}</div>
   <div class="carte"><b>Installer sur la tablette ou le téléphone</b><p class="aide"><b>iPad / iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
@@ -1456,7 +1456,7 @@ document.addEventListener("click",e=>{
   else if(act==="majPlusTard"){majPlusTard=true;rendreMaj()}
   else if(act==="chercherMaj")chercherMaj();
   else if(act==="notifMaj")basculerNotifMaj();
-  else if(act==="essaiNotif")notifier("Mel : coucou !","C’est comme ça que je te préviendrai quand il commencera à manquer quelque chose.",{tag:"essai"});
+  else if(act==="essaiNotif"){(async()=>{if(pushActif()){try{const ab=await regSW.pushManager.getSubscription();await appelCarnet("notifs/essai",{endpoint:ab.endpoint});toast("Notification envoyée par le serveur");return}catch(e){toast(e.message)}}notifier("Mel : coucou !","C’est comme ça que je te préviendrai quand il commencera à manquer quelque chose.",{tag:"essai"})})()}
   else if(act==="dicter")dicter();
   else if(act==="retirerPhotoMel"){photoMel=null;majMel()}
   else if(act==="ouvrirVolet")ouvrirVolet();
@@ -1524,7 +1524,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.5";
+const VERSION="2.6";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
@@ -1592,6 +1592,7 @@ async function imageNotif(titre,texte){
 }
 async function notifier(titre,texte,options={}){
   if(!regSW||!notifMaj())return;
+  if(pushActif()&&options.tag!=="essai")return; // le serveur envoie déjà cette notification à tous les appareils
   const image=await imageNotif(titre.replace(/^Mel : /,""),texte);
   regSW.showNotification(titre,{body:texte,icon:"mel-avatar.png",badge:"favicon-48.png",image,...options}).catch(()=>{});
 }
@@ -1608,11 +1609,27 @@ async function chercherMaj(){
   try{await regSW.update()}catch(e){toast("Pas d’internet pour vérifier");return}
   setTimeout(()=>{if(!regSW.waiting&&!regSW.installing)toast(`Tu as la dernière version (v${VERSION})`)},2500);
 }
+// Abonnement de l'appareil aux notifications du serveur (elles arrivent même appli fermée)
+const pushActif=()=>{try{return localStorage.getItem("carnet.push")==="1"}catch(e){return false}};
+function octets(b64){const s=atob(b64.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((b64.length+3)%4));return Uint8Array.from(s,c=>c.charCodeAt(0))}
+async function abonnerPush(){
+  if(!regSW||!("PushManager" in window)||!syncPossible())return false;
+  try{
+    let ab=await regSW.pushManager.getSubscription();
+    if(!ab){const{cle}=await appelCarnet("notifs/cle",{});ab=await regSW.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:octets(cle)})}
+    await appelCarnet("notifs/abonner",{abonnement:ab.toJSON()});
+    try{localStorage.setItem("carnet.push","1")}catch(e){}return true;
+  }catch(e){try{localStorage.setItem("carnet.push","0")}catch(x){}return false}
+}
+async function desabonnerPush(){
+  try{const ab=regSW&&await regSW.pushManager.getSubscription();if(ab){await appelCarnet("notifs/desabonner",{endpoint:ab.endpoint}).catch(()=>{});await ab.unsubscribe()}}catch(e){}
+  try{localStorage.setItem("carnet.push","0")}catch(e){}
+}
 async function basculerNotifMaj(){
-  if(notifMaj()){try{localStorage.setItem("carnet.notifMaj","0")}catch(e){}rendre();return}
+  if(notifMaj()){try{localStorage.setItem("carnet.notifMaj","0")}catch(e){}desabonnerPush();rendre();return}
   if(!("Notification" in window)){toast(SYSTEME==="ios"?"Installe d’abord l’appli sur l’écran d’accueil pour recevoir les notifications":"Les notifications ne sont pas disponibles ici");return}
   const p=await Notification.requestPermission();
-  if(p==="granted"){try{localStorage.setItem("carnet.notifMaj","1")}catch(e){}toast("Je te préviendrai quand le stock baisse et à chaque nouvelle version")}
+  if(p==="granted"){try{localStorage.setItem("carnet.notifMaj","1")}catch(e){}const ok=await abonnerPush();toast(ok?"Je te préviendrai même quand l’appli est fermée":"Je te préviendrai quand le stock baisse et à chaque nouvelle version")}
   else toast("Notifications refusées : tu peux les autoriser dans les réglages de la tablette");
   rendre();
 }
@@ -1636,7 +1653,7 @@ function exemple(){
   const lu=await lire("donnees");
   if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();D.vierge=true;sauverExemple=true;sauver()}
   history.replaceState({vue:"recettes"},"");rendre();
-  verifierMel().then(()=>planifierSync(300));setTimeout(verifierStocks,1500);
+  verifierMel().then(()=>{planifierSync(300);if(notifMaj())setTimeout(abonnerPush,2500)});setTimeout(verifierStocks,1500);
   if(new URLSearchParams(location.search).get("vue")==="inventaire"){history.replaceState({vue:"recettes"},"",location.pathname);aller("inventaire")}
 })();
 </script>

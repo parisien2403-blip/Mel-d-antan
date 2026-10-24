@@ -187,6 +187,9 @@ async function dessiner(env, request) {
 const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS elements (id TEXT PRIMARY KEY, genre TEXT NOT NULL, data TEXT NOT NULL, maj INTEGER NOT NULL, supprime INTEGER NOT NULL DEFAULT 0)",
   "CREATE TABLE IF NOT EXISTS photos (hash TEXT PRIMARY KEY, data TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS reglages (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
+  // Appareils qui reçoivent les notifications de Mel, même appli fermée
+  "CREATE TABLE IF NOT EXISTS abonnements (endpoint TEXT PRIMARY KEY, cles TEXT NOT NULL, cree TEXT)",
 ];
 let basePrete = null;
 const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
@@ -205,6 +208,7 @@ async function synchroniser(env, request) {
   const changes = Array.isArray(corps.changes) ? corps.changes.slice(0, 3000) : [];
   const suppressions = Array.isArray(corps.suppressions) ? corps.suppressions.slice(0, 3000) : [];
   const maintenant = Date.now(), ordres = [];
+  const avant = changes.some(c => c && c.genre === "produit") ? await lireCarnet(env) : null;
   for (const c of changes) {
     if (!c || typeof c.id !== "string" || !/^[\w-]{1,40}$/.test(c.id) || !GENRES.includes(c.genre) || !c.data || typeof c.data !== "object") continue;
     const texte = JSON.stringify({ ...c.data, id: c.id });
@@ -216,7 +220,22 @@ async function synchroniser(env, request) {
   for (const id of suppressions)
     if (typeof id === "string" && /^[\w-]{1,40}$/.test(id)) ordres.push(env.DB.prepare("UPDATE elements SET supprime = 1, maj = ? WHERE id = ?").bind(maintenant, id));
   if (ordres.length) await env.DB.batch(ordres);
-  return json({ elements: await lireCarnet(env) });
+  const elements = await lireCarnet(env);
+  if (avant) attendre(alerterStock(env, avant, elements).catch(e => console.error("alerte stock", e)));
+  return json({ elements });
+}
+// Un produit qui vient de passer sous son seuil (ou d'être épuisé) : Mel prévient tous les appareils
+const sousSeuil = p => p && p.stock != null && p.stock !== "" && p.alerte != null && p.alerte !== "" && +p.stock <= +p.alerte;
+const uniteTexte = u => ({ g: "g", ml: "ml", gouttes: "gouttes", pieces: "pièce(s)", cuilleres: "cuillère(s)", pincees: "pincée(s)", pourcent: "%" }[u] || "");
+async function alerterStock(env, avant, apres) {
+  const ancien = {}; for (const e of avant) if (e.genre === "produit") ancien[e.id] = e.data;
+  const nouveaux = apres.filter(e => e.genre === "produit").map(e => e.data)
+    .filter(p => sousSeuil(p) && (!sousSeuil(ancien[p.id]) || (+p.stock === 0 && +ancien[p.id].stock !== 0)));
+  if (!nouveaux.length) return;
+  const nom = p => String(p.nom || "");
+  const titre = nouveaux.length > 1 ? "Mel : il commence à manquer des produits" : `Mel : il commence à manquer de ${nom(nouveaux[0]).charAt(0).toLowerCase() + nom(nouveaux[0]).slice(1)}`;
+  const texte = nouveaux.map(p => +p.stock === 0 ? `${nom(p)} : épuisé` : `${nom(p)} : plus que ${+p.stock} ${uniteTexte(p.unite)}`).join(" · ") + ". Pense à en recommander !";
+  await pousser(env, { titre, texte, vue: "inventaire", tag: "stock" });
 }
 async function envoyerPhoto(env, request) {
   let corps = {};
@@ -234,11 +253,109 @@ async function lirePhoto(env, hash) {
   return new Response(JSON.stringify({ data: r.data }), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, max-age=31536000, immutable" } });
 }
 
+// ---------- Notifications envoyées par le serveur (Web Push, RFC 8291 aes128gcm + VAPID) ----------
+let attendre = p => p;   // remplacé à chaque requête par ctx.waitUntil : l'envoi ne retarde pas la réponse
+const b64url = o => btoa(String.fromCharCode(...o)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+function depuisB64url(t) { const s = atob(String(t).replace(/-/g, "+").replace(/_/g, "/") + "===".slice((String(t).length + 3) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+const concat = (...p) => { const o = new Uint8Array(p.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of p) { o.set(x, i); i += x.length; } return o; };
+async function hkdf(sel, ikm, info, n) {
+  const k = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt: sel, info }, k, n * 8));
+}
+// Clés VAPID créées à la première utilisation, gardées dans la base
+async function clesVapid(env) {
+  let l = await env.DB.prepare("SELECT v FROM reglages WHERE k = 'vapid'").first();
+  if (!l) {
+    const k = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    const v = { prive: await crypto.subtle.exportKey("jwk", k.privateKey), pub: b64url(new Uint8Array(await crypto.subtle.exportKey("raw", k.publicKey))) };
+    await env.DB.prepare("INSERT INTO reglages (k, v) VALUES ('vapid', ?) ON CONFLICT(k) DO NOTHING").bind(JSON.stringify(v)).run();
+    l = await env.DB.prepare("SELECT v FROM reglages WHERE k = 'vapid'").first();
+  }
+  return JSON.parse(l.v);
+}
+async function envoyerPush(env, ab, message) {
+  const vapid = await clesVapid(env), t = new TextEncoder();
+  const tete = b64url(t.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const corpsJwt = b64url(t.encode(JSON.stringify({ aud: new URL(ab.endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "mailto:mel@mel-dantan.invalid" })));
+  const cleSig = await crypto.subtle.importKey("jwk", vapid.prive, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, cleSig, t.encode(tete + "." + corpsJwt)));
+  const uaPub = depuisB64url(ab.cles.p256dh), auth = depuisB64url(ab.cles.auth);
+  const eph = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey));
+  const uaCle = await crypto.subtle.importKey("raw", uaPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const partage = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: uaCle }, eph.privateKey, 256));
+  const ikm = await hkdf(auth, partage, concat(t.encode("WebPush: info\0"), uaPub, asPub), 32);
+  const sel = crypto.getRandomValues(new Uint8Array(16));
+  const cle = await crypto.subtle.importKey("raw", await hkdf(sel, ikm, t.encode("Content-Encoding: aes128gcm\0"), 16), "AES-GCM", false, ["encrypt"]);
+  const nonce = await hkdf(sel, ikm, t.encode("Content-Encoding: nonce\0"), 12);
+  const chiffre = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, cle, concat(t.encode(JSON.stringify(message)), new Uint8Array([2]))));
+  return fetch(ab.endpoint, { method: "POST", body: concat(sel, new Uint8Array([0, 0, 16, 0, 65]), asPub, chiffre), headers: {
+    Authorization: `vapid t=${tete}.${corpsJwt}.${b64url(sig)}, k=${vapid.pub}`, "Content-Encoding": "aes128gcm",
+    "Content-Type": "application/octet-stream", TTL: "86400", Urgency: "high" } });
+}
+// Seuls les services de notification des navigateurs sont acceptés (jamais une adresse quelconque)
+function serviceDePush(adresse) {
+  let u; try { u = new URL(adresse); } catch { return false; }
+  return u.protocol === "https:" && String(adresse).length < 900 &&
+    /(^|\.)(fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/.test(u.hostname);
+}
+// Envoie à tous les appareils abonnés ; un abonnement expiré (404/410) est oublié
+async function pousser(env, message) {
+  const { results } = await env.DB.prepare("SELECT * FROM abonnements").all();
+  await Promise.all(results.map(async a => {
+    try {
+      const r = await envoyerPush(env, { endpoint: a.endpoint, cles: JSON.parse(a.cles) }, message);
+      if (r.status === 404 || r.status === 410) await env.DB.prepare("DELETE FROM abonnements WHERE endpoint = ?").bind(a.endpoint).run();
+    } catch (e) { console.error("notification", e); }
+  }));
+}
+// Tâche planifiée : une nouvelle version de l'appli (version.json) est annoncée une seule fois
+async function annoncerVersion(env) {
+  if (!env.DB) return;
+  await preparer(env);
+  const v = await (await env.ASSETS.fetch(new Request("https://assets/version.json"))).json();
+  const deja = await env.DB.prepare("SELECT v FROM reglages WHERE k = 'version_annoncee'").first();
+  if (deja && deja.v === v.version) return;
+  await env.DB.prepare("INSERT INTO reglages (k, v) VALUES ('version_annoncee', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(v.version)).run();
+  if (!deja) return;   // tout premier passage : rien à annoncer
+  await pousser(env, { titre: "Mel : une nouvelle version est prête", texte: `La version ${v.version} de Mel d’antan est prête${v.notes && v.notes[0] ? " : " + v.notes[0] : ""}. Ouvre l’appli pour l’installer.`, tag: "maj" });
+}
+async function notifs(env, request, chemin) {
+  let corps = {};
+  if (request.method === "POST") try { corps = JSON.parse(await request.text()) || {}; } catch { return json({ erreur: "Requête illisible." }, 400); }
+  if (chemin === "notifs/cle") return json({ cle: (await clesVapid(env)).pub });
+  if (chemin === "notifs/abonner") {
+    const ab = corps.abonnement || {};
+    if (!serviceDePush(ab.endpoint) || !ab.keys || !ab.keys.p256dh || !ab.keys.auth) return json({ erreur: "Abonnement illisible." }, 400);
+    await env.DB.prepare("INSERT INTO abonnements (endpoint, cles, cree) VALUES (?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET cles = excluded.cles")
+      .bind(ab.endpoint, JSON.stringify({ p256dh: String(ab.keys.p256dh).slice(0, 200), auth: String(ab.keys.auth).slice(0, 100) }), new Date().toISOString()).run();
+    return json({ ok: true });
+  }
+  if (chemin === "notifs/desabonner") {
+    await env.DB.prepare("DELETE FROM abonnements WHERE endpoint = ?").bind(String(corps.endpoint || "").slice(0, 900)).run();
+    return json({ ok: true });
+  }
+  if (chemin === "notifs/essai") {
+    const a = await env.DB.prepare("SELECT * FROM abonnements WHERE endpoint = ?").bind(String(corps.endpoint || "").slice(0, 900)).first();
+    if (!a) return json({ erreur: "Cet appareil n'est pas encore abonné aux notifications." }, 404);
+    const r = await envoyerPush(env, { endpoint: a.endpoint, cles: JSON.parse(a.cles) }, { titre: "Mel : coucou !", texte: "C’est comme ça que je te préviendrai, même quand l’appli est fermée.", tag: "essai" });
+    if (!r.ok) return json({ erreur: "Le service de notification de l'appareil a refusé l'envoi (" + r.status + ")." }, 502);
+    return json({ ok: true });
+  }
+  return json({ erreur: "Adresse inconnue." }, 404);
+}
+
 async function api(request, env, chemin) {
   const m = moteur(env);
   if (chemin === "mel/etat") return json({ actif: !!m, moteur: m, code: !!env.CODE_MEL, sync: !!env.DB });
   // Carnet partagé : même code que Mel
   const photo = chemin.match(/^photo\/([0-9a-f]{64})$/);
+  if (chemin.startsWith("notifs/")) {
+    if (!env.DB) return json({ erreur: "La base n'est pas encore branchée." }, 503);
+    if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+    try { await preparer(env); return await notifs(env, request, chemin); }
+    catch (e) { console.error(e); return json({ erreur: "Les notifications ne répondent pas pour le moment." }, 500); }
+  }
   if (chemin === "sync" || chemin === "photo" || photo) {
     if (!env.DB) return json({ erreur: "La base du carnet n'est pas encore branchée." }, 503);
     if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
@@ -265,9 +382,15 @@ async function api(request, env, chemin) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
+    attendre = p => (ctx && ctx.waitUntil ? ctx.waitUntil(p) : p);
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) return api(request, env, url.pathname.slice(5).replace(/\/$/, ""));
     return env.ASSETS.fetch(request);
+  },
+  // Tâche planifiée (wrangler.jsonc › triggers) : annonce d'une nouvelle version de l'appli
+  async scheduled(event, env, ctx) {
+    attendre = p => ctx.waitUntil(p);
+    ctx.waitUntil(annoncerVersion(env).catch(e => console.error("annonce version", e)));
   },
 };

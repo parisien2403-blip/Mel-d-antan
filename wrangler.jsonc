@@ -13,5 +13,7 @@
   "ai": { "binding": "AI" },
   // Carnet partagé entre les appareils (recettes, inventaire, photos) : base créée toute seule au premier déploiement
   "d1_databases": [{ "binding": "DB", "database_name": "mel-dantan" }],
+  // Toutes les 15 minutes : une nouvelle version (version.json) est annoncée par notification, même appli fermée
+  "triggers": { "crons": ["*/15 * * * *"] },
   "observability": { "enabled": true }
 }

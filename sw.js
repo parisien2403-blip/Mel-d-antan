@@ -1,9 +1,9 @@
 // Ouverture hors ligne : l'appli est gardée sur l'appareil, version par version.
 // Une nouvelle version s'installe en arrière-plan puis attend que Mel touche « Mettre à jour » dans l'appli.
 // À chaque publication : même numéro ici, dans index.html (VERSION) et dans version.json.
-const VERSION = "2.5";
+const VERSION = "2.6";
 const CACHE = "mel-dantan-" + VERSION;
-const FICHIERS = ["./", "index.html", "manifest.webmanifest", "logo.jpg", "tampon.png", "mel.webp", "mel-avatar.png", "logo-rond.png", "vendor/jspdf.umd.min.js", "favicon-48.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
+const FICHIERS = ["./", "index.html", "manifest.webmanifest", "logo.jpg", "tampon.png", "mel.webp", "mel-avatar.png", "mel-notif.jpg", "logo-rond.png", "vendor/jspdf.umd.min.js", "favicon-48.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 // cache: "reload" : les fichiers viennent du serveur, jamais d'un ancien cache du navigateur
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS.map(f => new Request(f, { cache: "reload" }))))
@@ -20,6 +20,16 @@ self.addEventListener("fetch", e => {
     const garde = await c.match(e.request, { ignoreSearch: true });
     if (garde) return garde;
     return fetch(e.request).then(r => { if (r.ok && (r.type === "basic" || r.type === "cors")) c.put(e.request, r.clone()); return r; });
+  }));
+});
+
+// Notification envoyée par le serveur (stock bas, nouvelle version), même appli fermée
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.titre || "Mel", {
+    body: d.texte || "", icon: "mel-avatar.png", badge: "favicon-48.png", image: "mel-notif.jpg",
+    tag: d.tag || "mel", renotify: true, data: { vue: d.vue || null }
   }));
 });
 

@@ -1,8 +1,8 @@
 {
-  "version": "2.5",
+  "version": "2.6",
   "date": "2026-10-25",
   "notes": [
-    "Mel en entier pour te poser ses questions",
-    "Alertes de stock et annonces de Mel avec sa bulle"
+    "Les notifications de Mel arrivent même quand l’appli est fermée",
+    "Mel en entier pour te poser ses questions"
   ]
 }

@@ -28,7 +28,9 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
 - **Accueil** : bonjour, chiffres de l’atelier (recettes, approuvées, stocks bas), logo, astuce de Mel du jour.
 - **Version** : « v1.0 » à côté du bouton Version appli / site ; bandeau de Mel et notification quand une mise à jour est prête.
 - **Alertes de stock** : quand un produit passe sous son seuil (« M’alerter sous »), Mel apparaît en dessin avec sa bulle,
-  et envoie une notification si elle est activée (Réglages › Notifications de Mel), appli ouverte ou en arrière-plan.
+  et envoie une notification si elle est activée (Réglages › Notifications de Mel). Les notifications partent du serveur
+  (Web Push, clés créées toutes seules) : elles arrivent même appli fermée. Les nouvelles versions sont annoncées par la
+  tâche planifiée (toutes les 15 min, `triggers` dans `wrangler.jsonc`).
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
 - **Affichage** : l’appli reconnaît l’appareil (Android, iPhone / iPad, ordinateur). Version appli (onglets en bas) sur téléphone
   et sur tablette à la verticale ; version site (menu en haut, page large) sur ordinateur et sur tablette à l’horizontale.
