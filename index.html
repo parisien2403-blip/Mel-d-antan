@@ -333,6 +333,13 @@ nav.haut .ico-mel{width:22px;height:22px}
 /* Accueil en mode sombre */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}}
 :root[data-theme="dark"] .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}
+/* Question de Mel (confirmation) */
+.dialogue-mel{z-index:40;align-items:center}
+.dialogue-mel .fenetre{max-width:440px;border-radius:20px;border:2px solid var(--cafe);margin:16px}
+.dialogue-tete{display:flex;gap:12px;align-items:flex-start}
+.dialogue-tete img{width:52px;height:52px;border-radius:50%;flex:none;box-shadow:0 0 0 2px var(--cafe)}
+.dialogue-tete b{font-family:var(--f-titre);font-size:1.15rem;display:block}
+.dialogue-tete p{margin:6px 0 0;color:var(--doux);font-size:.92rem}
 /* Pastille et volet de Mel */
 /* Espace en bas de chaque page : les derniers boutons passent au-dessus de la pastille de Mel */
 main{padding-bottom:110px}
@@ -681,8 +688,22 @@ addEventListener("popstate",e=>{
   if(voletMel&&!(e.state&&e.state.volet)){fermerVolet(false);return}
   const s=e.state||{vue:"recettes"};
   if(s.vue===vue&&s.id===courant)return;
-  if(vue==="editer"&&brouillon&&modifie()&&!confirm("Quitter sans enregistrer les changements ?")){history.pushState({vue,id:courant},"");return}
-  vue=s.vue;courant=s.id;if(vue!=="editer")brouillon=null;if(vue==="editer"&&!brouillon)vue="recettes";rendre();scrollTo(0,0)});
+  const partir=()=>{vue=s.vue;courant=s.id;if(vue!=="editer")brouillon=null;if(vue==="editer"&&!brouillon)vue="recettes";rendre();scrollTo(0,0)};
+  if(vue==="editer"&&brouillon&&modifie()){history.pushState({vue,id:courant},"");quitterEditeur().then(v=>{if(v){brouillon=null;partir();history.replaceState({vue,id:courant},"")}});return}
+  partir()});
+// Question de Mel (remplace la fenêtre grise du navigateur) : renvoie vrai si on confirme
+function demander(titre,texte,{oui="Oui",non="Annuler",danger=false}={}){
+  return new Promise(ok=>{
+    const z=document.createElement("div");z.className="voile dialogue-mel";
+    z.innerHTML=`<div class="fenetre" role="alertdialog" aria-modal="true"><div class="dialogue-tete"><img src="mel-avatar.png" alt=""><div><b>${esc(titre)}</b>${texte?`<p>${esc(texte)}</p>`:""}</div></div>
+      <div class="ligne" style="justify-content:flex-end"><button class="btn leger" data-rep="0">${esc(non)}</button><button class="btn ${danger?"danger":""}" data-rep="1">${esc(oui)}</button></div></div>`;
+    const fin=v=>{z.remove();document.removeEventListener("keydown",touche,true);ok(v)};
+    const touche=e=>{if(e.key==="Escape"){e.stopPropagation();fin(false)}else if(e.key==="Enter"){e.preventDefault();fin(true)}};
+    z.addEventListener("click",e=>{const b=e.target.closest("[data-rep]");if(b)fin(b.dataset.rep==="1");else if(e.target===z)fin(false)});
+    document.addEventListener("keydown",touche,true);document.body.appendChild(z);z.querySelector('[data-rep="1"]').focus();
+  });
+}
+const quitterEditeur=()=>!(vue==="editer"&&brouillon&&modifie())?Promise.resolve(true):demander("Quitter sans enregistrer ?","Tes changements sur cette recette seront perdus.",{oui:"Quitter",non:"Rester",danger:true});
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 
 /* ---------- Accueil : bonjour et chiffres de l'atelier, logo, astuce de Mel ---------- */
@@ -1336,10 +1357,10 @@ document.addEventListener("click",e=>{
   if(t.id==="retour"){history.back();return}
   if(t.id==="bascule"){choisirMode(d.mode);toast(`Version ${d.mode}${APPAREIL==="tablette"?" · tourner la tablette revient au réglage automatique":""}`);return}
   if(d.modeChoix){choisirMode(d.modeChoix);return}
-  if(t.id==="logo"){if(vue!=="recettes"){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller("recettes")}return}
+  if(t.id==="logo"){if(vue!=="recettes")quitterEditeur().then(v=>{if(v){brouillon=null;aller("recettes")}});return}
   // Version appli : l'onglet Mel de la barre du bas ouvre la conversation par-dessus la page en cours
   if(d.aller==="mel"&&t.closest("nav.bas")&&vue!=="mel"&&!voletMel){ouvrirVolet();return}
-  if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
+  if(d.aller){const v=d.aller;quitterEditeur().then(ok=>{if(ok){brouillon=null;aller(v)}});return}
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}
   if(d.tourner){tourner(+d.tourner);return}
@@ -1362,12 +1383,12 @@ document.addEventListener("click",e=>{
   else if(act==="modifier"){brouillon=copie(R(courant));instantane=JSON.stringify(brouillon);aller("editer")}
   else if(act==="approuver"){const r=R(courant);r.approuve=r.approuve?null:new Date().toISOString();frappe=!!r.approuve;sauver();rendre();toast(r.approuve?"Recette approuvée : le tampon est dans votre livre":"Tampon retiré")}
   else if(act==="dupliquer"){const r=copie(R(courant));r.id=nouvelId();r.neuve=true;delete r.approuve;r.nom=r.nom+" (copie)";brouillon=r;instantane="";aller("editer")}
-  else if(act==="supprimer"){const r=R(courant);if(confirm(`Supprimer « ${r.nom} » du carnet ?`)){D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")}}
+  else if(act==="supprimer"){const r=R(courant);demander(`Supprimer « ${r.nom} » ?`,"La recette disparaîtra de ton carnet et de ton livre, sur tous tes appareils.",{oui:"Supprimer",danger:true}).then(v=>{if(!v)return;D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")})}
   else if(act==="couler"){const r=R(courant),b=besoins(r,mult);let n=0;for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){p.stock=Math.max(0,Math.round((+p.stock-q)*100)/100);n++}}
     sauver();rendre();toast(n?`Inventaire mis à jour (${n} produit${n>1?"s":""})`:"Aucun produit suivi en stock dans cette recette");
     const bas=D.produits.filter(p=>b[p.id]&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte);if(bas.length)setTimeout(()=>toast("Bientôt épuisé : "+bas.map(p=>p.nom).join(", ")),2700)}
   else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
-  else if(act==="retirerCouche"){if(confirm("Retirer cette couche ?"))garder(()=>brouillon.couches.splice(+i,1))}
+  else if(act==="retirerCouche"){const c=brouillon.couches[+i];demander("Retirer cette couche ?",c&&c.nom?`La couche « ${c.nom} » et ses produits seront retirés de la recette.`:"",{oui:"Retirer",danger:true}).then(v=>{if(v)garder(()=>brouillon.couches.splice(+i,1))})}
   else if(act==="versBas")garder(()=>{const c=brouillon.couches;[c[+i-1],c[+i]]=[c[+i],c[+i-1]]});
   else if(act==="versHaut")garder(()=>{const c=brouillon.couches;[c[+i+1],c[+i]]=[c[+i],c[+i+1]]});
   else if(act==="ajoutIngr")garder(()=>brouillon.couches[+i].ingredients.push({produit:"",q:""}));
@@ -1381,7 +1402,7 @@ document.addEventListener("click",e=>{
     sauver();brouillon=null;courant=r.id;mult=1;vue="voir";history.replaceState({vue,id:courant},"");rendre();scrollTo(0,0);toast(neuve?"Recette ajoutée au carnet":"Recette enregistrée")}
   else if(act==="annuler"){history.back()}
   else if(act==="nouveauProduit")ouvrirProduit({});
-  else if(act==="supprimerProduit"){const p=calque.p,n=utilisations(p.id);if(confirm(n?`« ${p.nom} » sert dans ${n} recette${n>1?"s":""}. Le supprimer quand même ?`:`Supprimer « ${p.nom} » ?`)){D.produits=D.produits.filter(x=>x.id!==p.id);sauver();fermerCalque();rendre()}}
+  else if(act==="supprimerProduit"){const p=calque.p,n=utilisations(p.id);demander(`Supprimer « ${p.nom} » ?`,n?`Ce produit sert dans ${n} recette${n>1?"s":""} : il y apparaîtra comme « produit supprimé ».`:"Il disparaîtra de ton inventaire.",{oui:"Supprimer",danger:true}).then(v=>{if(v){D.produits=D.produits.filter(x=>x.id!==p.id);sauver();fermerCalque();rendre()}})}
   else if(act==="exporter")exporter();
   else if(act==="pdfRecette"){const rec=R(courant);fairePdf([rec],false,`${nomFichier(rec.nom)}.pdf`,rec.nom)}
   else if(act==="pdfPageLivre"){const r=recettePage();if(r)fairePdf([r],false,`${nomFichier(r.nom)}.pdf`,r.nom)}
@@ -1405,7 +1426,7 @@ document.addEventListener("click",e=>{
   else if(act==="fermerVolet")fermerVolet();
   else if(act==="agrandirMel"){voletMel=false;if(history.state&&history.state.volet)history.replaceState({vue,id:courant},"");aller("mel")}
   else if(act==="voixMel"){try{localStorage.setItem("carnet.voixMel",voixMel()?"0":"1")}catch(x){}if(!voixMel()&&"speechSynthesis" in window)speechSynthesis.cancel();majMel()}
-  else if(act==="effacerMel"){if(confirm("Effacer la conversation avec Mel ?")){D.discussion=[];melErreur="";sauver();majMel()}}
+  else if(act==="effacerMel"){demander("On recommence une conversation ?","Je garde ton carnet en tête, mais j’oublie ce qu’on s’est dit jusqu’ici.",{oui:"Nouvelle conversation",non:"Garder"}).then(v=>{if(v){D.discussion=[];melErreur="";sauver();majMel()}})}
   else if(act==="quitterPlein")quitterPlein();
   else if(act==="pdfOuvrir")ouvrirFichierPdf();
   else if(act==="installer")installer();
@@ -1455,7 +1476,7 @@ function exporter(){
 }
 async function importer(file){
   try{const o=JSON.parse(await file.text());if(!o||o.app!=="carnet-bougies"||!Array.isArray(o.recettes)||!Array.isArray(o.produits))throw 0;
-    if(!confirm(`Remplacer le carnet actuel par cette sauvegarde (${o.recettes.length} recettes, ${o.produits.length} produits) ?`))return;
+    if(!await demander("Restaurer cette sauvegarde ?",`Ton carnet actuel sera remplacé par celui de la sauvegarde (${o.recettes.length} recette${o.recettes.length>1?"s":""}, ${o.produits.length} produit${o.produits.length>1?"s":""}), sur tous tes appareils.`,{oui:"Restaurer",danger:true}))return;
     D={produits:o.produits,recettes:o.recettes,discussion:Array.isArray(o.discussion)?o.discussion:[]};sauver();rendre();toast("Sauvegarde restaurée")}
   catch(x){toast("Ce fichier n’est pas une sauvegarde du carnet")}
 }
@@ -1466,7 +1487,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.2";
+const VERSION="2.3";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
