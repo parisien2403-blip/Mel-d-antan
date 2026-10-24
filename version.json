@@ -1,9 +1,8 @@
 {
-  "version": "1.3",
+  "version": "1.4",
   "date": "2026-10-24",
   "notes": [
-    "La photo d’une recette prend la place du dessin dans sa fiche",
-    "La pastille de Mel ne cache plus les boutons",
-    "Mel regarde tes photos et dessine des idées de bougies"
+    "Couverture du livre épurée : juste le titre",
+    "La photo d’une recette prend la place du dessin dans sa fiche"
   ]
 }

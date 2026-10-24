@@ -1,7 +1,7 @@
 // Ouverture hors ligne : l'appli est gardée sur l'appareil, version par version.
 // Une nouvelle version s'installe en arrière-plan puis attend que Mel touche « Mettre à jour » dans l'appli.
 // À chaque publication : même numéro ici, dans index.html (VERSION) et dans version.json.
-const VERSION = "1.3";
+const VERSION = "1.4";
 const CACHE = "mel-dantan-" + VERSION;
 const FICHIERS = ["./", "index.html", "manifest.webmanifest", "logo.jpg", "tampon.png", "mel.webp", "mel-avatar.png", "logo-rond.png", "vendor/jspdf.umd.min.js", "favicon-48.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
