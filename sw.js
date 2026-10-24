@@ -1,7 +1,7 @@
 // Ouverture hors ligne : l'appli est gardée sur l'appareil, version par version.
 // Une nouvelle version s'installe en arrière-plan puis attend que Mel touche « Mettre à jour » dans l'appli.
 // À chaque publication : même numéro ici, dans index.html (VERSION) et dans version.json.
-const VERSION = "2.3";
+const VERSION = "2.4";
 const CACHE = "mel-dantan-" + VERSION;
 const FICHIERS = ["./", "index.html", "manifest.webmanifest", "logo.jpg", "tampon.png", "mel.webp", "mel-avatar.png", "logo-rond.png", "vendor/jspdf.umd.min.js", "favicon-48.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
@@ -26,5 +26,10 @@ self.addEventListener("fetch", e => {
 // Notification « nouvelle version » touchée : l'appli s'ouvre (ou revient au premier plan)
 self.addEventListener("notificationclick", e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(l => l.length ? l[0].focus() : self.clients.openWindow("./")));
+  // Stock bas : l'appli s'ouvre sur l'inventaire
+  const vue = e.notification.data && e.notification.data.vue;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(l => {
+    if (l.length) { if (vue) l[0].postMessage({ aller: vue }); return l[0].focus(); }
+    return self.clients.openWindow(vue ? "./?vue=" + vue : "./");
+  }));
 });

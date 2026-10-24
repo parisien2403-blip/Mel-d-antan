@@ -1,8 +1,9 @@
 {
-  "version": "2.3",
+  "version": "2.4",
   "date": "2026-10-25",
   "notes": [
-    "Les questions de confirmation s’affichent aux couleurs de Mel d’antan",
-    "Bougies moulées : pâtisseries et fruits"
+    "Mel te prévient quand il commence à manquer du stock",
+    "Mel apparaît en dessin avec sa bulle pour ses annonces",
+    "Les questions de confirmation sont aux couleurs de Mel d’antan"
   ]
 }

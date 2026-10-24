@@ -333,6 +333,22 @@ nav.haut .ico-mel{width:22px;height:22px}
 /* Accueil en mode sombre */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}}
 :root[data-theme="dark"] .accueil{background:radial-gradient(ellipse at 50% 120%,rgba(212,154,106,.14),transparent 60%),linear-gradient(180deg,#33281f,#251c16)}
+.annonce-mel{position:fixed;right:10px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:9;display:flex;align-items:flex-end;max-width:min(600px,calc(100% - 20px));pointer-events:none;animation:arrive .45s cubic-bezier(.2,.9,.3,1.2)}
+:root[data-mode="site"] .annonce-mel{bottom:0;right:24px}
+.annonce-mel>*{pointer-events:auto}
+.mel-buste{height:230px;flex:none;filter:drop-shadow(0 6px 14px rgba(60,30,10,.28));margin-left:-6px}
+.bulle-annonce{position:relative;background:var(--carte);border:2px solid var(--cafe);border-radius:20px;padding:12px 16px;margin-bottom:96px;box-shadow:0 10px 26px rgba(70,40,20,.28);min-width:0}
+.bulle-annonce::after{content:"";position:absolute;right:-12px;bottom:26px;width:20px;height:20px;background:var(--carte);border-right:2px solid var(--cafe);border-bottom:2px solid var(--cafe);transform:rotate(-45deg)}
+.bulle-annonce>b,.bulle-annonce form>b{color:var(--cafe);font-family:var(--f-titre);font-size:1.05rem;display:block}
+.bulle-annonce p,.bulle-annonce ul{margin:6px 0 8px;font-size:.9rem;color:var(--encre)}
+.bulle-annonce ul{padding-left:18px}
+.annonce-mel.alerte .bulle-annonce{border-color:var(--alerte)}.annonce-mel.alerte .bulle-annonce::after{border-color:var(--alerte)}
+.annonce-mel.alerte .bulle-annonce>b{color:var(--alerte)}.bulle-annonce .epuise{color:var(--alerte);font-weight:700}
+.bulle-annonce li{margin:2px 0}
+/* Pendant que Mel parle, le bouton « Nouvelle recette » et la pastille lui laissent la place */
+body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
+@keyframes arrive{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:620px){.mel-buste{height:170px}.bulle-annonce{margin-bottom:70px;padding:10px 12px}.bulle-annonce p,.bulle-annonce ul{font-size:.85rem}}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 .dialogue-mel .fenetre{max-width:440px;border-radius:20px;border:2px solid var(--cafe);margin:16px}
@@ -403,8 +419,7 @@ main{padding-bottom:110px}
 </head>
 <body>
 <header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><button class="btn nouv-tete" id="nouvTete" data-act="nouvelle" hidden>＋ <span>Nouvelle recette</span></button><nav class="haut" id="navHaut"></nav><span class="num-version" id="numVersion"></span><button class="bascule" id="bascule"></button></header>
-<div id="majBandeau"></div>
-<div id="syncBandeau"></div>
+<div id="annonceMel"></div>
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
@@ -421,7 +436,7 @@ let D={produits:[],recettes:[]};
 let minuteur=null;
 // Chaque changement est rangé sur l'appareil, puis envoyé au carnet en ligne quelques secondes plus tard
 let sauverExemple=false;
-function sauver(){if(sauverExemple)sauverExemple=false;else delete D.vierge;clearTimeout(minuteur);minuteur=setTimeout(()=>ecrire("donnees",D),250);planifierSync(4000)}
+function sauver(){if(sauverExemple)sauverExemple=false;else delete D.vierge;clearTimeout(minuteur);minuteur=setTimeout(()=>ecrire("donnees",D),250);planifierSync(4000);setTimeout(verifierStocks,600)}
 const nouvelId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const copie=o=>JSON.parse(JSON.stringify(o));
 
@@ -1261,7 +1276,7 @@ async function synchroniser(choix){
     const el={};for(const e of fin)el[e.id]={j:JSON.stringify(e.data)};
     await ecrire("sync",{el});
     if(JSON.stringify([produits,recettes])!==avant&&JSON.stringify([D.produits,D.recettes])===avant){
-      D.produits=produits;D.recettes=recettes;delete D.vierge;await ecrire("donnees",D);
+      D.produits=produits;D.recettes=recettes;delete D.vierge;await ecrire("donnees",D);verifierStocks();
       if(vue==="voir"&&!R(courant)){vue="recettes"}
       if(vue==="editer")nav();else{const y=scrollY;rendre();scrollTo(0,y)}
     }else if(JSON.stringify([D.produits,D.recettes])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
@@ -1273,11 +1288,24 @@ async function synchroniser(choix){
     if(syncRelancer){syncRelancer=false;planifierSync(1500)}
   }
 }
+/* Mel annonce : son dessin en bas de l'écran avec une bulle qui parle (code, mise à jour, stock bas) */
+const annonces={};
+function annoncer(cle,html){if(html)annonces[cle]=html;else delete annonces[cle];rendreAnnonce()}
+function rendreAnnonce(){
+  const z=document.getElementById("annonceMel");if(!z)return;
+  const cle=["sync","maj","stock"].find(k=>annonces[k]);
+  document.body.classList.toggle("annonce-ouverte",!!cle);
+  if(!cle){z.innerHTML="";delete z.dataset.cle;return}
+  if(z.dataset.cle===cle&&z.dataset.html===annonces[cle])return;
+  // Le texte déjà tapé dans le champ du code est gardé si l'annonce se redessine
+  const tape=document.getElementById("codeSync")?.value||"";
+  z.dataset.cle=cle;z.dataset.html=annonces[cle];
+  z.innerHTML=`<div class="annonce-mel ${cle==="stock"?"alerte":""}" role="status"><div class="bulle-annonce">${annonces[cle]}</div><img class="mel-buste" src="mel.webp" alt="Mel"></div>`;
+  const c=document.getElementById("codeSync");if(c&&tape)c.value=tape;
+}
 function rendreSyncBandeau(){
-  const z=document.getElementById("syncBandeau");if(!z)return;
-  if(!syncEtat.codeRequis||syncEtat.bandeauFerme||!syncPossible()){z.innerHTML="";return}
-  z.innerHTML=`<form class="maj-bandeau" id="fCodeSync"><img src="mel-avatar.png" alt=""><div><b>Mel : tape ton code pour retrouver ton carnet</b><small>Tes recettes, photos et ton stock seront les mêmes sur tous tes appareils.</small></div>
-    <input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:110px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></form>`;
+  annoncer("sync",!syncEtat.codeRequis||syncEtat.bandeauFerme||!syncPossible()?null:`<form id="fCodeSync"><b>Tape ton code pour retrouver ton carnet</b><p>Tes recettes, tes photos et ton stock seront les mêmes sur tous tes appareils.</p>
+    <div class="ligne"><input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:100px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></div></form>`);
 }
 setInterval(()=>{if(!document.hidden)synchroniser()},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
@@ -1308,8 +1336,11 @@ function vReglages(){
    <p class="aide">Recettes, photos et inventaire sont les mêmes sur le PC, la tablette et le téléphone. Sans internet, l’appli continue de marcher et envoie les changements au retour du réseau. La conversation avec Mel reste propre à chaque appareil.</p></div>`:""}
   <div class="carte"><b>Version</b><p class="aide">Mel d’antan <b>v${VERSION}</b>${majInfo&&!majPlusTard?` · la version ${esc(majInfo.version)} est prête`:""}</p>
    <div class="ligne" style="margin-top:10px">${majInfo?`<button class="btn" data-act="installerMaj">Mettre à jour maintenant</button>`:`<button class="btn leger" data-act="chercherMaj">Rechercher une mise à jour</button>`}
-    <button class="btn leger" data-act="notifMaj">${notifMaj()?"🔔 Notifications de mise à jour : oui":"🔕 Me prévenir par une notification"}</button></div>
+    </div>
    <p class="aide">L’appli vérifie toute seule à chaque ouverture et toutes les 30 minutes. Une nouvelle version s’installe quand tu touches « Mettre à jour » ; tes recettes ne bougent pas.</p></div>
+  <div class="carte"><b>Notifications de Mel</b><p class="aide">Mel te prévient quand un produit passe sous son seuil d’alerte (réglé dans l’inventaire, « M’alerter sous »), et quand une nouvelle version de l’appli est prête.</p>
+   <div class="ligne" style="margin-top:10px"><button class="btn ${notifMaj()?"leger":""}" data-act="notifMaj">${notifMaj()?"🔔 Notifications activées":"🔔 Activer les notifications"}</button>${notifMaj()?`<button class="btn leger" data-act="essaiNotif">Essayer</button>`:""}</div>
+   ${stockBas().length?`<p class="aide">En ce moment : ${stockBas().map(p=>esc(p.nom)).join(", ")} sous le seuil.</p>`:""}</div>
   <div class="carte"><b>Installer sur la tablette ou le téléphone</b><p class="aide"><b>iPad / iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
    ${installable?`<button class="btn" data-act="installer" style="margin-top:10px">Installer l’application</button>`:""}</div>`;
 }
@@ -1386,7 +1417,7 @@ document.addEventListener("click",e=>{
   else if(act==="supprimer"){const r=R(courant);demander(`Supprimer « ${r.nom} » ?`,"La recette disparaîtra de ton carnet et de ton livre, sur tous tes appareils.",{oui:"Supprimer",danger:true}).then(v=>{if(!v)return;D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")})}
   else if(act==="couler"){const r=R(courant),b=besoins(r,mult);let n=0;for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){p.stock=Math.max(0,Math.round((+p.stock-q)*100)/100);n++}}
     sauver();rendre();toast(n?`Inventaire mis à jour (${n} produit${n>1?"s":""})`:"Aucun produit suivi en stock dans cette recette");
-    const bas=D.produits.filter(p=>b[p.id]&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte);if(bas.length)setTimeout(()=>toast("Bientôt épuisé : "+bas.map(p=>p.nom).join(", ")),2700)}
+    verifierStocks()}
   else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
   else if(act==="retirerCouche"){const c=brouillon.couches[+i];demander("Retirer cette couche ?",c&&c.nom?`La couche « ${c.nom} » et ses produits seront retirés de la recette.`:"",{oui:"Retirer",danger:true}).then(v=>{if(v)garder(()=>brouillon.couches.splice(+i,1))})}
   else if(act==="versBas")garder(()=>{const c=brouillon.couches;[c[+i-1],c[+i]]=[c[+i],c[+i-1]]});
@@ -1413,6 +1444,8 @@ document.addEventListener("click",e=>{
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
   else if(act==="installerMaj")installerMaj();
+  else if(act==="voirStock"){stockAffiche=[];rendreStockBandeau();quitterEditeur().then(v=>{if(v){brouillon=null;aller("inventaire")}})}
+  else if(act==="okStock"){stockAffiche=[];rendreStockBandeau()}
   else if(act.startsWith("syncChoix")){const c=a.split(":")[1];calque=null;rendreCalque();synchroniser(c)}
   else if(act==="synchroniserMaintenant"){synchroniser();toast("Synchronisation…")}
   else if(act==="fermerSyncBandeau"){syncEtat.bandeauFerme=true;rendreSyncBandeau()}
@@ -1420,6 +1453,7 @@ document.addEventListener("click",e=>{
   else if(act==="majPlusTard"){majPlusTard=true;rendreMaj()}
   else if(act==="chercherMaj")chercherMaj();
   else if(act==="notifMaj")basculerNotifMaj();
+  else if(act==="essaiNotif")notifier("Mel : coucou !","C’est comme ça que je te préviendrai quand il commencera à manquer quelque chose.",{tag:"essai"});
   else if(act==="dicter")dicter();
   else if(act==="retirerPhotoMel"){photoMel=null;majMel()}
   else if(act==="ouvrirVolet")ouvrirVolet();
@@ -1487,7 +1521,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.3";
+const VERSION="2.4";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
@@ -1506,14 +1540,63 @@ async function nouvelleVersion(w){
   try{const r=await fetch("version.json",{cache:"no-store"});if(r.ok)info=await r.json()}catch(e){}
   majInfo=info;majPlusTard=false;rendreMaj();
   if(regSW&&notifMaj()&&(document.hidden||!document.hasFocus()))
-    regSW.showNotification("Mel d’antan · mise à jour",{body:`La version ${info.version||"nouvelle"} est prête${info.notes&&info.notes[0]?" : "+info.notes[0]:""}. Touche ici pour l’installer.`,icon:"icon-192.png",badge:"favicon-48.png",tag:"maj"}).catch(()=>{});
+    notifier("Mel : une nouvelle version est prête",`La version ${info.version||"nouvelle"} est prête${info.notes&&info.notes[0]?" : "+info.notes[0]:""}. Touche ici pour l’installer.`,{tag:"maj"});
+}
+/* ---------- Stock bas : Mel prévient à l'écran et par notification ---------- */
+// Un produit prévient une fois quand il passe sous son seuil ; il pourra reprévenir s'il remonte puis redescend
+const unite=p=>(UNITES.find(u=>u[0]===p.unite)||[,""])[1];
+const stockBas=()=>D.produits.filter(p=>p.stock!=null&&p.stock!==""&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte);
+let stockAffiche=[];
+function verifierStocks(){
+  let vus;try{vus=JSON.parse(localStorage.getItem("carnet.stocksPrevenus")||"{}")}catch(e){vus={}}
+  const bas=stockBas(),ids=new Set(bas.map(p=>p.id));
+  for(const id of Object.keys(vus))if(!ids.has(id))delete vus[id];
+  const nouveaux=bas.filter(p=>!vus[p.id]||(+p.stock===0&&vus[p.id]!=="vide"));
+  if(nouveaux.length){
+    for(const p of nouveaux)vus[p.id]=+p.stock===0?"vide":"bas";
+    stockAffiche=[...new Set([...stockAffiche,...nouveaux.map(p=>p.id)])];rendreStockBandeau();
+    if(regSW&&notifMaj()){
+      const t=nouveaux.map(p=>+p.stock===0?`${p.nom} : épuisé`:`${p.nom} : plus que ${nb(+p.stock)} ${unite(p)}`).join(" · ");
+      notifier(nouveaux.length>1?"Mel : il commence à manquer des produits":`Mel : il commence à manquer de ${nouveaux[0].nom.charAt(0).toLowerCase()+nouveaux[0].nom.slice(1)}`,t+". Pense à en recommander !",{tag:"stock",data:{vue:"inventaire"}});
+    }
+  }
+  try{localStorage.setItem("carnet.stocksPrevenus",JSON.stringify(vus))}catch(e){}
+  if(stockAffiche.length){stockAffiche=stockAffiche.filter(id=>ids.has(id));rendreStockBandeau()}
+}
+function rendreStockBandeau(){
+  const l=stockAffiche.map(P).filter(Boolean);
+  annoncer("stock",!l.length?null:`<b>Il commence à manquer ${l.length>1?"des produits":"de "+esc(l[0].nom.charAt(0).toLowerCase()+l[0].nom.slice(1))} !</b>
+    <ul>${l.slice(0,4).map(p=>+p.stock===0?`<li class="epuise">${esc(p.nom)} : épuisé</li>`:`<li>${esc(p.nom)} : plus que <b>${nb(+p.stock)} ${esc(unite(p))}</b></li>`).join("")}${l.length>4?`<li>et ${l.length-4} autre${l.length>5?"s":""}</li>`:""}</ul>
+    <p>Pense à en recommander.</p><div class="ligne"><button class="btn petit" data-act="voirStock">Voir l’inventaire</button><button class="btn leger petit" data-act="okStock">J’ai noté</button></div>`);
+}
+// Notification touchée : le service worker demande d'ouvrir la bonne page
+if("serviceWorker"in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.aller==="inventaire"){quitterEditeur().then(v=>{if(v){brouillon=null;aller("inventaire")}})}});
+// Image de notification : Mel dessinée, et sa bulle avec le message (affichée en grand sur Android et Windows)
+async function imageNotif(titre,texte){
+  try{
+    const im=await chargerImage("mel.webp"),W=720,H=360,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+    x.fillStyle="#f3e9d6";x.fillRect(0,0,W,H);
+    const h=H-10,w=im.width*h/im.height;x.drawImage(im,W-w-16,H-h,w,h);
+    const bx=24,by=36,bw=W-w-70,bh=H-110;
+    x.fillStyle="#fbf6ec";x.strokeStyle="#88502f";x.lineWidth=4;x.beginPath();x.roundRect?x.roundRect(bx,by,bw,bh,26):x.rect(bx,by,bw,bh);x.fill();x.stroke();
+    x.beginPath();x.moveTo(bx+bw-2,by+bh-70);x.lineTo(bx+bw+30,by+bh-46);x.lineTo(bx+bw-2,by+bh-34);x.closePath();x.fill();
+    x.beginPath();x.moveTo(bx+bw,by+bh-70);x.lineTo(bx+bw+30,by+bh-46);x.lineTo(bx+bw,by+bh-34);x.stroke();
+    const lignes=(t,max,taille,gras)=>{x.font=`${gras?"bold ":""}${taille}px Georgia, serif`;const mots=String(t).split(" "),l=[];let cur="";for(const m of mots){const e=cur?cur+" "+m:m;if(x.measureText(e).width>max&&cur){l.push(cur);cur=m}else cur=e}if(cur)l.push(cur);return l};
+    let y=by+46;x.fillStyle="#88502f";for(const l of lignes(titre,bw-40,28,true).slice(0,2)){x.fillText(l,bx+20,y);y+=36}
+    x.fillStyle="#3b2f23";y+=6;for(const l of lignes(texte,bw-40,23,false).slice(0,5)){x.fillText(l,bx+20,y);y+=30}
+    return c.toDataURL("image/png");
+  }catch(e){return undefined}
+}
+async function notifier(titre,texte,options={}){
+  if(!regSW||!notifMaj())return;
+  const image=await imageNotif(titre.replace(/^Mel : /,""),texte);
+  regSW.showNotification(titre,{body:texte,icon:"mel-avatar.png",badge:"favicon-48.png",image,...options}).catch(()=>{});
 }
 function rendreMaj(){
-  const z=document.getElementById("majBandeau");if(!z)return;
-  if(!majInfo||majPlusTard){z.innerHTML="";return}
+  if(!majInfo||majPlusTard){annoncer("maj",null);return}
   const notes=(majInfo.notes||[]).slice(0,3);
-  z.innerHTML=`<div class="maj-bandeau" role="status"><img src="mel-avatar.png" alt=""><div><b>Mel : la version ${esc(majInfo.version||"nouvelle")} est prête !</b>${notes.length?`<small>${notes.map(esc).join(" · ")}</small>`:""}</div>
-    <button class="btn petit" data-act="installerMaj">Mettre à jour</button><button class="btn leger petit" data-act="majPlusTard">Plus tard</button></div>`;
+  annoncer("maj",`<b>La version ${esc(majInfo.version||"nouvelle")} est prête !</b>${notes.length?`<ul>${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}
+    <div class="ligne"><button class="btn petit" data-act="installerMaj">Mettre à jour</button><button class="btn leger petit" data-act="majPlusTard">Plus tard</button></div>`);
 }
 function installerMaj(){majDemandee=true;if(swAttente)swAttente.postMessage("activer");else location.reload();setTimeout(()=>location.reload(),4000)}
 async function chercherMaj(){
@@ -1526,7 +1609,7 @@ async function basculerNotifMaj(){
   if(notifMaj()){try{localStorage.setItem("carnet.notifMaj","0")}catch(e){}rendre();return}
   if(!("Notification" in window)){toast(SYSTEME==="ios"?"Installe d’abord l’appli sur l’écran d’accueil pour recevoir les notifications":"Les notifications ne sont pas disponibles ici");return}
   const p=await Notification.requestPermission();
-  if(p==="granted"){try{localStorage.setItem("carnet.notifMaj","1")}catch(e){}toast("Je te préviendrai à chaque nouvelle version")}
+  if(p==="granted"){try{localStorage.setItem("carnet.notifMaj","1")}catch(e){}toast("Je te préviendrai quand le stock baisse et à chaque nouvelle version")}
   else toast("Notifications refusées : tu peux les autoriser dans les réglages de la tablette");
   rendre();
 }
@@ -1550,7 +1633,8 @@ function exemple(){
   const lu=await lire("donnees");
   if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();D.vierge=true;sauverExemple=true;sauver()}
   history.replaceState({vue:"recettes"},"");rendre();
-  verifierMel().then(()=>planifierSync(300));
+  verifierMel().then(()=>planifierSync(300));setTimeout(verifierStocks,1500);
+  if(new URLSearchParams(location.search).get("vue")==="inventaire"){history.replaceState({vue:"recettes"},"",location.pathname);aller("inventaire")}
 })();
 </script>
 </body>
