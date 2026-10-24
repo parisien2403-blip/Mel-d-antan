@@ -187,16 +187,40 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .titre-or{font-family:var(--f-titre);font-style:italic;font-size:1.6rem;color:#e8c98a;margin:6px 0 0}
 .sous-or{color:#d9b97a;margin:0;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase}
 .livre-cmd{justify-content:center;gap:18px;color:var(--doux)}
+/* Bouton « version appli / version site » de l'en-tête */
+.bascule{background:none;border:1.5px solid var(--cafe);color:var(--cafe);border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem;font-weight:600;flex:none}
+.bascule svg,nav.haut svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.haut{display:flex;gap:4px}
+nav.haut button{background:none;border:0;padding:8px 14px;border-radius:999px;display:flex;align-items:center;gap:8px;color:var(--doux);cursor:pointer;font-weight:600;font-size:.95rem}
+nav.haut button.on{background:var(--cafe);color:var(--carte)}
+/* Mode site (ordinateur, tablette à l'horizontale) : menu en haut, pas de barre du bas, page large */
+:root[data-mode="site"] nav.bas{display:none}
+:root[data-mode="site"] body{padding-bottom:24px}
+:root[data-mode="site"] main{max-width:1240px;padding:24px}
+:root[data-mode="site"] header{padding-left:max(16px,calc((100% - 1240px)/2 + 24px));padding-right:max(16px,calc((100% - 1240px)/2 + 24px))}
+:root[data-mode="site"] .flottant{bottom:24px;right:max(18px,calc((100% - 1240px)/2 + 24px))}
+:root[data-mode="site"] .barre-enreg{bottom:0}
+:root[data-mode="site"] .toast{bottom:28px}
+:root[data-mode="site"] .grille{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px}
+:root[data-mode="site"] .livre{--h:max(420px,calc(100dvh - 240px))}
+/* Mode appli (téléphone, tablette à la verticale) : barre d'onglets en bas, une colonne */
+:root[data-mode="appli"] nav.haut{display:none}
+:root[data-mode="appli"] .fiche,:root[data-mode="appli"] .editeur{grid-template-columns:1fr}
+:root[data-mode="appli"] .scene{position:static}
+:root[data-mode="appli"] .editeur .scene{position:sticky;top:60px;z-index:2;flex-direction:row;padding:8px 12px;box-shadow:var(--ombre)}
+:root[data-mode="appli"] .editeur .scene svg{width:110px}
 @media (max-width:720px){
   .fiche,.editeur{grid-template-columns:1fr}
   .scene{position:static}
   .editeur .scene{position:sticky;top:60px;z-index:2;flex-direction:row;padding:8px 12px;box-shadow:var(--ombre)}
   .editeur .scene svg{width:110px}
+  nav.haut button span{display:none}
+  :root[data-mode="site"] .bascule span{display:none}
 }
 </style>
 </head>
 <body>
-<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1></header>
+<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><nav class="haut" id="navHaut"></nav><button class="bascule" id="bascule"></button></header>
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
@@ -360,9 +384,40 @@ const ICO={
   livre:'<path d="M2 5c3-1 6-1 10 1 4-2 7-2 10-1v14c-3-1-6-1-10 1-4-2-7-2-10-1z"/><path d="M12 6v14"/>',
   inventaire:'<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/>',
   sauvegarde:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'};
+/* ---------- Appareil (Android, iPhone / iPad, ordinateur) et mode d'affichage ---------- */
+// Automatique : téléphone → appli ; ordinateur → site ; tablette → site à l'horizontale, appli à la verticale
+const UA=navigator.userAgent;
+const SYSTEME=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(UA)?"android":"ordinateur";
+function typeAppareil(){
+  const petit=Math.min(screen.width,screen.height);
+  if(SYSTEME==="ios")return/iPhone|iPod/.test(UA)?"telephone":"tablette";
+  if(SYSTEME==="android")return/Mobile/i.test(UA)&&petit<600?"telephone":"tablette";
+  return navigator.maxTouchPoints>0&&petit<600?"telephone":"ordinateur";
+}
+const APPAREIL=typeAppareil();
+const paysage=()=>innerWidth>innerHeight;
+const prefMode=()=>{try{return localStorage.getItem("carnet.mode")||"auto"}catch(e){return"auto"}};
+const modeAuto=()=>APPAREIL==="telephone"?"appli":APPAREIL==="ordinateur"?"site":paysage()?"site":"appli";
+const modeActuel=()=>prefMode()==="auto"?modeAuto():prefMode();
+function choisirMode(m){try{localStorage.setItem("carnet.mode",m)}catch(e){}appliquerMode(true)}
+let dernierPaysage=paysage();
+function appliquerMode(forcer){
+  // Tablette : tourner l'écran repasse en automatique (horizontale = site, verticale = appli)
+  if(APPAREIL==="tablette"&&paysage()!==dernierPaysage&&prefMode()!=="auto")try{localStorage.setItem("carnet.mode","auto")}catch(e){}
+  dernierPaysage=paysage();
+  const m=modeActuel();
+  if(forcer||document.documentElement.dataset.mode!==m){document.documentElement.dataset.mode=m;if(forcer!=="debut")rendre()}
+}
+const NOM_APPAREIL={telephone:"téléphone",tablette:"tablette",ordinateur:"ordinateur"},NOM_SYSTEME={ios:"iPhone / iPad",android:"Android",ordinateur:"ordinateur"};
+const ICO_MODE={appli:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',site:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'};
+
 function nav(){
   const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
-  document.getElementById("nav").innerHTML=[["recettes","Recettes"],["livre","Mon livre"],["inventaire","Inventaire"],["sauvegarde","Réglages"]].map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
+  const onglets=[["recettes","Recettes"],["livre","Mon livre"],["inventaire","Inventaire"],["sauvegarde","Réglages"]];
+  document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
+  document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg><span>${l}</span></button>`).join("");
+  const autre=modeActuel()==="site"?"appli":"site";
+  const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
   const titres={recettes:"Mel d’antan",livre:"Mon livre",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
   document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
@@ -456,7 +511,7 @@ function reduirePhoto(file,max=1000){return new Promise((ok,ko)=>{const u=URL.cr
 /* ---------- Écran : mon livre (couverture, sommaire, une recette par page, les pages tournent) ---------- */
 let lp=0,livreFiltre="toutes",tourne=false,glisse=null;
 // Tablette à l'horizontale : livre ouvert sur deux pages (photo à gauche, recette à droite) ; à la verticale : une page
-const enDouble=()=>innerWidth>=880&&innerWidth>innerHeight;
+const enDouble=()=>modeActuel()==="site"&&innerWidth>=880&&paysage();
 const recettesLivre=()=>D.recettes.filter(r=>livreFiltre!=="approuvees"||r.approuve).sort((a,b)=>(a.cree||"").localeCompare(b.cree||""));
 const tamponHTML=(cls="")=>`<div class="tampon ${cls}" aria-label="Approuvé"><img src="tampon.png" alt=""><span>Approuvé</span></div>`;
 const nomContenant=r=>esc(CONTENANTS[r.contenant]?.nom||"");
@@ -509,7 +564,8 @@ function allerPage(n){if(Math.abs(n-lp)>3){lp=n;rendre();return}const pas=()=>{i
 document.addEventListener("pointerdown",e=>{glisse=vue==="livre"&&e.target.closest("#livre")?{x:e.clientX,y:e.clientY}:null});
 document.addEventListener("pointerup",e=>{if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;glisse=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.4)tourner(dx<0?1:-1)});
 let attenteTaille=null;
-addEventListener("resize",()=>{if(vue!=="livre")return;clearTimeout(attenteTaille);attenteTaille=setTimeout(()=>{if(!tourne)rendre()},200)});
+// Écran tourné ou fenêtre redimensionnée : mode d'affichage et livre recalculés
+addEventListener("resize",()=>{clearTimeout(attenteTaille);attenteTaille=setTimeout(()=>{if(tourne)return;const avant=document.documentElement.dataset.mode;appliquerMode();if(vue==="livre"&&document.documentElement.dataset.mode===avant)rendre()},200)});
 
 /* ---------- PDF : une recette ou tout le livre, papier café ligné, photo, tampon ---------- */
 let jsPdfPret=null,pdfEnCours=false;
@@ -620,8 +676,11 @@ function vReglages(){
   return `<div class="carte"><b>Sauvegarde</b><p class="aide">Tout le carnet est rangé sur cet appareil. Faites de temps en temps une sauvegarde (un fichier avec les recettes, les photos et l’inventaire) : elle sert aussi à passer le carnet sur un autre téléphone ou un ordinateur.</p>
    <div class="ligne" style="margin-top:12px"><button class="btn" data-act="exporter">Télécharger une sauvegarde</button><label class="btn leger">Restaurer une sauvegarde<input type="file" accept="application/json,.json" id="importer" hidden></label></div>
    <p class="aide">${D.recettes.length} recette${D.recettes.length>1?"s":""} · ${D.produits.length} produit${D.produits.length>1?"s":""}${localStorage.getItem("carnet.derniereSauvegarde")?` · dernière sauvegarde le ${new Date(localStorage.getItem("carnet.derniereSauvegarde")).toLocaleDateString("fr-FR")}`:""}</p></div>
+  <div class="carte"><b>Affichage</b><p class="aide">Appareil détecté : ${NOM_APPAREIL[APPAREIL]} (${NOM_SYSTEME[SYSTEME]})${APPAREIL==="tablette"?`, tenue ${paysage()?"à l’horizontale":"à la verticale"}`:""} · affiché en <b>version ${modeActuel()}</b>.</p>
+   <div class="puces" style="margin-top:10px">${[["auto","Automatique"],["appli","Version appli"],["site","Version site"]].map(([k,l])=>`<button class="puce ${prefMode()===k?"on":""}" data-mode-choix="${k}">${l}</button>`).join("")}</div>
+   <p class="aide">Automatique : version appli sur téléphone, version site sur ordinateur ; sur tablette, version site à l’horizontale et version appli à la verticale.</p></div>
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
-  <div class="carte"><b>Installer sur le téléphone</b><p class="aide"><b>iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
+  <div class="carte"><b>Installer sur la tablette ou le téléphone</b><p class="aide"><b>iPad / iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
    ${installable?`<button class="btn" data-act="installer" style="margin-top:10px">Installer l’application</button>`:""}</div>`;
 }
 const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t)};
@@ -649,10 +708,12 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],#retour,#logo");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
+  if(t.id==="bascule"){choisirMode(d.mode);toast(`Version ${d.mode}${APPAREIL==="tablette"?" · tourner la tablette revient au réglage automatique":""}`);return}
+  if(d.modeChoix){choisirMode(d.modeChoix);return}
   if(t.id==="logo"){if(vue!=="recettes"){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller("recettes")}return}
   if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
@@ -760,7 +821,7 @@ function exemple(){
       {nom:"Chantilly",couleur:"",texture:"chantilly",ingredients:[{produit:fouet.id,q:60},{produit:vanille.id,q:6},{produit:grains.id,q:3},{produit:cacao.id,q:1}]}]}];
 }
 (async()=>{
-  fondThemes(localStorage.getItem("carnet.theme")||"auto");
+  fondThemes(localStorage.getItem("carnet.theme")||"auto");appliquerMode("debut");
   const lu=await lire("donnees");
   if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();sauver()}
   history.replaceState({vue:"recettes"},"");rendre();

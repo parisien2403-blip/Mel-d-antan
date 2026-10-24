@@ -16,6 +16,9 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   pages qui tournent du doigt ; deux pages à l’horizontale, une à la verticale ; toutes les recettes ou les approuvées seulement.
 - **PDF** : « Partager en PDF » sur une recette, ou « Partager le livre en PDF » (message, e-mail, WhatsApp, Fichiers, impression).
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
+- **Affichage** : l’appli reconnaît l’appareil (Android, iPhone / iPad, ordinateur). Version appli (onglets en bas) sur téléphone
+  et sur tablette à la verticale ; version site (menu en haut, page large) sur ordinateur et sur tablette à l’horizontale.
+  Le bouton « Version site / Version appli » de l’en-tête change à la main ; sur tablette, tourner l’écran revient à l’automatique.
 - **Réglages** : sauvegarde dans un fichier (recettes + photos + inventaire), restauration, thème clair / sombre.
 
 Logo : `logo.jpg` (dans l’en-tête et sur l’accueil) ; icônes de l’appli tirées du même dessin (`icon-*.png`, `apple-touch-icon.png`, `favicon-48.png`).
