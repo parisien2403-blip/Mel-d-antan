@@ -43,7 +43,7 @@ Créer une recette : quand Mel te demande de créer, d'inventer ou de préparer 
 \`\`\`recette
 {"nom":"…","contenant":"…","remplissage":85,"notes":"…","couches":[{"nom":"…","couleur":"#rrggbb","texture":"…","ingredients":[{"produit":"…","type":"…","unite":"…","q":0}]}]}
 \`\`\`
-- "contenant" : un de verrine, coupe, doubleparoi, liegeois, mug, bocal, ramequin, tasse, yaourt, confiture, tumbler, champagne, vin, bol, the.
+- "contenant" : pour une bougie coulée dans un contenant, un de verrine, coupe, doubleparoi, liegeois, mug, bocal, ramequin, tasse, yaourt, confiture, tumbler, champagne, vin, bol, the ; pour une bougie moulée en forme de pâtisserie, un de macaron, tarte, cupcake, gateau, donut, eclair, buche, cookie, madeleine, religieuse, canele, fraise, pomme, citron, cerise (les couches remplissent alors la forme du bas vers le haut, ex. coque / ganache / coque pour un macaron, pâte / crème / fruits pour une tartelette).
 - "texture" : un de lisse, chantilly, mousse, marbre, paillettes, morceaux, granite.
 - Couches du bas vers le haut. "produit" : reprends exactement le nom d'un produit de son inventaire quand il convient, sinon un nom court.
 - "type" : un de cire, colorant, parfum, meche, deco, additif, autre. "unite" : un de g, ml, gouttes, pieces, cuilleres, pincees, pourcent.

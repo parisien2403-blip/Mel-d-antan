@@ -502,7 +502,69 @@ const CONTENANTS={
     clip:"M38 120 Q40 196 100 200 Q160 196 162 120 Z",
     verre:`<ellipse class="v-fond" cx="100" cy="216" rx="86" ry="13"/><path class="v-fond" d="M30 112 Q32 206 100 208 Q168 206 170 112 Z"/><path class="v-anse" d="M168 130 q26 0 24 22 q-2 20 -30 24"/>`,
     devant:`<path class="v-trait" d="M30 112 Q32 206 100 208 Q168 206 170 112"/><ellipse class="v-trait" cx="100" cy="112" rx="70" ry="6"/><ellipse class="v-trait" cx="100" cy="216" rx="86" ry="13"/>`},
+  /* Bougies moulées : la bougie a la forme de la pâtisserie, les couches remplissent sa silhouette du bas vers le haut */
+  macaron:{nom:"Macaron",moule:true,haut:86,bas:194,cx:100,larg:120,
+    clip:"M36 132 Q36 86 100 86 Q164 86 164 132 L158 140 L164 148 Q164 194 100 194 Q36 194 36 148 L42 140 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="210" rx="78" ry="10"/>`,
+    devant:`<path class="m-trait" d="M36 132 Q36 86 100 86 Q164 86 164 132 L158 140 L164 148 Q164 194 100 194 Q36 194 36 148 L42 140 Z"/><path class="m-pied" d="M40 128 q6 4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 M40 152 q6 -4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0"/>`},
+  tarte:{nom:"Tartelette",moule:true,haut:132,bas:214,cx:100,larg:150,
+    clip:"M22 140 Q22 132 30 132 H170 Q178 132 178 140 L166 208 Q164 214 156 214 H44 Q36 214 34 208 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="92" ry="10"/>`,
+    devant:`<path class="m-trait" d="M22 140 Q22 132 30 132 H170 Q178 132 178 140 L166 208 Q164 214 156 214 H44 Q36 214 34 208 Z"/><path class="m-plis" d="M36 150 L44 210 M52 148 L58 212 M68 148 L72 212 M84 148 L86 212 M100 148 V212 M116 148 L114 212 M132 148 L128 212 M148 148 L142 212 M164 150 L156 210"/>`},
+  cupcake:{nom:"Cupcake",moule:true,haut:90,bas:224,cx:100,larg:116,
+    clip:"M48 150 Q44 98 100 90 Q156 98 152 150 L140 224 H60 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="230" rx="64" ry="8"/>`,
+    devant:`<path class="m-trait" d="M52 152 L60 224 H140 L148 152 Z"/><path class="m-plis" d="M60 152 L66 224 M72 152 L76 224 M84 152 L86 224 M96 152 L97 224 M108 152 L107 224 M120 152 L118 224 M132 152 L128 224 M142 152 L136 224"/><path class="m-trait" d="M48 150 Q44 98 100 90 Q156 98 152 150"/>`},
+  gateau:{nom:"Gâteau à étages",moule:true,haut:78,bas:212,cx:100,larg:120,
+    clip:"M40 92 V200 Q40 214 100 214 Q160 214 160 200 V92 Q160 78 100 78 Q40 78 40 92 Z",
+    verre:`<path class="m-assiette" d="M18 214 Q18 226 100 226 Q182 226 182 214 Q182 206 100 206 Q18 206 18 214 Z"/><rect class="m-assiette" x="90" y="226" width="20" height="14"/><ellipse class="m-assiette" cx="100" cy="242" rx="40" ry="6"/>`,
+    devant:`<path class="m-trait" d="M40 92 V200 Q40 214 100 214 Q160 214 160 200 V92"/><ellipse class="m-trait" cx="100" cy="92" rx="60" ry="14"/>`},
+  donut:{nom:"Donut",moule:true,trou:true,haut:96,bas:204,cx:100,larg:110,
+    clip:"M26 150 A74 54 0 1 0 174 150 A74 54 0 1 0 26 150 Z M78 140 A22 12 0 1 0 122 140 A22 12 0 1 0 78 140 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="212" rx="86" ry="10"/>`,
+    devant:`<ellipse class="m-trait" cx="100" cy="150" rx="74" ry="54"/><ellipse class="m-trait" cx="100" cy="140" rx="22" ry="12"/>`},
+  eclair:{nom:"Éclair",moule:true,haut:122,bas:182,cx:100,larg:120,
+    clip:"M24 152 Q24 122 56 122 H144 Q176 122 176 152 Q176 182 144 182 H56 Q24 182 24 152 Z",
+    verre:`<rect class="m-assiette" x="14" y="184" width="172" height="10" rx="5"/>`,
+    devant:`<path class="m-trait" d="M24 152 Q24 122 56 122 H144 Q176 122 176 152 Q176 182 144 182 H56 Q24 182 24 152 Z"/>`},
+  buche:{nom:"Bûche",moule:true,haut:108,bas:192,cx:92,larg:110,
+    clip:"M26 108 H150 Q176 108 176 150 Q176 192 150 192 H26 Q20 150 26 108 Z",
+    verre:`<rect class="m-assiette" x="12" y="194" width="176" height="10" rx="5"/>`,
+    devant:`<path class="m-trait" d="M26 108 H150 Q176 108 176 150 Q176 192 150 192 H26 Q20 150 26 108 Z"/><ellipse class="m-trait" cx="152" cy="150" rx="18" ry="38"/><ellipse class="m-plis" cx="152" cy="150" rx="10" ry="22"/><path class="m-plis" d="M40 122 q20 -6 40 0 t40 0 M44 178 q20 6 40 0 t40 0"/>`},
+  cookie:{nom:"Cookie",moule:true,haut:124,bas:190,cx:100,larg:130,
+    clip:"M30 150 Q30 124 100 124 Q170 124 170 150 V164 Q170 190 100 190 Q30 190 30 164 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="198" rx="86" ry="10"/>`,
+    devant:`<path class="m-trait" d="M30 150 Q30 124 100 124 Q170 124 170 150 V164 Q170 190 100 190 Q30 190 30 164 Z"/><path class="m-plis" d="M30 152 Q30 176 100 176 Q170 176 170 152"/>`},
+  madeleine:{nom:"Madeleine",moule:true,haut:100,bas:188,cx:100,larg:110,
+    clip:"M34 172 Q30 106 100 100 Q170 106 166 172 Q134 190 100 188 Q66 190 34 172 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="196" rx="82" ry="9"/>`,
+    devant:`<path class="m-trait" d="M34 172 Q30 106 100 100 Q170 106 166 172 Q134 190 100 188 Q66 190 34 172 Z"/><path class="m-plis" d="M100 112 V180 M80 114 L70 178 M120 114 L130 178 M62 124 L48 172 M138 124 L152 172"/>`},
+  religieuse:{nom:"Religieuse / chou",moule:true,haut:84,bas:222,cx:100,larg:56,
+    clip:"M56 178 A44 44 0 1 0 144 178 A44 44 0 1 0 56 178 Z M74 112 A26 26 0 1 0 126 112 A26 26 0 1 0 74 112 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="226" rx="70" ry="9"/>`,
+    devant:`<circle class="m-trait" cx="100" cy="178" r="44"/><circle class="m-trait" cx="100" cy="112" r="26"/>`},
+  canele:{nom:"Cannelé",moule:true,haut:96,bas:210,cx:100,larg:84,
+    clip:"M58 108 L52 196 Q52 210 100 210 Q148 210 148 196 L142 108 Q142 96 100 96 Q58 96 58 108 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="70" ry="9"/>`,
+    devant:`<path class="m-trait" d="M58 108 L52 196 Q52 210 100 210 Q148 210 148 196 L142 108 Q142 96 100 96 Q58 96 58 108 Z"/><path class="m-plis" d="M68 104 L64 206 M80 100 L78 208 M92 98 L91 209 M108 98 L109 209 M120 100 L122 208 M132 104 L136 206"/><ellipse class="m-plis" cx="100" cy="106" rx="30" ry="6"/>`},
+  fraise:{nom:"Fraise",moule:true,haut:98,bas:214,cx:100,larg:80,
+    clip:"M100 214 C60 190 34 150 40 118 C44 96 70 92 100 100 C130 92 156 96 160 118 C166 150 140 190 100 214 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="62" ry="8"/>`,
+    devant:`<path class="m-trait" d="M100 214 C60 190 34 150 40 118 C44 96 70 92 100 100 C130 92 156 96 160 118 C166 150 140 190 100 214 Z"/><g fill="#f7e27a" opacity=".8">${[[70,130],[100,126],[130,130],[60,154],[86,150],[114,150],[140,154],[76,174],[100,172],[124,174],[90,194],[110,194]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2" ry="3"/>`).join("")}</g><path d="M100 100 C88 84 70 88 62 96 C78 96 86 100 92 106 C84 110 76 118 74 126 C86 118 96 112 100 106 C104 112 114 118 126 126 C124 118 116 110 108 106 C114 100 122 96 138 96 C130 88 112 84 100 100 Z" fill="#5f8a3c"/>`},
+  pomme:{nom:"Pomme",moule:true,haut:104,bas:210,cx:100,larg:90,
+    clip:"M100 112 C80 96 40 100 38 146 C36 190 70 214 100 204 C130 214 164 190 162 146 C160 100 120 96 100 112 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="72" ry="9"/>`,
+    devant:`<path class="m-trait" d="M100 112 C80 96 40 100 38 146 C36 190 70 214 100 204 C130 214 164 190 162 146 C160 100 120 96 100 112 Z"/><path d="M104 108 Q118 88 140 92 Q130 110 104 108 Z" fill="#5f8a3c"/><path class="m-plis" d="M60 130 Q54 150 60 172"/>`},
+  citron:{nom:"Citron",moule:true,haut:102,bas:210,cx:100,larg:100,
+    clip:"M28 156 Q30 150 38 148 Q60 104 100 102 Q140 104 162 148 Q170 150 172 156 Q170 162 162 164 Q140 208 100 210 Q60 208 38 164 Q30 162 28 156 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="80" ry="9"/>`,
+    devant:`<path class="m-trait" d="M28 156 Q30 150 38 148 Q60 104 100 102 Q140 104 162 148 Q170 150 172 156 Q170 162 162 164 Q140 208 100 210 Q60 208 38 164 Q30 162 28 156 Z"/><path d="M100 102 Q112 86 130 88 Q120 102 100 102 Z" fill="#5f8a3c"/>`},
+  cerise:{nom:"Cerises",moule:true,trou:false,haut:142,bas:214,cx:132,larg:56,
+    clip:"M38 180 A34 34 0 1 0 106 180 A34 34 0 1 0 38 180 Z M98 176 A34 34 0 1 0 166 176 A34 34 0 1 0 98 176 Z",
+    verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="80" ry="8"/>`,
+    devant:`<circle class="m-trait" cx="72" cy="180" r="34"/><circle class="m-trait" cx="132" cy="176" r="34"/><path d="M74 146 Q86 104 108 88 M122 142 Q116 112 108 88" stroke="#6b4a2a" stroke-width="3" fill="none"/><path d="M108 88 Q128 70 150 80 Q132 96 108 88 Z" fill="#5f8a3c"/>`},
 };
+const FAMILLES=[["verre","Contenants (verres, pots, tasses…)"],["moule","Bougies moulées (pâtisseries, fruits…)"]];
 const CIRE="#f3e6cf";
 // Hasard reproductible : les bulles et paillettes restent à la même place d'un dessin à l'autre
 function graine(n){let s=n*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280)}
@@ -531,7 +593,8 @@ let numSvg=0;
 function dessin(rec,{mini=false}={}){
   const C=CONTENANTS[rec.contenant]||CONTENANTS.verrine,n=++numSvg;
   const couches=rec.couches||[];
-  const remp=(C.bas-C.haut)*((rec.remplissage??88)/100);
+  // Bougie moulée : la cire occupe toute la forme
+  const remp=(C.bas-C.haut)*(C.moule?1:(rec.remplissage??88)/100);
   const poids=couches.map(poidsCouche),tot=poids.reduce((a,b)=>a+b,0);
   // Hauteur de chaque couche : selon son poids (g / ml), sinon parts égales
   const parts=couches.map((c,i)=>tot>0?(poids[i]||tot*.04)/(tot+couches.reduce((a,_,j)=>a+(poids[j]?0:tot*.04),0)):1/Math.max(1,couches.length));
@@ -550,11 +613,11 @@ function dessin(rec,{mini=false}={}){
   const sommet=dome?dessus-(C.larg/2)*.86:dessus;
   const meche=couches.length&&rec.meche!==false?`<line x1="${cx}" y1="${sommet+2}" x2="${cx}" y2="${sommet-16}" stroke="#3a2a20" stroke-width="2.4" stroke-linecap="round"/>${mini?"":`<path d="M${cx} ${sommet-38} q9 12 0 20 q-9 -8 0 -20z" fill="#f2a93b"/><path d="M${cx} ${sommet-30} q4 6 0 10 q-4 -4 0 -10z" fill="#fff3c4"/>`}`:"";
   const vb=Math.min(0,sommet-44);
-  return `<svg viewBox="0 ${vb} 200 ${264-vb}" role="img" aria-label="${esc(C.nom)}"><defs><clipPath id="cl${n}"><path d="${C.clip}"/></clipPath>
+  return `<svg viewBox="0 ${vb} 200 ${264-vb}" role="img" aria-label="${esc(C.nom)}"><defs><clipPath id="cl${n}"><path d="${C.clip}"${C.trou?' clip-rule="evenodd"':""}/></clipPath>
     <linearGradient id="re${n}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".25" stop-color="#fff" stop-opacity=".05"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".25"/></linearGradient>
-    <style>.v-fond{fill:rgba(220,235,240,.35);stroke:none}.v-paroi{fill:rgba(255,255,255,.25);stroke:none}.v-col{fill:rgba(220,235,240,.5)}.v-anse{fill:none;stroke:rgba(190,210,220,.9);stroke-width:9;stroke-linecap:round}.v-trait{fill:none;stroke:rgba(120,140,150,.75);stroke-width:2}.v-trait.fin{stroke-width:1.2;stroke-dasharray:3 3}</style></defs>
+    <style>.v-fond{fill:rgba(220,235,240,.35);stroke:none}.v-paroi{fill:rgba(255,255,255,.25);stroke:none}.v-col{fill:rgba(220,235,240,.5)}.v-anse{fill:none;stroke:rgba(190,210,220,.9);stroke-width:9;stroke-linecap:round}.v-trait{fill:none;stroke:rgba(120,140,150,.75);stroke-width:2}.v-trait.fin{stroke-width:1.2;stroke-dasharray:3 3}.m-trait{fill:none;stroke:rgba(90,55,30,.55);stroke-width:1.8}.m-plis{fill:none;stroke:rgba(90,55,30,.28);stroke-width:1.4}.m-pied{fill:none;stroke:rgba(90,55,30,.35);stroke-width:2}.m-assiette{fill:rgba(255,255,255,.65);stroke:rgba(150,130,110,.5);stroke-width:1.2}</style></defs>
     ${C.verre}<g clip-path="url(#cl${n})">${fond}${motifs}</g>${dome}${meche}
-    <path d="${C.clip}" fill="url(#re${n})"/>${C.devant}</svg>`;
+    ${C.moule?"":`<path d="${C.clip}" fill="url(#re${n})"/>`}${C.devant}</svg>`;
 }
 
 /* ---------- État de l'écran ---------- */
@@ -702,8 +765,8 @@ function vEditer(){
   <div>
    <div class="carte"><label class="champ">Nom de la recette<input type="text" data-b="nom" value="${esc(r.nom)}" placeholder="Café liégeois, Fraisier, Coupe vanille…" maxlength="80"></label>
     <div class="photo-zone" style="margin-top:12px">${r.photo?`<img src="${r.photo}" alt="">`:""}<label class="btn leger petit">${r.photo?"Changer la photo":"📷 Ajouter une photo"}<input type="file" accept="image/*" id="photo" hidden></label>${r.photo?`<button class="btn leger petit" data-act="sansPhoto">Retirer</button>`:""}</div></div>
-   <div class="carte"><b>Le contenant</b><div class="choix-contenants" style="margin-top:10px">${Object.entries(CONTENANTS).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span></button>`).join("")}</div>
-    <label class="champ" style="margin-top:12px"><span>Remplissage : <b id="rempVal">${r.remplissage}</b> %</span><input type="range" min="30" max="100" data-b="remplissage" value="${r.remplissage}"></label></div>
+   <div class="carte"><b>La forme de la bougie</b>${FAMILLES.map(([f,l])=>`<p class="aide" style="margin:12px 0 6px">${l}</p><div class="choix-contenants">${Object.entries(CONTENANTS).filter(([,c])=>(c.moule?"moule":"verre")===f).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span></button>`).join("")}</div>`).join("")}
+    ${CONTENANTS[r.contenant]?.moule?`<p class="aide" style="margin-top:12px">Bougie moulée : tes couches remplissent la forme, du bas vers le haut (ex. coque, ganache, coque pour un macaron).</p>`:`<label class="champ" style="margin-top:12px"><span>Remplissage : <b id="rempVal">${r.remplissage}</b> %</span><input type="range" min="30" max="100" data-b="remplissage" value="${r.remplissage}"></label>`}</div>
    <div class="carte"><div class="ligne" style="justify-content:space-between"><b>Les couches (du bas vers le haut)</b></div>
     <p class="aide">La hauteur de chaque couche suit son poids en grammes. La couleur se règle à la main, ou prend celle du colorant.</p>
     <div style="margin-top:10px">${r.couches.map((c,i)=>`<div class="couche" style="--c:${couleurCouche(c)}">
@@ -1403,7 +1466,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.1";
+const VERSION="2.2";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

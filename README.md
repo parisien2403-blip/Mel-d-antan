@@ -4,7 +4,9 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
 
 - **Recettes** : nom, photo de la création, contenant au choix (verrine, coupe de glace, verre double paroi
   cappuccino, verre à café liégeois, mug en verre, bocal, ramequin, tasse à café, pot de yaourt en verre,
-  pot à confiture, verre à whisky, coupe à champagne, verre à pied, bol, tasse à thé ancienne), couches du bas vers le haut.
+  pot à confiture, verre à whisky, coupe à champagne, verre à pied, bol, tasse à thé ancienne) ou bougie moulée
+  (macaron, tartelette, cupcake, gâteau à étages, donut, éclair, bûche, cookie, madeleine, religieuse, cannelé,
+  fraise, pomme, citron, cerises) : les couches remplissent alors la forme, couches du bas vers le haut.
   Chaque couche a ses produits pris dans l'inventaire avec leur quantité (500 g de cire de soja, 3 gouttes de colorant bleu…),
   une couleur et un aspect (lisse, chantilly, mousse, marbré, paillettes, morceaux, granité).
 - **Aperçu** : à gauche, le contenant dessiné avec les couches dedans, à la hauteur de leur poids en grammes ;
