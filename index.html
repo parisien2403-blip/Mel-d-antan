@@ -114,7 +114,13 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 :root[data-theme="dark"] .scene{background:linear-gradient(180deg,#342822,#261d18)}
 .scene svg{width:100%;max-width:300px;height:auto}
 .scene .nom-contenant{font-size:.85rem;color:var(--doux)}
-.photo-grande{width:100%;border-radius:14px;display:block;max-height:420px;object-fit:cover;margin-bottom:14px}
+.scene.avec-photo{padding:0;position:sticky;overflow:hidden;background:none;box-shadow:var(--ombre)}
+.photo-fiche{width:100%;display:block;border-radius:16px;aspect-ratio:3/4;object-fit:cover}
+.mini-dessin{position:absolute;right:10px;bottom:10px;width:64px;height:84px;background:rgba(251,246,236,.92);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:var(--ombre)}
+.mini-dessin svg{height:74px;width:auto}
+:root[data-mode="appli"] .photo-fiche{aspect-ratio:4/3;max-height:60vh}
+:root[data-mode="appli"] .scene.avec-photo,.scene.avec-photo{position:relative;top:auto}
+@media (min-width:721px){:root[data-mode="site"] .scene.avec-photo{position:sticky;top:76px}}
 .recette-papier{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:18px 20px;box-shadow:var(--ombre);
   background-image:repeating-linear-gradient(180deg,transparent 0 31px,rgba(122,74,46,.12) 31px 32px)}
 .recette-papier h2{font-size:1.6rem}
@@ -621,8 +627,11 @@ function vVoir(){
   const r=R(courant);setTimeout(()=>frappe=false);if(!r)return `<p class="vide">Recette introuvable.</p>`;
   const b=besoins(r,mult);
   const total=r.couches.reduce((a,c)=>a+poidsCouche(c),0)*mult;
-  return `<div class="fiche"><div class="scene">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant]?.nom||"")}</div></div>
-  <div>${r.photo?`<img class="photo-grande" src="${r.photo}" alt="Photo de ${esc(r.nom)}">`:""}
+  // Avec une photo : elle prend la place du dessin, qui reste en petit dans un coin (rappel des couches)
+  const gauche=r.photo?`<div class="scene avec-photo"><img class="photo-fiche" src="${r.photo}" alt="Photo de ${esc(r.nom)}"><div class="mini-dessin" title="${esc(CONTENANTS[r.contenant]?.nom||"")}">${dessin(r,{mini:true})}</div></div>`
+    :`<div class="scene">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant]?.nom||"")}</div></div>`;
+  return `<div class="fiche">${gauche}
+  <div>
    <div class="recette-papier">${r.approuve?tamponHTML("coin"+(frappe?" frappe":"")):""}<h2>${esc(r.nom||"Sans nom")}</h2>
     <div class="ligne" style="margin:10px 0 2px"><span class="aide" style="margin:0">Quantités pour</span><div class="puces">${[.5,1,2,3,4].map(k=>`<button class="puce ${mult===k?"on":""}" data-mult="${k}">${k===.5?"½":k} bougie${k>1?"s":""}</button>`).join("")}</div></div>
     ${r.couches.map((c,i)=>`<div class="couche-titre"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${i+1}`)}${c.texture&&c.texture!=="lisse"?` <small class="aide" style="margin:0">· ${esc((TEXTURES.find(t=>t[0]===c.texture)||[,""])[1])}</small>`:""}</div>
@@ -1219,7 +1228,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.2";
+const VERSION="1.3";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

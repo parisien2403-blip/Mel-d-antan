@@ -1,8 +1,9 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "date": "2026-10-24",
   "notes": [
-    "La pastille de Mel ne cache plus les boutons en bas des pages",
+    "La photo d’une recette prend la place du dessin dans sa fiche",
+    "La pastille de Mel ne cache plus les boutons",
     "Mel regarde tes photos et dessine des idées de bougies"
   ]
 }
