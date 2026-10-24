@@ -98,7 +98,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .vignette .image{aspect-ratio:1;background:linear-gradient(180deg,#faf3e4,#ecdcc0);display:flex;align-items:center;justify-content:center;position:relative}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}}
 :root[data-theme="dark"] .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}
-.vignette .image img{width:100%;height:100%;object-fit:cover}
+.vignette .image img{width:100%;height:100%;object-fit:contain}
 .vignette .image svg{height:88%}
 .vignette .txt{padding:10px 12px 12px}
 .vignette b{font-family:var(--f-titre);font-size:1.02rem;display:block}
@@ -113,7 +113,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .scene svg{width:100%;max-width:300px;height:auto}
 .scene .nom-contenant{font-size:.85rem;color:var(--doux)}
 .colonne-photo{display:flex;flex-direction:column;gap:14px;position:sticky;top:76px}
-.photo-fiche{width:100%;display:block;border-radius:16px;aspect-ratio:4/3;object-fit:cover;box-shadow:var(--ombre)}
+.photo-fiche{width:100%;height:auto;max-height:75vh;object-fit:contain;display:block;border-radius:16px;box-shadow:var(--ombre)}
 .scene.sous-photo{position:static}
 .scene.sous-photo svg{max-width:210px}
 :root[data-mode="appli"] .colonne-photo{position:static}
@@ -216,7 +216,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .sommaire .ok{color:#7a3f1f}
 .polaroid{background:#fffdf8;padding:10px 10px 6px;margin:8px auto 18px;width:min(84%,330px);transform:rotate(-2.5deg);box-shadow:0 6px 16px rgba(60,35,15,.3);position:relative}
 .polaroid::before{content:"";position:absolute;top:-12px;left:50%;width:90px;height:26px;transform:translateX(-50%) rotate(3deg);background:rgba(240,226,192,.8);box-shadow:0 1px 2px rgba(0,0,0,.15)}
-.polaroid img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.polaroid img{width:100%;height:auto;max-height:46vh;object-fit:contain;display:block}
 .polaroid .dessin{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(#faf3e4,#e9d7b8)}
 .polaroid .dessin svg{height:94%}
 .polaroid figcaption{font-family:var(--f-main);font-size:1.4rem;text-align:center;color:#3b2414;margin:2px 0 0}
@@ -814,7 +814,8 @@ async function pageRecette(doc,r,res){
   doc.setFont("times","italic");doc.setFontSize(12);doc.setTextColor(122,90,64);doc.text(CONTENANTS[r.contenant]?.nom||"",30,37);
   // Photo (ou dessin) façon polaroïd, à droite
   const px=128,py=50,pw=66;doc.setFillColor(255,253,248);doc.setDrawColor(200,180,150);doc.setLineWidth(.2);doc.rect(px,py,pw,pw+11,"FD");
-  doc.addImage(r.photo||await dessinImage(r),"JPEG",px+3,py+3,pw-6,pw-6);
+  const img=r.photo||await dessinImage(r),dim=await chargerImage(img).then(i=>[i.width,i.height]).catch(()=>[1,1]),cote=pw-6,k=Math.min(cote/dim[0],cote/dim[1]),iw=dim[0]*k,ih=dim[1]*k;
+  doc.addImage(img,"JPEG",px+3+(cote-iw)/2,py+3+(cote-ih)/2,iw,ih);
   doc.setFont("times","italic");doc.setFontSize(11);doc.setTextColor(59,36,20);doc.text(doc.splitTextToSize(r.nom,pw-6)[0],px+pw/2,py+pw+6,{align:"center"});
   doc.setFillColor(240,226,192);doc.rect(px+pw/2-14,py-4,28,8,"F");
   // Le texte suit les lignes du cahier ; il passe sous la photo une fois celle-ci dépassée
@@ -1239,7 +1240,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.6";
+const VERSION="1.7";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

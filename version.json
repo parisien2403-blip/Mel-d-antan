@@ -1,8 +1,8 @@
 {
-  "version": "1.6",
+  "version": "1.7",
   "date": "2026-10-24",
   "notes": [
-    "Fiche recette : la photo en haut, le dessin du contenant en grand juste en dessous",
-    "Dans ton livre : partage une seule recette, ou celles de ton choix, en PDF"
+    "Les photos s’affichent en entier, sans être recadrées (fiche, livre, PDF)",
+    "Fiche recette : la photo en haut, le dessin du contenant en dessous"
   ]
 }
