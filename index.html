@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#7a4a2e">
+<meta name="theme-color" content="#efe2c8">
 <meta name="description" content="Mel d’antan, le carnet de recettes de bougies : recettes, inventaire, photos et aperçu des couches dans le contenant.">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-48.png" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,27 +17,32 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Caveat:wght@500&display=swap">
 <style>
 :root{
-  --fond:#f6efe6; --carte:#fffaf4; --encre:#3b2a20; --doux:#7d6656; --ligne:#e4d6c6;
-  --cafe:#7a4a2e; --cafe-2:#5c3520; --creme:#f3e6cf; --rose:#d98c8c; --ok:#4f7a4a; --alerte:#b5562f;
-  --ombre:0 2px 10px rgba(80,45,25,.10);
+  /* Couleurs du logo Mel d'antan : papier ancien, encre brune, caramel de « d'antan » */
+  --fond:#f3e9d6; --carte:#fbf6ec; --encre:#3b2f23; --doux:#7a6a58; --ligne:#e2d3b8;
+  --cafe:#88502f; --cafe-2:#5e3a22; --creme:#f7f0e0; --rose:#d98c8c; --ok:#5f7a45; --alerte:#b5562f;
+  --tete:#efe2c8; --tete-encre:#3b2f23;
+  --ombre:0 2px 10px rgba(70,45,25,.10);
   --f-titre:"Fraunces", Georgia, serif; --f-main:"Caveat", "Comic Sans MS", cursive;
   --f-texte:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --fond:#1e1714; --carte:#2a201b; --encre:#f2e7dc; --doux:#c2ae9f; --ligne:#45372f;
-  --cafe:#d9a77e; --cafe-2:#f0c49d; --ok:#8cc184; --alerte:#e89a74; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}}
+  --fond:#1f1813; --carte:#2b221b; --encre:#f2e7d6; --doux:#c2ae98; --ligne:#45372c;
+  --cafe:#d49a6a; --cafe-2:#f0c49d; --ok:#a9c48a; --alerte:#e89a74; --tete:#2b221b; --tete-encre:#f2e7d6; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --fond:#1e1714; --carte:#2a201b; --encre:#f2e7dc; --doux:#c2ae9f; --ligne:#45372f;
-  --cafe:#d9a77e; --cafe-2:#f0c49d; --ok:#8cc184; --alerte:#e89a74; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}
+  --fond:#1f1813; --carte:#2b221b; --encre:#f2e7d6; --doux:#c2ae98; --ligne:#45372c;
+  --cafe:#d49a6a; --cafe-2:#f0c49d; --ok:#a9c48a; --alerte:#e89a74; --tete:#2b221b; --tete-encre:#f2e7d6; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--fond);color:var(--encre);font:16px/1.45 var(--f-texte);padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
 h1,h2,h3{font-family:var(--f-titre);font-weight:600;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
-header{position:sticky;top:0;z-index:5;background:var(--cafe);color:#fff6ec;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px;box-shadow:var(--ombre)}
+header{position:sticky;top:0;z-index:5;background:var(--tete);color:var(--tete-encre);padding:calc(8px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;gap:12px;box-shadow:var(--ombre);border-bottom:1px solid var(--ligne)}
+header .logo{width:44px;height:44px;border-radius:50%;flex:none;cursor:pointer;box-shadow:0 0 0 1px var(--ligne)}
+.accueil{display:flex;flex-direction:column;align-items:center;margin:4px 0 18px}
+.accueil img{width:min(240px,52vw);aspect-ratio:1;border-radius:50%;box-shadow:0 4px 18px rgba(70,45,25,.18)}
 header h1{font-size:1.25rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header .retour{background:none;border:0;color:inherit;font-size:1.5rem;padding:0 6px 0 0;cursor:pointer}
+header .retour{background:none;border:0;color:var(--cafe);font-size:1.5rem;padding:0 6px 0 0;cursor:pointer}
 main{max-width:1100px;margin:0 auto;padding:16px}
 nav.bas{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--carte);border-top:1px solid var(--ligne);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.bas button{flex:1;background:none;border:0;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.78rem;color:var(--doux);cursor:pointer}
@@ -65,7 +70,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 /* Liste des recettes */
 .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
 .vignette{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--ombre);text-align:left;padding:0;display:flex;flex-direction:column}
-.vignette .image{aspect-ratio:1;background:linear-gradient(180deg,#fbf4ea,#efe2d0);display:flex;align-items:center;justify-content:center;position:relative}
+.vignette .image{aspect-ratio:1;background:linear-gradient(180deg,#faf3e4,#ecdcc0);display:flex;align-items:center;justify-content:center;position:relative}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}}
 :root[data-theme="dark"] .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}
 .vignette .image img{width:100%;height:100%;object-fit:cover}
@@ -79,7 +84,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .flottant{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:4;box-shadow:0 6px 18px rgba(80,45,25,.3);padding:14px 20px}
 /* Fiche recette */
 .fiche{display:grid;grid-template-columns:minmax(240px,340px) 1fr;gap:20px;align-items:start}
-.scene{background:linear-gradient(180deg,#fbf4ea,#ecdcc6);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:76px}
+.scene{background:linear-gradient(180deg,#faf3e4,#e9d7b8);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:76px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .scene{background:linear-gradient(180deg,#342822,#261d18)}}
 :root[data-theme="dark"] .scene{background:linear-gradient(180deg,#342822,#261d18)}
 .scene svg{width:100%;max-width:300px;height:auto}
@@ -131,7 +136,7 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 </style>
 </head>
 <body>
-<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><h1 id="titre">Mel d’antan</h1></header>
+<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1></header>
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
@@ -269,7 +274,7 @@ const ICO={
 function nav(){
   const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
   document.getElementById("nav").innerHTML=[["recettes","Recettes"],["inventaire","Inventaire"],["sauvegarde","Réglages"]].map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
-  const titres={recettes:"Mel d’antan · mes recettes",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  const titres={recettes:"Mel d’antan",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
   document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
 }
@@ -294,7 +299,7 @@ function vRecettes(){
   const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
     .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
-  return `${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
+  return `${q||filtreContenant?"":`<div class="accueil"><img src="logo.jpg" alt="Mel d’antan"></div>`}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
   ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt=""><div class="mini-verre">${dessin(r,{mini:true})}</div>`:dessin(r,{mini:true})}</div>
     <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
@@ -400,10 +405,11 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],#retour");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],#retour,#logo");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
+  if(t.id==="logo"){if(vue!=="recettes"){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller("recettes")}return}
   if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}

@@ -13,7 +13,9 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
 - **Réglages** : sauvegarde dans un fichier (recettes + photos + inventaire), restauration, thème clair / sombre.
 
-Tout est enregistré sur l'appareil (IndexedDB) et l'appli marche sans internet une fois installée.
+Logo : `logo.jpg` (dans l’en-tête et sur l’accueil) ; icônes de l’appli tirées du même dessin (`icon-*.png`, `apple-touch-icon.png`, `favicon-48.png`).
+
+Tout est enregistré sur l’appareil (IndexedDB) et l'appli marche sans internet une fois installée.
 Penser à faire une sauvegarde de temps en temps.
 
 ## Mettre en ligne
