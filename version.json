@@ -1,9 +1,8 @@
 {
-  "version": "2.4",
+  "version": "2.5",
   "date": "2026-10-25",
   "notes": [
-    "Mel te prévient quand il commence à manquer du stock",
-    "Mel apparaît en dessin avec sa bulle pour ses annonces",
-    "Les questions de confirmation sont aux couleurs de Mel d’antan"
+    "Mel en entier pour te poser ses questions",
+    "Alertes de stock et annonces de Mel avec sa bulle"
   ]
 }

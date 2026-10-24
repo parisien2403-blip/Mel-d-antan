@@ -351,11 +351,14 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 @media (max-width:620px){.mel-buste{height:170px}.bulle-annonce{margin-bottom:70px;padding:10px 12px}.bulle-annonce p,.bulle-annonce ul{font-size:.85rem}}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
-.dialogue-mel .fenetre{max-width:440px;border-radius:20px;border:2px solid var(--cafe);margin:16px}
-.dialogue-tete{display:flex;gap:12px;align-items:flex-start}
-.dialogue-tete img{width:52px;height:52px;border-radius:50%;flex:none;box-shadow:0 0 0 2px var(--cafe)}
-.dialogue-tete b{font-family:var(--f-titre);font-size:1.15rem;display:block}
-.dialogue-tete p{margin:6px 0 0;color:var(--doux);font-size:.92rem}
+/* Mel en entier, la question dans sa bulle */
+.scene-dialogue{display:flex;align-items:flex-end;max-width:min(620px,calc(100% - 24px));animation:arrive .35s cubic-bezier(.2,.9,.3,1.2)}
+.scene-dialogue .mel-buste{height:300px}
+.scene-dialogue .bulle-annonce{margin-bottom:130px;padding:16px 18px}
+.scene-dialogue .bulle-annonce>b{font-size:1.2rem}
+.scene-dialogue .bulle-annonce p{color:var(--doux);font-size:.95rem}
+@media (max-width:620px){.scene-dialogue{max-width:calc(100% - 12px)}.scene-dialogue .mel-buste{height:170px;margin-left:-14px}.scene-dialogue .bulle-annonce{flex:1;margin-bottom:70px;padding:12px 14px}
+  .scene-dialogue .bulle-annonce>b{font-size:1rem}.scene-dialogue .bulle-annonce p{font-size:.85rem}.scene-dialogue .btn{padding:7px 12px;font-size:.85rem}}
 /* Pastille et volet de Mel */
 /* Espace en bas de chaque page : les derniers boutons passent au-dessus de la pastille de Mel */
 main{padding-bottom:110px}
@@ -710,8 +713,8 @@ addEventListener("popstate",e=>{
 function demander(titre,texte,{oui="Oui",non="Annuler",danger=false}={}){
   return new Promise(ok=>{
     const z=document.createElement("div");z.className="voile dialogue-mel";
-    z.innerHTML=`<div class="fenetre" role="alertdialog" aria-modal="true"><div class="dialogue-tete"><img src="mel-avatar.png" alt=""><div><b>${esc(titre)}</b>${texte?`<p>${esc(texte)}</p>`:""}</div></div>
-      <div class="ligne" style="justify-content:flex-end"><button class="btn leger" data-rep="0">${esc(non)}</button><button class="btn ${danger?"danger":""}" data-rep="1">${esc(oui)}</button></div></div>`;
+    z.innerHTML=`<div class="scene-dialogue" role="alertdialog" aria-modal="true"><div class="bulle-annonce ${danger?"danger":""}"><b>${esc(titre)}</b>${texte?`<p>${esc(texte)}</p>`:""}
+      <div class="ligne" style="justify-content:flex-end"><button class="btn leger" data-rep="0">${esc(non)}</button><button class="btn ${danger?"danger":""}" data-rep="1">${esc(oui)}</button></div></div><img class="mel-buste" src="mel.webp" alt="Mel"></div>`;
     const fin=v=>{z.remove();document.removeEventListener("keydown",touche,true);ok(v)};
     const touche=e=>{if(e.key==="Escape"){e.stopPropagation();fin(false)}else if(e.key==="Enter"){e.preventDefault();fin(true)}};
     z.addEventListener("click",e=>{const b=e.target.closest("[data-rep]");if(b)fin(b.dataset.rep==="1");else if(e.target===z)fin(false)});
@@ -1521,7 +1524,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.4";
+const VERSION="2.5";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
