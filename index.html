@@ -888,11 +888,26 @@ function entrerPlein(){
 }
 function quitterPlein(retour=true){
   if(!pleinLivre)return;pleinLivre=false;document.documentElement.classList.remove("plein");
-  if(document.fullscreenElement||document.webkitFullscreenElement)try{const p=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(p&&p.catch)p.catch(()=>{})}catch(e){}
+  if(!pleinEcranVoulu()&&(document.fullscreenElement||document.webkitFullscreenElement))try{const p=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(p&&p.catch)p.catch(()=>{})}catch(e){}
   if(retour&&history.state&&history.state.plein)history.back();
   rendre();
 }
-const finPleinNavigateur=()=>{if(!(document.fullscreenElement||document.webkitFullscreenElement)&&pleinLivre)quitterPlein()};
+/* Toute l'appli en plein écran (sans barres du système ni du navigateur) : Android et ordinateur.
+   Le navigateur n'accepte d'y entrer qu'après un appui : on le demande au premier toucher. */
+const pleinEcranVoulu=()=>{try{return localStorage.getItem("carnet.pleinEcran")!=="0"}catch(e){return true}};
+const pleinEcranDispo=()=>!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
+const enPleinEcran=()=>!!(document.fullscreenElement||document.webkitFullscreenElement)||matchMedia("(display-mode: fullscreen)").matches;
+let pleinEcranQuitte=false; // quitté à la main (Échap, retour) : on ne le redemande qu'à la prochaine ouverture
+function demanderPleinEcran(){
+  if(enPleinEcran()||!pleinEcranDispo())return;
+  const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  try{const p=f.call(el,{navigationUI:"hide"});if(p&&p.catch)p.catch(()=>{})}catch(e){}
+}
+document.addEventListener("pointerup",()=>{if(pleinEcranVoulu()&&!pleinEcranQuitte)demanderPleinEcran()},true);
+const finPleinNavigateur=()=>{const plein=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  if(!plein&&pleinLivre)quitterPlein();
+  if(!plein&&pleinEcranVoulu())pleinEcranQuitte=true;
+  if(vue==="sauvegarde")rendre()};
 document.addEventListener("fullscreenchange",finPleinNavigateur);document.addEventListener("webkitfullscreenchange",finPleinNavigateur);
 // Recette affichée sur la page ouverte du livre (sinon rien : couverture, sommaire, fin)
 const recettePage=()=>{const recs=recettesLivre();return lp>=2?recs[lp-2]||null:null};
@@ -1343,6 +1358,9 @@ function vReglages(){
   <div class="carte"><b>Affichage</b><p class="aide">Appareil détecté : ${NOM_APPAREIL[APPAREIL]} (${NOM_SYSTEME[SYSTEME]})${APPAREIL==="tablette"?`, tenue ${paysage()?"à l’horizontale":"à la verticale"}`:""} · affiché en <b>version ${modeActuel()}</b>.</p>
    <div class="puces" style="margin-top:10px">${[["auto","Automatique"],["appli","Version appli"],["site","Version site"]].map(([k,l])=>`<button class="puce ${prefMode()===k?"on":""}" data-mode-choix="${k}">${l}</button>`).join("")}</div>
    <p class="aide">Automatique : version appli sur téléphone, version site sur ordinateur ; sur tablette, version site à l’horizontale et version appli à la verticale.</p></div>
+  ${pleinEcranDispo()||matchMedia("(display-mode: fullscreen)").matches?`<div class="carte"><b>Plein écran</b><p class="aide">L’appli prend tout l’écran, sans les barres du téléphone, de la tablette ou du navigateur. ${SYSTEME==="ordinateur"?"Touche Échap pour en sortir.":"Fais glisser depuis le bord de l’écran pour revoir les barres un instant."}</p>
+   <div class="ligne" style="margin-top:10px"><button class="btn ${pleinEcranVoulu()?"leger":""}" data-act="pleinEcranAuto">${pleinEcranVoulu()?"✓ Toujours en plein écran":"Toujours en plein écran"}</button>${pleinEcranDispo()?(enPleinEcran()?`<button class="btn leger" data-act="sortirPleinEcran">Sortir du plein écran</button>`:`<button class="btn leger" data-act="pleinEcranMaintenant">Plein écran maintenant</button>`):""}</div></div>`
+   :SYSTEME==="ios"?`<div class="carte"><b>Plein écran</b><p class="aide">Sur iPad et iPhone, installe l’appli sur l’écran d’accueil (Partager › « Sur l’écran d’accueil ») : elle s’ouvre alors sans les barres de Safari. Apple garde toujours l’heure et la batterie en haut.</p></div>`:""}
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
   ${syncPossible()?`<div class="carte"><b>Carnet partagé entre tes appareils</b>
    <p class="aide">${syncEtat.codeRequis?"Tape ton code pour retrouver le même carnet sur cet appareil.":syncEtat.erreur?`⚠️ ${esc(syncEtat.erreur)}`:syncEtat.derniere?`✓ À jour · dernière synchronisation à ${syncEtat.derniere.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`:"Synchronisation en cours…"}</p>
@@ -1457,6 +1475,9 @@ document.addEventListener("click",e=>{
   else if(act==="pdfLivre"){const recs=recettesLivre();if(!recs.length){toast("Aucune recette dans le livre");return}fairePdf(recs,true,`mel-dantan-livre-de-recettes.pdf`,"Mon livre de recettes · Mel d’antan")}
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
+  else if(act==="pleinEcranAuto"){const v=!pleinEcranVoulu();try{localStorage.setItem("carnet.pleinEcran",v?"1":"0")}catch(e){}pleinEcranQuitte=false;if(v)demanderPleinEcran();else if(document.fullscreenElement&&!pleinLivre)document.exitFullscreen().catch(()=>{});setTimeout(rendre,300)}
+  else if(act==="pleinEcranMaintenant"){pleinEcranQuitte=false;demanderPleinEcran();setTimeout(rendre,300)}
+  else if(act==="sortirPleinEcran"){pleinEcranQuitte=true;(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});setTimeout(rendre,300)}
   else if(act==="installerMaj")installerMaj();
   else if(act==="voirStock"){stockAffiche=[];rendreStockBandeau();quitterEditeur().then(v=>{if(v){brouillon=null;aller("inventaire")}})}
   else if(act==="okStock"){stockAffiche=[];rendreStockBandeau()}
@@ -1535,7 +1556,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.8";
+const VERSION="2.9";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
