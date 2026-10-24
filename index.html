@@ -144,8 +144,18 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .badge-ok{position:absolute;left:6px;top:6px;background:rgba(250,243,228,.85);border-radius:50%;padding:3px}
 /* Le livre */
 .livre-zone{display:flex;flex-direction:column;align-items:center;gap:10px}
-.livre{--h:max(420px,calc(100dvh - 300px));position:relative;perspective:2400px;height:var(--h);border-radius:6px;box-shadow:0 16px 36px rgba(50,25,10,.38);touch-action:pan-y;user-select:none;-webkit-user-select:none;display:flex}
+.livre{--h:max(420px,calc(100dvh - 300px));position:relative;perspective:2400px;height:var(--h);border-radius:6px;transition:transform .8s cubic-bezier(.45,.05,.35,1);touch-action:pan-y;user-select:none;-webkit-user-select:none;display:flex}
 .livre.double{width:min(100%,calc(var(--h) * 1.45))}
+.livre .moitie:has(>.page:not(.vide)),.livre.simple{box-shadow:0 16px 36px rgba(50,25,10,.38)}
+.livre.ferme-devant{transform:translateX(-25%)}.livre.ferme-dos{transform:translateX(25%)}
+.page.vide{background:transparent}
+.livre .couverture{cursor:pointer}
+.garde{background-color:#6b4a35;background-image:radial-gradient(circle at 20% 30%,rgba(214,176,120,.35) 0 8%,transparent 9%),radial-gradient(circle at 70% 60%,rgba(240,210,160,.25) 0 12%,transparent 13%),radial-gradient(circle at 40% 80%,rgba(120,70,40,.5) 0 10%,transparent 11%),repeating-linear-gradient(35deg,rgba(255,235,200,.08) 0 6px,transparent 6px 14px);background-size:180px 180px,240px 240px,200px 200px,auto;display:flex;align-items:center;justify-content:center}
+.garde.pg-g{box-shadow:inset -22px 0 26px -14px rgba(30,15,5,.6)}.garde.pg-d{box-shadow:inset 22px 0 26px -14px rgba(30,15,5,.6)}
+.ex-libris{background:#f6ecda;border:2px solid #c9a35c;outline:1px solid #c9a35c;outline-offset:4px;border-radius:8px;padding:22px 26px;text-align:center;width:min(70%,260px);box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.ex-libris img{width:44%;display:block;margin:0 auto 8px}
+.ex-libris p{margin:0;font-family:var(--f-titre);font-style:italic;color:#7a5a40;font-size:.95rem}
+.ex-libris b{display:block;font-family:var(--f-main);font-weight:500;font-size:2.6rem;color:#4b2414;line-height:1.1}
 .livre.simple{width:min(100%,calc(var(--h) * .74));overflow:hidden}
 .moitie{position:relative;flex:1;height:100%}
 .feuille{position:absolute;top:0;height:100%;transform-style:preserve-3d;z-index:4}
@@ -566,6 +576,8 @@ const recettesLivre=()=>D.recettes.filter(r=>livreFiltre!=="approuvees"||r.appro
 const tamponHTML=(cls="")=>`<div class="tampon ${cls}" aria-label="Approuvé"><img src="tampon.png" alt=""><span>Approuvé</span></div>`;
 const nomContenant=r=>esc(CONTENANTS[r.contenant]?.nom||"");
 function pCouverture(n){return `<div class="page couverture"><div class="cadre-or"><img src="logo.jpg" alt="Mel d’antan"><p class="titre-or">Mon livre de recettes</p><p class="sous-or">${n} recette${n>1?"s":""}${livreFiltre==="approuvees"?" approuvée"+(n>1?"s":""):""}</p></div></div>`}
+// Page de garde (intérieur de la couverture) : papier marbré, ex-libris de Mel
+const pGarde=devant=>`<div class="page garde ${devant?"pg-g":"pg-d"}">${devant?`<div class="ex-libris"><img src="logo-rond.png" alt=""><p>Ce livre appartient à</p><b>Mel</b></div>`:""}</div>`;
 const pDos=()=>`<div class="page couverture"><div class="cadre-or"><img src="logo.jpg" alt="" style="width:38%"></div></div>`;
 function pSommaire(recs,decal){return `<div class="page papier pg-d"><h2 class="titre-main">Sommaire</h2><ol class="sommaire">${recs.map((r,i)=>`<li><button data-livre-aller="${i+decal}">${esc(r.nom)}${r.approuve?` <b class="ok">✓</b>`:""}<span>${i+1}</span></button></li>`).join("")||`<li>${livreFiltre==="approuvees"?"Aucune recette approuvée pour l’instant.":"Le carnet est encore vide."}</li>`}</ol></div>`}
 const polaroid=r=>`<figure class="polaroid">${r.photo?`<img src="${r.photo}" alt="">`:`<div class="dessin">${dessin(r)}</div>`}<figcaption>${esc(r.nom)}</figcaption></figure>`;
@@ -576,24 +588,28 @@ function texteLivre(r){
 }
 function feuillets(){
   const recs=recettesLivre();
-  if(enDouble())return[{g:pCouverture(recs.length),d:pSommaire(recs,1)},
+  // Livre ouvert sur deux pages : d'abord fermé (couverture seule), page de garde, sommaire, recettes, puis refermé (dos)
+  const vide=`<div class="page vide"></div>`;
+  if(enDouble())return[{g:vide,d:pCouverture(recs.length),ferme:"devant"},{g:pGarde(true),d:pSommaire(recs,2)},
     ...recs.map((r,i)=>({g:`<div class="page papier pg-g centre">${polaroid(r)}${r.photo?`<div class="petit-dessin">${dessin(r,{mini:true})}<span>${nomContenant(r)}</span></div>`:""}</div>`,
       d:`<div class="page papier pg-d">${texteLivre(r)}<div class="num">${i+1}</div></div>`})),
-    {g:`<div class="page papier pg-g centre"><p class="titre-main">Fin</p></div>`,d:pDos()}];
+    {g:`<div class="page papier pg-g centre"><p class="titre-main">Fin</p></div>`,d:pGarde(false)},{g:pDos(),d:vide,ferme:"dos"}];
   return[pCouverture(recs.length),pSommaire(recs,2),...recs.map((r,i)=>`<div class="page papier">${polaroid(r)}${texteLivre(r)}<div class="num">${i+1}</div></div>`),pDos()];
 }
 function vLivre(){
   const F=feuillets(),dbl=enDouble();lp=Math.max(0,Math.min(lp,F.length-1));const f=F[lp],der=F.length-1;
-  const ou=lp===0?(dbl?"Couverture · sommaire":"Couverture"):lp===der?"Fin":dbl?`Recette ${lp} sur ${der-1}`:lp===1?"Sommaire":`Recette ${lp-1} sur ${der-2}`;
+  const nr=dbl?der-3:der-2;
+  const ou=lp===0?"Couverture":lp===der?"Dos du livre":lp===1?"Sommaire":dbl&&lp===der-1?"Fin":`Recette ${lp-1} sur ${nr}`;
+  const classe=`livre ${dbl?"double":"simple"}${f.ferme?" ferme-"+f.ferme:""}`;
   const pages=dbl?`<div class="moitie g">${f.g}</div><div class="moitie d">${f.d}</div>`:`<div class="moitie">${f}</div>`;
-  if(pleinLivre)return `<div class="livre-plein"><div class="livre ${dbl?"double":"simple"}" id="livre">${pages}</div>
+  if(pleinLivre)return `<div class="livre-plein"><div class="${classe}" id="livre">${pages}</div>
    <button class="btn leger rond plein-fermer" data-act="quitterPlein" aria-label="Quitter le plein écran">✕</button>
    <button class="plein-fleche g" data-tourner="-1" ${lp?"":"disabled"} aria-label="Page précédente">‹</button><button class="plein-fleche d" data-tourner="1" ${lp<der?"":"disabled"} aria-label="Page suivante">›</button>
    <div class="plein-ou">${ou}</div></div>`;
   return `<div class="livre-zone"><div class="puces"><button class="puce ${livreFiltre==="toutes"?"on":""}" data-livre-filtre="toutes">Toutes les recettes</button><button class="puce ${livreFiltre==="approuvees"?"on":""}" data-livre-filtre="approuvees">Approuvées seulement</button></div>
-   <div class="livre ${dbl?"double":"simple"}" id="livre">${pages}</div>
+   <div class="${classe}" id="livre">${pages}</div>
    <div class="ligne livre-cmd"><button class="btn leger rond" data-tourner="-1" ${lp?"":"disabled"} aria-label="Page précédente">‹</button><span>${ou}</span><button class="btn leger rond" data-tourner="1" ${lp<der?"":"disabled"} aria-label="Page suivante">›</button></div>
-   <p class="aide" style="text-align:center;margin:0">Faites glisser la page du doigt pour la tourner.</p>
+   <p class="aide" style="text-align:center;margin:0">${lp===0?"Touche la couverture pour ouvrir le livre.":"Fais glisser la page du doigt pour la tourner."}</p>
    <div class="ligne" style="justify-content:center"><button class="btn petit" data-act="pleinLivre">⛶ Plein écran</button><button class="btn leger petit" data-act="pdfLivre">Partager le livre en PDF</button></div></div>`;
 }
 // Plein écran : celui du navigateur quand il existe (Android, ordinateur, iPad récent), sinon le livre occupe toute la page
@@ -626,12 +642,14 @@ function tourner(dir){
     if(dir>0){L.querySelector(".moitie").innerHTML=F[n];html=`<div class="feuille plein"><div class="face">${F[lp]}</div>${verso}</div>`;a=-180}
     else{html=`<div class="feuille plein"><div class="face">${F[n]}</div>${verso}</div>`;de=-180;a=0}
   }
+  if(dbl){L.classList.remove("ferme-devant","ferme-dos");if(F[n].ferme)L.classList.add("ferme-"+F[n].ferme)}
   L.insertAdjacentHTML("beforeend",html);
   const fin=()=>{lp=n;tourne=false;rendre()};
   L.lastElementChild.animate([{transform:`rotateY(${de}deg)`},{transform:`rotateY(${a}deg)`}],{duration:800,easing:"cubic-bezier(.45,.05,.35,1)"}).finished.then(fin,fin);
 }
 // Sommaire : les pages tournent une à une jusqu'à la recette choisie (au-delà de 3, on y va directement)
 function allerPage(n){if(Math.abs(n-lp)>3){lp=n;rendre();return}const pas=()=>{if(lp===n)return;tourner(n>lp?1:-1);setTimeout(pas,850)};pas()}
+document.addEventListener("click",e=>{if(vue==="livre"&&!tourne&&e.target.closest("#livre .couverture")){const F=feuillets();if(lp===0)tourner(1);else if(lp===F.length-1)tourner(-1)}});
 document.addEventListener("pointerdown",e=>{glisse=vue==="livre"&&e.target.closest("#livre")?{x:e.clientX,y:e.clientY}:null});
 document.addEventListener("pointerup",e=>{if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;glisse=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.4)tourner(dx<0?1:-1)});
 let attenteTaille=null;
