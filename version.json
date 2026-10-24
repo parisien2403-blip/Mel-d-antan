@@ -1,8 +1,8 @@
 {
-  "version": "1.7",
+  "version": "1.8",
   "date": "2026-10-24",
   "notes": [
-    "Les photos s’affichent en entier, sans être recadrées (fiche, livre, PDF)",
-    "Fiche recette : la photo en haut, le dessin du contenant en dessous"
+    "La pastille de Mel se range dans la marge : elle ne cache plus aucun bouton",
+    "Les photos s’affichent en entier, sans être recadrées"
   ]
 }

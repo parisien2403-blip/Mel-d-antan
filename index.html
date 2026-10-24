@@ -305,9 +305,15 @@ main{padding-bottom:110px}
 :root.plein main{padding-bottom:0}
 .pastille-mel{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:6;border:0;background:var(--carte);border-radius:999px;padding:4px 14px 4px 4px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 6px 18px rgba(70,40,20,.35),0 0 0 2px var(--cafe);font-weight:700;color:var(--cafe);font-family:var(--f-main);font-size:1.35rem}
 .pastille-mel img{width:52px;height:52px;border-radius:50%}
-:root[data-mode="site"] .pastille-mel{bottom:24px;right:max(18px,calc((100% - 1240px)/2 + 24px))}
-.flottant{right:150px}
-:root[data-mode="site"] .flottant{right:max(150px,calc((100% - 1240px)/2 + 156px))}
+/* Version site : la pastille vit dans la marge de droite, jamais sur la page */
+:root[data-mode="site"] .pastille-mel{bottom:24px;right:18px;flex-direction:column;padding:4px 4px 6px;border-radius:40px;gap:2px;font-size:1.1rem}
+:root[data-mode="site"] .pastille-mel img{width:58px;height:58px}
+/* Écran pas assez large pour avoir une marge libre : la page laisse une colonne à droite pour la pastille */
+@media (max-width:1460px){:root[data-mode="site"] main{padding-right:108px}}
+:root[data-mode="site"] .flottant{right:max(118px,calc((100% - 1240px)/2 + 24px))}
+/* Version appli : pastille ronde, juste la tête, et le bouton Nouvelle recette à sa gauche */
+:root[data-mode="appli"] .pastille-mel{display:none}
+:root[data-mode="appli"] .flottant{right:18px}
 .voile-mel{position:fixed;inset:0;z-index:18;background:rgba(30,15,8,.35);animation:apparait .25s}
 .volet-mel{position:fixed;z-index:19;background:var(--fond);display:flex;flex-direction:column;box-shadow:0 0 30px rgba(40,20,10,.4);animation:monte .3s cubic-bezier(.2,.8,.3,1)}
 :root[data-mode="site"] .volet-mel{top:0;right:0;bottom:0;width:min(460px,100%);animation-name:glisse}
@@ -1117,6 +1123,8 @@ document.addEventListener("click",e=>{
   if(t.id==="bascule"){choisirMode(d.mode);toast(`Version ${d.mode}${APPAREIL==="tablette"?" · tourner la tablette revient au réglage automatique":""}`);return}
   if(d.modeChoix){choisirMode(d.modeChoix);return}
   if(t.id==="logo"){if(vue!=="recettes"){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller("recettes")}return}
+  // Version appli : l'onglet Mel de la barre du bas ouvre la conversation par-dessus la page en cours
+  if(d.aller==="mel"&&t.closest("nav.bas")&&vue!=="mel"&&!voletMel){ouvrirVolet();return}
   if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}
@@ -1240,7 +1248,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.7";
+const VERSION="1.8";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
