@@ -640,7 +640,7 @@ async function fairePdf(recs,livre,nom,titre){
       doc.setFillColor(61,34,21);doc.rect(0,0,210,297,"F");doc.setDrawColor(201,163,92);doc.setLineWidth(.8);doc.rect(12,12,186,273);doc.setLineWidth(.3);doc.rect(15,15,180,267);
       doc.addImage(surFond(rond,"#3d2215",700),"JPEG",45,50,120,120);
       doc.setFont("times","italic");doc.setFontSize(30);doc.setTextColor(232,201,138);doc.text("Mon livre de recettes",105,205,{align:"center"});
-      doc.setFont("times","normal");doc.setFontSize(11);doc.setTextColor(217,185,122);doc.text(`${recs.length} RECETTE${recs.length>1?"S":""} · ${new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}).toUpperCase()}`,105,218,{align:"center"});
+      doc.setFont("times","normal");doc.setFontSize(11);doc.setTextColor(217,185,122);doc.text(`${recs.length} RECETTE${recs.length>1?"S":""}`,105,218,{align:"center"});
       doc.addPage();fondPapier(doc);doc.setFont("times","bolditalic");doc.setFontSize(26);doc.setTextColor(75,36,20);doc.text("Sommaire",30,27);
       doc.setFontSize(13);recs.forEach((r,i)=>{const y=44+8.5*(i%28+1)-1.8;if(i&&i%28===0){piedPage(doc);doc.addPage();fondPapier(doc)}doc.setFont("times","normal");doc.setTextColor(59,36,20);doc.text(`${i+1}.  ${r.nom}${r.approuve?"  — approuvée":""}`,30,y);doc.setFont("times","italic");doc.setTextColor(122,90,64);doc.text(CONTENANTS[r.contenant]?.nom||"",196,y,{align:"right"})});
       piedPage(doc);
