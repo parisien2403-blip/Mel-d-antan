@@ -13,7 +13,7 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   les produits en quantité insuffisante s'affichent en orange.
 - **Approuvé** : une recette réussie reçoit le tampon Mel d’antan « Approuvé » (encre chocolat). Elle reste modifiable.
 - **Mon livre** : les recettes en livre (couverture, sommaire, une recette par page sur papier café ligné, photo en polaroïd),
-  pages qui tournent du doigt ; deux pages à l’horizontale, une à la verticale ; toutes les recettes ou les approuvées seulement.
+  pages qui tournent du doigt ; deux pages à l’horizontale, une à la verticale ; toutes les recettes ou les approuvées seulement ; bouton « Plein écran » (croix ou retour pour sortir).
 - **PDF** : « Partager en PDF » sur une recette, ou « Partager le livre en PDF » (message, e-mail, WhatsApp, Fichiers, impression).
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
 - **Affichage** : l’appli reconnaît l’appareil (Android, iPhone / iPad, ordinateur). Version appli (onglets en bas) sur téléphone

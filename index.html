@@ -203,6 +203,18 @@ nav.haut button.on{background:var(--cafe);color:var(--carte)}
 :root[data-mode="site"] .toast{bottom:28px}
 :root[data-mode="site"] .grille{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px}
 :root[data-mode="site"] .livre{--h:max(420px,calc(100dvh - 240px))}
+/* Livre en plein écran : rien d'autre que le livre, sur fond sombre */
+:root.plein header,:root.plein nav.bas{display:none}
+:root.plein body{padding:0;background:radial-gradient(circle at 50% 40%,#4a2e1d,#1e130c 75%)}
+:root.plein main{max-width:none;padding:0}
+.livre-plein{height:100dvh;display:flex;align-items:center;justify-content:center;padding:12px}
+:root.plein .livre{--h:calc(100dvh - 60px)}
+:root.plein .livre.double{width:min(calc(100vw - 120px),calc(var(--h) * 1.45))}
+:root.plein .livre.simple{width:min(calc(100vw - 24px),calc(var(--h) * .74))}
+.btn.plein-fermer{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:10;background:rgba(255,250,240,.92);color:#5e3a22;width:42px;height:42px;font-size:1.1rem;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.plein-fleche{position:fixed;top:50%;transform:translateY(-50%);z-index:10;width:46px;height:70px;border:0;border-radius:14px;background:rgba(255,250,240,.16);color:#f3e6cf;font-size:2.2rem;cursor:pointer}
+.plein-fleche.g{left:8px}.plein-fleche.d{right:8px}.plein-fleche:disabled{opacity:.2}
+.plein-ou{position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#e8d5b5;font-size:.85rem;pointer-events:none}
 /* Mode appli (téléphone, tablette à la verticale) : barre d'onglets en bas, une colonne */
 :root[data-mode="appli"] nav.haut{display:none}
 :root[data-mode="appli"] .fiche,:root[data-mode="appli"] .editeur{grid-template-columns:1fr}
@@ -431,6 +443,7 @@ function rendre(){
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
 addEventListener("popstate",e=>{
   if(calque){calque=null;rendreCalque();return}
+  if(pleinLivre&&!(e.state&&e.state.plein)){quitterPlein(false);return}
   const s=e.state||{vue:"recettes"};
   if(s.vue===vue&&s.id===courant)return;
   if(vue==="editer"&&brouillon&&modifie()&&!confirm("Quitter sans enregistrer les changements ?")){history.pushState({vue,id:courant},"");return}
@@ -535,12 +548,33 @@ function feuillets(){
 function vLivre(){
   const F=feuillets(),dbl=enDouble();lp=Math.max(0,Math.min(lp,F.length-1));const f=F[lp],der=F.length-1;
   const ou=lp===0?(dbl?"Couverture · sommaire":"Couverture"):lp===der?"Fin":dbl?`Recette ${lp} sur ${der-1}`:lp===1?"Sommaire":`Recette ${lp-1} sur ${der-2}`;
+  const pages=dbl?`<div class="moitie g">${f.g}</div><div class="moitie d">${f.d}</div>`:`<div class="moitie">${f}</div>`;
+  if(pleinLivre)return `<div class="livre-plein"><div class="livre ${dbl?"double":"simple"}" id="livre">${pages}</div>
+   <button class="btn leger rond plein-fermer" data-act="quitterPlein" aria-label="Quitter le plein écran">✕</button>
+   <button class="plein-fleche g" data-tourner="-1" ${lp?"":"disabled"} aria-label="Page précédente">‹</button><button class="plein-fleche d" data-tourner="1" ${lp<der?"":"disabled"} aria-label="Page suivante">›</button>
+   <div class="plein-ou">${ou}</div></div>`;
   return `<div class="livre-zone"><div class="puces"><button class="puce ${livreFiltre==="toutes"?"on":""}" data-livre-filtre="toutes">Toutes les recettes</button><button class="puce ${livreFiltre==="approuvees"?"on":""}" data-livre-filtre="approuvees">Approuvées seulement</button></div>
-   <div class="livre ${dbl?"double":"simple"}" id="livre">${dbl?`<div class="moitie g">${f.g}</div><div class="moitie d">${f.d}</div>`:`<div class="moitie">${f}</div>`}</div>
+   <div class="livre ${dbl?"double":"simple"}" id="livre">${pages}</div>
    <div class="ligne livre-cmd"><button class="btn leger rond" data-tourner="-1" ${lp?"":"disabled"} aria-label="Page précédente">‹</button><span>${ou}</span><button class="btn leger rond" data-tourner="1" ${lp<der?"":"disabled"} aria-label="Page suivante">›</button></div>
    <p class="aide" style="text-align:center;margin:0">Faites glisser la page du doigt pour la tourner.</p>
-   <button class="btn leger petit" data-act="pdfLivre">Partager le livre en PDF</button></div>`;
+   <div class="ligne" style="justify-content:center"><button class="btn petit" data-act="pleinLivre">⛶ Plein écran</button><button class="btn leger petit" data-act="pdfLivre">Partager le livre en PDF</button></div></div>`;
 }
+// Plein écran : celui du navigateur quand il existe (Android, ordinateur, iPad récent), sinon le livre occupe toute la page
+let pleinLivre=false;
+function entrerPlein(){
+  pleinLivre=true;document.documentElement.classList.add("plein");history.pushState({vue,id:courant,plein:1},"");
+  const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(f)try{const p=f.call(el);if(p&&p.catch)p.catch(()=>{})}catch(e){}
+  rendre();scrollTo(0,0);
+}
+function quitterPlein(retour=true){
+  if(!pleinLivre)return;pleinLivre=false;document.documentElement.classList.remove("plein");
+  if(document.fullscreenElement||document.webkitFullscreenElement)try{const p=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(p&&p.catch)p.catch(()=>{})}catch(e){}
+  if(retour&&history.state&&history.state.plein)history.back();
+  rendre();
+}
+const finPleinNavigateur=()=>{if(!(document.fullscreenElement||document.webkitFullscreenElement)&&pleinLivre)quitterPlein()};
+document.addEventListener("fullscreenchange",finPleinNavigateur);document.addEventListener("webkitfullscreenchange",finPleinNavigateur);
 // Une feuille se soulève et tourne : recto = page actuelle, verso = page qui arrive
 function tourner(dir){
   if(tourne)return;const F=feuillets(),n=lp+dir;if(n<0||n>=F.length)return;
@@ -756,6 +790,8 @@ document.addEventListener("click",e=>{
   else if(act==="pdfRecette"){const rec=R(courant);fairePdf([rec],false,`${nomFichier(rec.nom)}.pdf`,rec.nom)}
   else if(act==="pdfLivre"){const recs=recettesLivre();if(!recs.length){toast("Aucune recette dans le livre");return}fairePdf(recs,true,`mel-dantan-livre-de-recettes.pdf`,"Mon livre de recettes · Mel d’antan")}
   else if(act==="pdfPartager")partagerPdf();
+  else if(act==="pleinLivre")entrerPlein();
+  else if(act==="quitterPlein")quitterPlein();
   else if(act==="pdfOuvrir")ouvrirFichierPdf();
   else if(act==="installer")installer();
 });
@@ -783,7 +819,7 @@ document.addEventListener("submit",e=>{
   if(retour&&brouillon){brouillon.couches[retour.i].ingredients[retour.j].produit=p.id}
   const y=scrollY;rendre();scrollTo(0,y);toast("Produit enregistré");
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque();else if(e.key==="Escape"&&pleinLivre)quitterPlein();
   if(vue==="livre"&&!calque&&(e.key==="ArrowRight"||e.key==="ArrowLeft"))tourner(e.key==="ArrowRight"?1:-1)});
 // Le petit sélecteur de couleur prend aussi la couleur choisie pour « Utiliser cette couleur »
 document.addEventListener("input",e=>{if(e.target.id==="pCouleur")document.getElementById("pAvecCouleur").checked=true});
