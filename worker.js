@@ -26,6 +26,11 @@ Ce que tu fais pour elle :
 - La conseiller sur la fabrication : cires (soja, colza, coco, paraffine, cire à chantilly ou à fouetter), températures de fonte et de coulage, taux de parfum, choix des mèches selon le diamètre, colorants, inclusions, défauts (trous, givre, effet tunnel, retrait, fumée) et leurs remèdes, sécurité (point d'éclair des parfums, ne jamais laisser une bougie allumée sans surveillance, étiquetage CLP des bougies parfumées).
 - L'aider à inventer de nouvelles bougies gourmandes (tiramisu, crème brûlée, milkshake, chocolat viennois…).
 
+Exactitude (très important) :
+- Mieux vaut une réponse courte et juste qu'une réponse sûre d'elle et fausse. N'invente jamais un chiffre, une marque, une température ou une règle : si tu n'es pas sûre, dis-le simplement (« je ne suis pas certaine, vérifie sur la fiche de ta cire ») et donne ce que tu sais de façon fiable.
+- Les « Corrections de Mel » données avec son carnet sont des vérités qu'elle t'a apprises : respecte-les en priorité, même si tu pensais autre chose.
+- Relis ta réponse avant de l'envoyer : est-ce qu'elle répond bien à la question posée, et chaque chiffre est-il juste ?
+
 Unités et calculs (très important) :
 - Chaque produit du carnet a son unité (g, ml, gouttes, pièces…). Elle est toujours indiquée : ne dis jamais qu'elle manque.
 - Ne mélange jamais des unités différentes. Un pourcentage de parfum se calcule en poids : poids du parfum ÷ poids de la cire × 100.
@@ -92,12 +97,12 @@ function nettoyer(corps) {
 // Réponse donnée par l'IA de Cloudflare à la place de Claude : l'appli l'affiche
 const relais = (r, pourquoi = "credits") => { const h = new Headers(r.headers); h.set("x-mel-relais", pourquoi === "panne" ? "panne" : "1"); return new Response(r.body, { status: r.status, headers: h }); };
 // Le texte de la réponse part vers l'appli au fil de l'eau
-function flux(ecrire) {
+function flux(ecrire, moteurReponse) {
   const { readable, writable } = new TransformStream();
   const w = writable.getWriter(), enc = new TextEncoder();
   const envoyer = t => w.write(enc.encode(t));
   ecrire(envoyer).catch(e => { console.error(e); return envoyer("\n\n(Oups, ma réponse a été coupée. Tu peux me reposer la question ?)"); }).finally(() => w.close());
-  return new Response(readable, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  return new Response(readable, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-mel-moteur": moteurReponse } });
 }
 
 async function repondreClaude(env, { messages, contexte }) {
@@ -109,7 +114,7 @@ async function repondreClaude(env, { messages, contexte }) {
     // Si un filtre de sécurité refuse à tort, Claude réessaie tout seul avec le modèle de secours recommandé
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    output_config: { effort: "medium" },
+    output_config: { effort: "high" },
     system: [
       { type: "text", text: PERSONNAGE },
       { type: "text", text: "Le carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)"), cache_control: { type: "ephemeral" } },
@@ -131,7 +136,7 @@ async function repondreClaude(env, { messages, contexte }) {
     const fin = await stream.finalMessage();
     if (fin.stop_reason === "refusal") await envoyer("\n\nDésolée Mel, je ne peux pas t'aider sur ce point-là. Tu veux me demander autre chose ?");
     else if (fin.stop_reason === "max_tokens") await envoyer("\n\n(Ma réponse était trop longue, je me suis arrêtée là. Demande-moi la suite !)");
-  });
+  }, "claude");
 }
 
 // Crédits Claude épuisés ou limite de dépense atteinte : Claude se met en pause, l'IA gratuite de Cloudflare prend le relais
@@ -193,7 +198,7 @@ async function repondreCloudflare(env, { messages, contexte }) {
         try { const o = JSON.parse(d); if (o.response) await envoyer(o.response); } catch { /* morceau incomplet */ }
       }
     }
-  });
+  }, "cloudflare");
 }
 
 // Mel dessine : image d'inspiration créée par l'IA d'images gratuite de Cloudflare (Workers AI)
@@ -223,7 +228,7 @@ const SCHEMA = [
 ];
 let basePrete = null;
 const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
-const GENRES = ["produit", "recette"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
+const GENRES = ["produit", "recette", "note"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
 async function empreinteHex(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");

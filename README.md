@@ -24,6 +24,8 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   (IA d’images gratuite de Cloudflare, Workers AI), à télécharger ou à mettre en photo d’une recette.
   Pastille de Mel en bas de chaque page : la conversation s’ouvre par-dessus la page en cours (volet à droite en version
   site, panneau du bas en version appli) ; Mel sait quelle page est ouverte et propose des questions à propos.
+  « Corriger Mel » sous chaque réponse : la bonne information est retenue (Réglages › Ce que Mel a appris), partagée entre
+  les appareils et respectée en priorité. Une mention « IA gratuite » signale les réponses de l’IA de Cloudflare.
   La conversation reste sur l’appareil et fait partie de la sauvegarde.
 - **Accueil** : bonjour, chiffres de l’atelier (recettes, approuvées, stocks bas), logo, astuce de Mel du jour.
 - **Version** : « v1.0 » à côté du bouton Version appli / site ; bandeau de Mel et notification quand une mise à jour est prête.

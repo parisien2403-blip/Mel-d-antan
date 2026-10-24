@@ -1,8 +1,9 @@
 {
-  "version": "2.9",
+  "version": "3.0",
   "date": "2026-10-25",
   "notes": [
-    "L’appli prend tout l’écran, sans les barres du téléphone ni du navigateur",
-    "Crédits Claude épuisés : l’IA gratuite de Cloudflare prend le relais"
+    "« Corriger Mel » : apprends-lui la bonne réponse, elle s’en souviendra",
+    "On voit quand c’est l’IA gratuite qui a répondu",
+    "L’appli prend tout l’écran"
   ]
 }

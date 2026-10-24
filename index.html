@@ -349,12 +349,18 @@ nav.haut .ico-mel{width:22px;height:22px}
 body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 @keyframes arrive{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 @media (max-width:620px){.mel-buste{height:170px}.bulle-annonce{margin-bottom:70px;padding:10px 12px}.bulle-annonce p,.bulle-annonce ul{font-size:.85rem}}
+.pied-bulle{display:flex;gap:12px;align-items:center;margin:4px 0 0 6px;font-size:.78rem;color:var(--doux)}
+.pied-bulle .lien{font-size:.78rem}
+.pied-bulle span{border:1px solid var(--ligne);border-radius:999px;padding:1px 8px}
+.liste-notes{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+.liste-notes li{display:flex;gap:10px;align-items:flex-start;background:var(--fond);border:1px solid var(--ligne);border-radius:12px;padding:8px 12px}
+.liste-notes span{flex:1}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
-.scene-dialogue{display:flex;align-items:flex-end;max-width:min(620px,calc(100% - 24px));animation:arrive .35s cubic-bezier(.2,.9,.3,1.2)}
+.scene-dialogue{display:flex;align-items:flex-end;max-width:min(680px,calc(100% - 24px));width:100%;justify-content:center;animation:arrive .35s cubic-bezier(.2,.9,.3,1.2)}
 .scene-dialogue .mel-buste{height:300px}
-.scene-dialogue .bulle-annonce{margin-bottom:130px;padding:16px 18px}
+.scene-dialogue .bulle-annonce{margin-bottom:130px;padding:16px 18px;flex:1;max-width:460px}
 .scene-dialogue .bulle-annonce>b{font-size:1.2rem}
 .scene-dialogue .bulle-annonce p{color:var(--doux);font-size:.95rem}
 @media (max-width:620px){.scene-dialogue{max-width:calc(100% - 12px)}.scene-dialogue .mel-buste{height:170px;margin-left:-14px}.scene-dialogue .bulle-annonce{flex:1;margin-bottom:70px;padding:12px 14px}
@@ -1049,7 +1055,8 @@ function contexteCarnet(){
   const recs=D.recettes.map(r=>`## ${r.nom}${r.approuve?" (approuvée)":""}\nContenant : ${CONTENANTS[r.contenant]?.nom||r.contenant}, rempli à ${r.remplissage??88} %. Notée le ${(r.cree||"").slice(0,10)}.\n`+
     r.couches.map((c,i)=>`Couche ${i+1} (du bas) « ${c.nom||"sans nom"} », aspect ${(TEXTURES.find(t=>t[0]===c.texture)||[,"lisse"])[1].toLowerCase()} : ${c.ingredients.filter(x=>x.produit).map(x=>phrase(+x.q||0,P(x.produit))).join(" ; ")||"aucun produit"}.`).join("\n")+
     (r.notes?`\nNotes : ${r.notes}`:"")).join("\n\n");
-  return `Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
+  const cor=(D.notes||[]).map(n=>`- ${n.texte}`).join("\n");
+  return `${cor?`CORRECTIONS DE MEL (ce qu'elle t'a appris : à respecter en priorité)\n${cor}\n\n`:""}Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
 }
 // Mise en forme simple des réponses : gras, listes, paragraphes ; la fiche de recette proposée devient une carte
 // Description du dessin demandé par Mel (bloc ```image … ```)
@@ -1087,7 +1094,9 @@ function ouvrirFicheMel(f){
   instantane="";if(nouveaux)sauver();aller("editer");
   toast(nouveaux?`Fiche ouverte · ${nouveaux} produit${nouveaux>1?"s":""} ajouté${nouveaux>1?"s":""} à l’inventaire`:"Fiche ouverte : vérifie et enregistre");
 }
-function bulleMel(t,enCours,msg,idx){return`<div class="de-mel"><img src="mel-avatar.png" alt="Mel"><div class="bulle">${t?formeMel(t,enCours,msg,idx):`<span class="reflechit" aria-label="Mel réfléchit"><span></span><span></span><span></span></span>`}</div></div>`}
+function bulleMel(t,enCours,msg,idx){
+  const pied=msg&&idx!=null&&!enCours?`<div class="pied-bulle">${msg.moteur==="cloudflare"?`<span title="Réponse donnée par l’IA gratuite de Cloudflare, moins fiable que Claude">IA gratuite</span>`:""}<button class="lien" data-corriger="${idx}">${msg.corrige?"✓ Corrigé":"Corriger Mel"}</button></div>`:"";
+  return`<div class="de-mel"><img src="mel-avatar.png" alt="Mel"><div><div class="bulle">${t?formeMel(t,enCours,msg,idx):`<span class="reflechit" aria-label="Mel réfléchit"><span></span><span></span><span></span></span>`}</div>${pied}</div></div>`}
 function corpsMel(volet){
   if(!melEtat){verifierMel();}
   const fil=D.discussion||[];
@@ -1182,14 +1191,14 @@ async function demanderMel(question){
       body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content,image},i,l)=>({role,content:image&&i<l.length-1?"[Photo envoyée plus tôt] "+content:content,...(image&&i===l.length-1?{image}:{})})),contexte:(pageCourante()?`EN CE MOMENT : ${pageCourante()}\n\n`:"")+contexteCarnet()})});
     if(!r.ok){const e=await r.json().catch(()=>({}));if(e.code){try{localStorage.removeItem("carnet.codeMel")}catch(x){}}throw new Error(e.erreur||"Mel ne répond pas pour le moment.")}
     // Relais par l'IA de Cloudflare (crédits Claude épuisés) ou retour de Claude : l'indication suit
-    const relaisNow=r.headers.get("x-mel-relais")==="1";
+    const relaisNow=r.headers.get("x-mel-relais")==="1",moteurRep=r.headers.get("x-mel-moteur")||"";
     if(relaisNow&&!melEtat.relais){melEtat.relais=true;melEtat.moteur="cloudflare";toast("Crédits Claude du mois épuisés : l’IA gratuite de Cloudflare prend le relais")}
     else if(!relaisNow&&melEtat.relais){melEtat.relais=false;verifierMel()}
     const lecteur=r.body.getReader(),dec=new TextDecoder();let prevu=false;
     for(;;){const{done,value}=await lecteur.read();if(done)break;melTexte+=dec.decode(value,{stream:true});
       if(!prevu){prevu=true;requestAnimationFrame(()=>{prevu=false;const z=document.getElementById("enCours");if(z){z.innerHTML=bulleMel(melTexte,true);finFil()}})}}
     melTexte+=dec.decode();
-    if(melTexte.trim()){D.discussion.push({role:"assistant",content:melTexte,date:new Date().toISOString()});parler(melTexte);
+    if(melTexte.trim()){D.discussion.push({role:"assistant",content:melTexte,date:new Date().toISOString(),...(moteurRep?{moteur:moteurRep}:{})});parler(melTexte);
       const desc=descriptionImage(melTexte);if(desc)setTimeout(()=>dessinerMel(D.discussion.length-1),50)}
   }catch(e){melErreur=e.message||"Mel ne répond pas pour le moment.";const p=D.discussion.pop();if(p&&p.image)photoMel=p.image}
   finally{
@@ -1255,13 +1264,14 @@ async function synchroniser(choix){
   if(!syncPossible())return;
   if(syncEtat.enCours){syncRelancer=true;return}
   if(melEtat.code&&!codeMel()){syncEtat.codeRequis=true;rendreSyncBandeau();return}
-  syncEtat.enCours=true;syncEtat.erreur="";let avant=JSON.stringify([D.produits,D.recettes]);
+  syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes]);
   try{
     const base=await lire("sync");
     const serveur=(await appelCarnet("sync",{})).elements;
     const local={};
     for(const p of D.produits)local[p.id]={genre:"produit",data:await enLigne(p)};
     for(const x of D.recettes)local[x.id]={genre:"recette",data:await enLigne(x)};
+    for(const x of D.notes)local[x.id]={genre:"note",data:{...x}};
     const srv={};for(const e of serveur)srv[e.id]=e;
     let changes=[],suppressions=[];
     if(!base){
@@ -1300,15 +1310,16 @@ async function synchroniser(choix){
     let fin=serveur;
     if(changes.length||suppressions.length){await envoyerPhotos(changes);fin=(await appelCarnet("sync",{changes,suppressions})).elements}
     // Le carnet de l'appareil devient celui en ligne
-    const produits=[],recettes=[];
-    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else produits.push(d)}
+    const produits=[],recettes=[],notes=[];
+    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else if(e.genre==="note")notes.push(d);else produits.push(d)}
+    notes.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
     const el={};for(const e of fin)el[e.id]={j:JSON.stringify(e.data)};
     await ecrire("sync",{el});
-    if(JSON.stringify([produits,recettes])!==avant&&JSON.stringify([D.produits,D.recettes])===avant){
-      D.produits=produits;D.recettes=recettes;delete D.vierge;await ecrire("donnees",D);verifierStocks();
+    if(JSON.stringify([produits,recettes,notes])!==avant&&JSON.stringify([D.produits,D.recettes,D.notes])===avant){
+      D.produits=produits;D.recettes=recettes;D.notes=notes;delete D.vierge;await ecrire("donnees",D);verifierStocks();
       if(vue==="voir"&&!R(courant)){vue="recettes"}
       if(vue==="editer")nav();else{const y=scrollY;rendre();scrollTo(0,y)}
-    }else if(JSON.stringify([D.produits,D.recettes])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
+    }else if(JSON.stringify([D.produits,D.recettes,D.notes])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
     syncEtat.derniere=new Date();syncEtat.codeRequis=false;
   }catch(e){
     syncEtat.erreur=e.message;if(e.code){syncEtat.codeRequis=true;try{localStorage.removeItem("carnet.codeMel")}catch(x){}}
@@ -1370,6 +1381,8 @@ function vReglages(){
    <div class="ligne" style="margin-top:10px">${majInfo?`<button class="btn" data-act="installerMaj">Mettre à jour maintenant</button>`:`<button class="btn leger" data-act="chercherMaj">Rechercher une mise à jour</button>`}
     </div>
    <p class="aide">L’appli vérifie toute seule à chaque ouverture et toutes les 30 minutes. Une nouvelle version s’installe quand tu touches « Mettre à jour » ; tes recettes ne bougent pas.</p></div>
+  <div class="carte"><b>Ce que Mel a appris</b><p class="aide">Les corrections que tu as données à Mel (bouton « Corriger Mel » sous ses réponses). Elle les respecte en priorité.</p>
+   ${(D.notes||[]).length?`<ul class="liste-notes">${D.notes.map(n=>`<li><span>${esc(n.texte)}</span><button class="lien" data-oublier="${n.id}">Oublier</button></li>`).join("")}</ul>`:`<p class="aide">Aucune correction pour l’instant.</p>`}</div>
   <div class="carte"><b>Notifications de Mel</b><p class="aide">Mel te prévient quand un produit passe sous son seuil d’alerte (réglé dans l’inventaire, « M’alerter sous »), et quand une nouvelle version de l’appli est prête.${notifMaj()?(pushActif()?" ✓ Elles arrivent même quand l’appli est fermée.":" Elles n’arrivent que quand l’appli est ouverte ou en arrière-plan."):""}</p>
    <div class="ligne" style="margin-top:10px"><button class="btn ${notifMaj()?"leger":""}" data-act="notifMaj">${notifMaj()?"🔔 Notifications activées":"🔔 Activer les notifications"}</button>${notifMaj()?`<button class="btn leger" data-act="essaiNotif">Essayer</button>`:""}</div>
    ${stockBas().length?`<p class="aide">En ce moment : ${stockBas().map(p=>esc(p.nom)).join(", ")} sous le seuil.</p>`:""}</div>
@@ -1382,6 +1395,12 @@ const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("dat
 function rendreCalque(){
   const z=document.getElementById("calque");
   if(!calque){z.innerHTML="";return}
+  if(calque.correction){const c=calque.correction;z.innerHTML=`<div class="voile dialogue-mel" data-fermer><form class="scene-dialogue" id="fCorrection"><div class="bulle-annonce"><b>Qu’est-ce qui n’est pas juste ?</b>
+    <p>Écris-moi la bonne information : je m’en souviendrai pour toutes tes prochaines questions, sur tous tes appareils.</p>
+    ${c.question?`<p class="aide" style="margin:0 0 6px">Ta question : « ${esc(c.question.slice(0,160))} »</p>`:""}
+    <textarea id="texteCorrection" rows="3" maxlength="600" required placeholder="Ex. : ma cire à chantilly se fouette à 45 °C, pas 50 °C." style="width:100%"></textarea>
+    <div class="ligne" style="justify-content:flex-end;margin-top:8px"><button type="button" class="btn leger" data-fermer>Annuler</button><button class="btn">Apprendre à Mel</button></div></div><img class="mel-buste" src="mel.webp" alt="Mel"></form></div>`;
+    setTimeout(()=>document.getElementById("texteCorrection")?.focus(),50);return}
   if(calque.syncChoix){const a=syncEtat.attenteChoix||{};z.innerHTML=`<div class="voile"><div class="fenetre"><h2 style="font-size:1.3rem">Ton carnet existe déjà en ligne</h2>
     <p class="aide" style="margin:0">Un autre appareil a déjà envoyé son carnet (${a.nServeur||0} recette${a.nServeur>1?"s":""}). Cet appareil en a ${a.nLocal||0}. Que veux-tu faire ?</p>
     <button class="btn" data-act="syncChoix:fusion">Réunir les deux carnets</button>
@@ -1414,7 +1433,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1429,6 +1448,8 @@ document.addEventListener("click",e=>{
   if(d.tourner){tourner(+d.tourner);return}
   if(d.filtreAcc){filtreContenant="";recherche="";rendre();document.querySelector(".grille")?.scrollIntoView({behavior:"smooth",block:"start"});return}
   if(d.questionMel){demanderMel(d.questionMel);return}
+  if(d.corriger){const i=+d.corriger,q=(D.discussion||[]).slice(0,i).reverse().find(m=>m.role==="user");calque={correction:{idx:i,question:q?q.content:""}};history.pushState({vue,id:courant,calque:1},"");rendreCalque();return}
+  if(d.oublier){demander("Oublier cette correction ?","Mel ne s’en servira plus pour te répondre.",{oui:"Oublier",danger:true}).then(v=>{if(v){D.notes=(D.notes||[]).filter(n=>n.id!==d.oublier);sauver();rendre()}});return}
   if(d.selPdf){const l=calque&&calque.choixPdf;if(l){const i=l.indexOf(d.selPdf);if(i>=0)l.splice(i,1);else l.push(d.selPdf);rendreCalque()}return}
   if(d.imageMel){const[i,q]=d.imageMel.split(":");actionImageMel(+i,q);return}
   if(d.photoRecette){const r=R(d.photoRecette),img=calque&&calque.choixRecette&&calque.choixRecette.image;if(r&&img){r.photo=img;r.maj=new Date().toISOString();sauver();fermerCalque();rendre();toast(`Photo ajoutée à « ${r.nom} »`)}return}
@@ -1518,6 +1539,9 @@ document.addEventListener("change",async e=>{
 });
 document.addEventListener("submit",e=>{
   e.preventDefault();
+  if(e.target.id==="fCorrection"){const t=document.getElementById("texteCorrection").value.trim();if(!t)return;const c=calque.correction;
+    D.notes=D.notes||[];D.notes.push({id:nouvelId(),nom:t.slice(0,60),texte:t,date:new Date().toISOString()});
+    const m=D.discussion&&D.discussion[c.idx];if(m)m.corrige=true;sauver();fermerCalque();majMel();toast("Merci Mel, je m’en souviendrai !");return}
   if(e.target.id==="fMel"){const z=document.getElementById("questionMel");const q=z.value;z.value="";if(ecoute)ecoute.stop();demanderMel(q);return}
   if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}melErreur="";majMel();planifierSync(200);return}
   if(e.target.id==="fCodeSync"||e.target.id==="fCodeSyncReglages"){const v=(document.getElementById("codeSync")||document.getElementById("codeSyncR")).value.trim();if(!v)return;try{localStorage.setItem("carnet.codeMel",v)}catch(x){}syncEtat.codeRequis=false;rendreSyncBandeau();synchroniser();return}
@@ -1556,7 +1580,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.9";
+const VERSION="3.0";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
