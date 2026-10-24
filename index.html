@@ -293,6 +293,10 @@ nav.haut .ico-mel{width:22px;height:22px}
 .saisie label.rond{cursor:pointer}.saisie label.desactive{opacity:.35;cursor:not-allowed}
 .choix-recettes{display:flex;flex-wrap:wrap;gap:8px}
 /* Pastille et volet de Mel */
+/* Espace en bas de chaque page : les derniers boutons passent au-dessus de la pastille de Mel */
+main{padding-bottom:110px}
+:root[data-mode="site"] main{padding-bottom:110px}
+:root.plein main{padding-bottom:0}
 .pastille-mel{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:6;border:0;background:var(--carte);border-radius:999px;padding:4px 14px 4px 4px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 6px 18px rgba(70,40,20,.35),0 0 0 2px var(--cafe);font-weight:700;color:var(--cafe);font-family:var(--f-main);font-size:1.35rem}
 .pastille-mel img{width:52px;height:52px;border-radius:50%}
 :root[data-mode="site"] .pastille-mel{bottom:24px;right:max(18px,calc((100% - 1240px)/2 + 24px))}
@@ -1215,7 +1219,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.1";
+const VERSION="1.2";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

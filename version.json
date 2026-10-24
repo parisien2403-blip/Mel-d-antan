@@ -1,9 +1,8 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "date": "2026-10-24",
   "notes": [
-    "Envoie une photo de ta bougie à Mel : elle la regarde et te conseille",
-    "Demande à Mel de dessiner une idée de bougie",
-    "Mel calcule mieux les quantités de parfum"
+    "La pastille de Mel ne cache plus les boutons en bas des pages",
+    "Mel regarde tes photos et dessine des idées de bougies"
   ]
 }
