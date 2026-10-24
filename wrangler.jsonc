@@ -1,0 +1,15 @@
+// Déploiement Cloudflare (Workers) : l'appli (fichiers du dépôt) + Mel (worker.js, /api/mel).
+// Cloudflare le redéploie tout seul depuis GitHub à chaque envoi sur main.
+// Secrets facultatifs (Workers › mel-dantan › Paramètres › Variables et secrets) :
+//   ANTHROPIC_API_KEY  Mel répond avec Claude (sinon avec l'IA gratuite de Cloudflare)
+//   CODE_MEL           code demandé une fois par l'appli avant de parler à Mel
+{
+  "name": "mel-dantan",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": { "directory": "./", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "ai": { "binding": "AI" },
+  "observability": { "enabled": true }
+}

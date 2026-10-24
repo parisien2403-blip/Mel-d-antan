@@ -203,6 +203,42 @@ nav.haut button.on{background:var(--cafe);color:var(--carte)}
 :root[data-mode="site"] .toast{bottom:28px}
 :root[data-mode="site"] .grille{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px}
 :root[data-mode="site"] .livre{--h:max(420px,calc(100dvh - 240px))}
+/* Mel, l'assistante */
+.ico-mel{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1.5px currentColor;flex:none}
+nav.haut .ico-mel{width:22px;height:22px}
+.mel-page{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:22px;align-items:start}
+.mel-carte{background:linear-gradient(180deg,#faf3e4,#ead8b8);border-radius:18px;padding:16px 16px 0;text-align:center;position:sticky;top:80px;overflow:hidden;box-shadow:var(--ombre)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mel-carte{background:linear-gradient(180deg,#3a2c23,#2a201b)}}
+:root[data-theme="dark"] .mel-carte{background:linear-gradient(180deg,#3a2c23,#2a201b)}
+.mel-carte img{width:100%;max-width:260px;display:block;margin:10px auto 0}
+.mel-carte h2{font-family:var(--f-main);font-size:2.4rem;font-weight:500;color:var(--cafe);line-height:1}
+.mel-carte p{margin:6px 0 0;color:var(--doux);font-size:.9rem}
+.mel-bandeau{display:none;align-items:center;gap:12px;margin-bottom:12px}
+.mel-bandeau img{width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 2px var(--cafe)}
+.mel-bandeau b{font-family:var(--f-main);font-size:1.8rem;font-weight:500;color:var(--cafe);display:block;line-height:1}
+:root[data-mode="appli"] .mel-page{grid-template-columns:1fr}
+:root[data-mode="appli"] .mel-carte{display:none}
+:root[data-mode="appli"] .mel-bandeau{display:flex}
+@media (max-width:720px){.mel-page{grid-template-columns:1fr}.mel-carte{display:none}.mel-bandeau{display:flex}}
+.fil{display:flex;flex-direction:column;gap:12px;min-height:200px}
+.bulle{max-width:min(620px,88%);padding:10px 14px;border-radius:18px;line-height:1.5;word-wrap:break-word;overflow-wrap:anywhere}
+.bulle p{margin:0 0 6px}.bulle p:last-child{margin:0}.bulle ul{margin:4px 0 6px;padding-left:20px}
+.de-moi{align-self:flex-end;background:var(--cafe);color:var(--carte);border-bottom-right-radius:6px}
+.de-mel{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:min(680px,94%)}
+.de-mel>img{width:34px;height:34px;border-radius:50%;flex:none;box-shadow:0 0 0 1px var(--ligne)}
+.de-mel .bulle{background:var(--carte);border:1px solid var(--ligne);border-bottom-left-radius:6px;max-width:100%}
+.reflechit span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--doux);margin-right:4px;animation:pt 1.2s infinite}
+.reflechit span:nth-child(2){animation-delay:.2s}.reflechit span:nth-child(3){animation-delay:.4s}
+@keyframes pt{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.proposition{margin-top:10px;border:1.5px dashed var(--cafe);border-radius:14px;padding:10px;display:flex;gap:10px;align-items:center;background:var(--fond)}
+.proposition svg{height:90px;flex:none}
+.proposition b{display:block;font-family:var(--f-titre)}
+.saisie{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--fond);padding:10px 0 6px;display:flex;gap:8px;align-items:flex-end;z-index:3}
+:root[data-mode="site"] .saisie{bottom:0}
+.saisie textarea{min-height:46px;max-height:160px;resize:none;border-radius:22px;padding:11px 16px;flex:1}
+.saisie .rond{width:46px;height:46px;font-size:1.15rem}
+.btn.rond.ecoute{background:var(--alerte);color:#fff;box-shadow:0 0 0 4px rgba(181,86,47,.25)}
+.mel-outils{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:8px}
 /* Livre en plein écran : rien d'autre que le livre, sur fond sombre */
 :root.plein header,:root.plein nav.bas{display:none}
 :root.plein body{padding:0;background:radial-gradient(circle at 50% 40%,#4a2e1d,#1e130c 75%)}
@@ -425,19 +461,20 @@ const ICO_MODE={appli:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d=
 
 function nav(){
   const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
-  const onglets=[["recettes","Recettes"],["livre","Mon livre"],["inventaire","Inventaire"],["sauvegarde","Réglages"]];
-  document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
-  document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg><span>${l}</span></button>`).join("");
+  const onglets=[["recettes","Recettes"],["livre","Mon livre"],["mel","Mel"],["inventaire","Inventaire"],["sauvegarde","Réglages"]];
+  const icone=k=>k==="mel"?`<img class="ico-mel" src="mel-avatar.png" alt="">`:`<svg viewBox="0 0 24 24">${ICO[k]}</svg>`;
+  document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}${l}</button>`).join("");
+  document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}<span>${l}</span></button>`).join("");
   const autre=modeActuel()==="site"?"appli":"site";
   const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
-  const titres={recettes:"Mel d’antan",livre:"Mon livre",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  const titres={recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
   document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
 }
 function rendre(){
   nav();
   const a=document.getElementById("app");
-  a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
+  a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
   rendreCalque();
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
@@ -694,6 +731,115 @@ function ouvrirFichierPdf(){
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
 }
 
+/* ---------- Mel, l'assistante : elle connaît le carnet et répond par l'IA (serveur Cloudflare, /api/mel) ---------- */
+let melEtat=null,melAttente=false,melTexte="",melErreur="",ecoute=null;
+const MEL_SUGGESTIONS=["Qu’est-ce qui me manque en stock pour couler 3 café liégeois ?","À quelle température je coule une chantilly ?","Combien de parfum pour 500 g de cire de soja ?","Invente-moi une bougie tiramisu en verrine","Quelle mèche pour un pot de yaourt en verre ?","Pourquoi ma bougie fait un trou au milieu ?"];
+const codeMel=()=>{try{return localStorage.getItem("carnet.codeMel")||""}catch(e){return""}};
+const voixMel=()=>{try{return localStorage.getItem("carnet.voixMel")==="1"}catch(e){return false}};
+async function verifierMel(){
+  try{const r=await fetch("api/mel/etat",{cache:"no-store"});melEtat=r.ok?await r.json():{absent:true}}catch(e){melEtat={absent:true,horsLigne:!navigator.onLine}}
+  if(vue==="mel")rendre();
+}
+// Ce que Mel sait du carnet : inventaire et recettes en texte (sans les photos)
+function contexteCarnet(){
+  const unite=p=>(UNITES.find(u=>u[0]===p.unite)||[,""])[1];
+  const inv=D.produits.map(p=>`- ${p.nom} (${libType(p.type).toLowerCase()}, en ${unite(p)})${p.stock!=null&&p.stock!==""?` : stock ${nb(+p.stock)} ${unite(p)}${p.alerte!=null&&p.alerte!==""?`, alerte sous ${nb(+p.alerte)}`:""}`:" : stock non suivi"}${p.note?` · ${p.note}`:""}`).join("\n");
+  const recs=D.recettes.map(r=>`## ${r.nom}${r.approuve?" (approuvée)":""}\nContenant : ${CONTENANTS[r.contenant]?.nom||r.contenant}, rempli à ${r.remplissage??88} %. Notée le ${(r.cree||"").slice(0,10)}.\n`+
+    r.couches.map((c,i)=>`Couche ${i+1} (du bas) « ${c.nom||"sans nom"} », aspect ${(TEXTURES.find(t=>t[0]===c.texture)||[,"lisse"])[1].toLowerCase()} : ${c.ingredients.filter(x=>x.produit).map(x=>phrase(+x.q||0,P(x.produit))).join(" ; ")||"aucun produit"}.`).join("\n")+
+    (r.notes?`\nNotes : ${r.notes}`:"")).join("\n\n");
+  return `Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
+}
+// Mise en forme simple des réponses : gras, listes, paragraphes ; la fiche de recette proposée devient une carte
+function formeMel(t,enCours){
+  let fiche=null;const m=t.match(/```recette\s*([\s\S]*?)(```|$)/);
+  if(m){t=t.slice(0,m.index).trim();if(m[2])try{fiche=JSON.parse(m[1])}catch(e){fiche=null}}
+  const blocs=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split(/\n{2,}/).map(b=>{
+    const l=b.split("\n");
+    if(l.every(x=>/^\s*([-•*]|\d+[.)])\s+/.test(x)))return`<ul>${l.map(x=>`<li>${x.replace(/^\s*([-•*]|\d+[.)])\s+/,"")}</li>`).join("")}</ul>`;
+    return`<p>${l.join("<br>")}</p>`}).join("");
+  let carte="";
+  if(m&&enCours&&!m[2])carte=`<div class="proposition"><span class="reflechit"><span></span><span></span><span></span></span> Mel prépare la fiche…</div>`;
+  else if(fiche&&Array.isArray(fiche.couches)){const apercu={contenant:CONTENANTS[fiche.contenant]?fiche.contenant:"verrine",remplissage:fiche.remplissage||85,couches:fiche.couches.map(c=>({nom:c.nom,couleur:/^#[0-9a-f]{6}$/i.test(c.couleur||"")?c.couleur:"",texture:c.texture,ingredients:[]}))};
+    carte=`<div class="proposition">${dessin(apercu,{mini:true})}<div style="flex:1"><b>${esc(fiche.nom||"Nouvelle recette")}</b><small class="aide" style="margin:0">${esc(CONTENANTS[apercu.contenant].nom)} · ${fiche.couches.length} couche${fiche.couches.length>1?"s":""}</small><div style="margin-top:8px"><button class="btn petit" data-fiche-mel="${encodeURIComponent(JSON.stringify(fiche))}">Ouvrir dans l’éditeur</button></div></div></div>`}
+  return blocs+carte;
+}
+const sansAccent=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+// Fiche proposée par Mel → brouillon dans l'éditeur ; les produits absents sont ajoutés à l'inventaire
+function ouvrirFicheMel(f){
+  const types=TYPES.map(t=>t[0]),unites=UNITES.map(u=>u[0]),textures=TEXTURES.map(t=>t[0]);let nouveaux=0;
+  const produit=x=>{const n=sansAccent(x.produit);let p=D.produits.find(q=>sansAccent(q.nom)===n);
+    if(!p&&x.produit){p={id:nouvelId(),nom:String(x.produit).slice(0,60),type:types.includes(x.type)?x.type:"autre",unite:unites.includes(x.unite)?x.unite:"g",couleur:"",stock:null,alerte:null,note:"Ajouté par Mel"};D.produits.push(p);nouveaux++}
+    return p?p.id:""};
+  brouillon={...recetteVide(),nom:String(f.nom||"").slice(0,80),contenant:CONTENANTS[f.contenant]?f.contenant:"verrine",remplissage:Math.max(30,Math.min(100,+f.remplissage||85)),notes:String(f.notes||"").slice(0,3000),
+    couches:(f.couches||[]).slice(0,8).map(c=>({nom:String(c.nom||"").slice(0,40),couleur:/^#[0-9a-f]{6}$/i.test(c.couleur||"")?c.couleur:"",texture:textures.includes(c.texture)?c.texture:"lisse",
+      ingredients:(c.ingredients||[]).slice(0,12).map(x=>({produit:produit(x),q:+x.q||""}))}))};
+  if(!brouillon.couches.length)brouillon.couches=recetteVide().couches;
+  instantane="";if(nouveaux)sauver();aller("editer");
+  toast(nouveaux?`Fiche ouverte · ${nouveaux} produit${nouveaux>1?"s":""} ajouté${nouveaux>1?"s":""} à l’inventaire`:"Fiche ouverte : vérifie et enregistre");
+}
+function bulleMel(t,enCours){return`<div class="de-mel"><img src="mel-avatar.png" alt="Mel"><div class="bulle">${t?formeMel(t,enCours):`<span class="reflechit" aria-label="Mel réfléchit"><span></span><span></span><span></span></span>`}</div></div>`}
+function vMel(){
+  if(!melEtat){verifierMel();}
+  const fil=D.discussion||[];
+  const carte=`<aside class="mel-carte"><h2>Mel</h2><p>Ton assistante d’atelier</p><img src="mel.webp" alt="Mel, la mascotte, en tablier Mel d’antan"></aside>`;
+  const bandeau=`<div class="mel-bandeau"><img src="mel-avatar.png" alt="Mel"><div><b>Mel</b><span class="aide" style="margin:0">Ton assistante d’atelier</span></div></div>`;
+  let corps;
+  if(!melEtat)corps=`<p class="aide">Mel arrive…</p>`;
+  else if(melEtat.absent)corps=`<div class="carte"><p style="margin-top:0"><b>${melEtat.horsLigne?"Pas d’internet pour le moment.":"Mel n’est pas encore branchée ici."}</b></p><p class="aide">${melEtat.horsLigne?"Mel a besoin d’internet pour répondre. Le reste du carnet marche sans.":"Mel répond depuis la version de l’appli hébergée sur Cloudflare (adresse en …workers.dev). Ouvre l’appli à cette adresse pour lui parler."}</p></div>`;
+  else if(!melEtat.actif)corps=`<div class="carte"><p class="aide" style="margin:0">Mel n’a pas encore d’IA : active Workers AI ou ajoute la clé ANTHROPIC_API_KEY dans Cloudflare.</p></div>`;
+  else if(melEtat.code&&!codeMel())corps=`<form class="carte" id="fCodeMel"><p style="margin-top:0">Bonjour Mel ! Pour que je sois rien qu’à toi, tape ton code une seule fois.</p><div class="ligne"><input type="password" id="codeMel" placeholder="Code de Mel" autocomplete="current-password" style="flex:1"><button class="btn">Entrer</button></div>${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</form>`;
+  else{
+    const msgs=fil.map(m=>m.role==="user"?`<div class="bulle de-moi">${esc(m.content).replace(/\n/g,"<br>")}</div>`:bulleMel(m.content,false)).join("");
+    corps=`<div class="mel-outils">${"speechSynthesis" in window?`<button class="btn leger petit" data-act="voixMel">${voixMel()?"🔊 Mel parle":"🔈 Mel se tait"}</button>`:""}${fil.length?`<button class="btn leger petit" data-act="effacerMel">Nouvelle conversation</button>`:""}</div>
+     <div class="fil" id="fil">${fil.length?"":bulleMel(`Bonjour Mel ! Je connais tout ton carnet : ${D.recettes.length} recette${D.recettes.length>1?"s":""} et ${D.produits.length} produit${D.produits.length>1?"s":""}. Demande-moi une quantité, une température, ce qui te manque en stock, ou une idée de nouvelle bougie.`,false)}${msgs}${melAttente?`<div id="enCours">${bulleMel(melTexte,true)}</div>`:""}
+     ${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</div>
+     ${!fil.length||!melAttente?`<div class="puces" style="margin-top:14px">${MEL_SUGGESTIONS.map(q=>`<button class="puce" data-question-mel="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
+     <form class="saisie" id="fMel"><textarea id="questionMel" rows="1" placeholder="Pose ta question à Mel…" maxlength="4000" ${melAttente?"disabled":""}></textarea>
+      ${ecouteDispo()?`<button type="button" class="btn leger rond ${ecoute?"ecoute":""}" data-act="dicter" aria-label="Dicter ma question">🎤</button>`:""}<button class="btn rond" aria-label="Envoyer" ${melAttente?"disabled":""}>➤</button></form>`;
+  }
+  return `<div class="mel-page">${carte}<div>${bandeau}${corps}</div></div>`;
+}
+const Reco=window.SpeechRecognition||window.webkitSpeechRecognition;
+const ecouteDispo=()=>!!Reco;
+function dicter(){
+  if(ecoute){ecoute.stop();return}
+  const z=document.getElementById("questionMel");const debut=z?z.value:"";
+  try{ecoute=new Reco();ecoute.lang="fr-FR";ecoute.interimResults=true;ecoute.continuous=false;
+    ecoute.onresult=e=>{const t=[...e.results].map(x=>x[0].transcript).join("");const zz=document.getElementById("questionMel");if(zz)zz.value=(debut?debut+" ":"")+t};
+    ecoute.onend=()=>{ecoute=null;const zz=document.getElementById("questionMel");const v=zz?zz.value:"";rendre();const n=document.getElementById("questionMel");if(n){n.value=v;n.focus()}};
+    ecoute.onerror=e=>{if(e.error==="not-allowed")toast("Autorise le micro pour dicter à Mel")};
+    ecoute.start();rendre();
+  }catch(e){ecoute=null;toast("La dictée n’est pas disponible ici")}
+}
+function parler(t){
+  if(!voixMel()||!("speechSynthesis" in window))return;
+  const propre=t.replace(/```recette[\s\S]*$/,"").replace(/\*\*/g,"").replace(/^\s*[-•*]\s+/gm,"").trim();if(!propre)return;
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(propre);u.lang="fr-FR";u.rate=1.02;
+  const v=speechSynthesis.getVoices().find(x=>/^fr/i.test(x.lang)&&/female|amelie|audrey|marie|julie|léa|lea|google/i.test(x.name))||speechSynthesis.getVoices().find(x=>/^fr/i.test(x.lang));if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+const finFil=()=>{const f=document.getElementById("enCours")||document.getElementById("fil");if(f)f.lastElementChild?.scrollIntoView({block:"end",behavior:"smooth"})};
+async function demanderMel(question){
+  question=question.trim();if(!question||melAttente)return;
+  D.discussion=D.discussion||[];D.discussion.push({role:"user",content:question,date:new Date().toISOString()});
+  melAttente=true;melTexte="";melErreur="";sauver();rendre();finFil();
+  try{
+    const r=await fetch("api/mel",{method:"POST",headers:{"content-type":"application/json","x-code-mel":codeMel()},
+      body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content})=>({role,content})),contexte:contexteCarnet()})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));if(e.code){try{localStorage.removeItem("carnet.codeMel")}catch(x){}}throw new Error(e.erreur||"Mel ne répond pas pour le moment.")}
+    const lecteur=r.body.getReader(),dec=new TextDecoder();let prevu=false;
+    for(;;){const{done,value}=await lecteur.read();if(done)break;melTexte+=dec.decode(value,{stream:true});
+      if(!prevu){prevu=true;requestAnimationFrame(()=>{prevu=false;const z=document.getElementById("enCours");if(z){z.innerHTML=bulleMel(melTexte,true);finFil()}})}}
+    melTexte+=dec.decode();
+    if(melTexte.trim()){D.discussion.push({role:"assistant",content:melTexte,date:new Date().toISOString()});parler(melTexte)}
+  }catch(e){melErreur=e.message||"Mel ne répond pas pour le moment.";D.discussion.pop()}
+  finally{
+    if(D.discussion.length>80)D.discussion=D.discussion.slice(-80);
+    melAttente=false;melTexte="";sauver();
+    if(vue==="mel"){const q=melErreur?question:"";rendre();finFil();const z=document.getElementById("questionMel");if(z&&q)z.value=q}
+  }
+}
+
 /* ---------- Écran : inventaire ---------- */
 function vInventaire(){
   return `<div class="ligne" style="justify-content:space-between;margin-bottom:6px"><p class="aide" style="margin:0;flex:1;min-width:200px">Vos cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand vous coulez une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
@@ -742,7 +888,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-question-mel],[data-fiche-mel],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -753,6 +899,8 @@ document.addEventListener("click",e=>{
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}
   if(d.tourner){tourner(+d.tourner);return}
+  if(d.questionMel){demanderMel(d.questionMel);return}
+  if(d.ficheMel){try{ouvrirFicheMel(JSON.parse(decodeURIComponent(d.ficheMel)))}catch(x){toast("Cette fiche est illisible : demande à Mel de la refaire")}return}
   if(d.livreAller){allerPage(+d.livreAller);return}
   if(d.livreFiltre){livreFiltre=d.livreFiltre;lp=0;rendre();return}
   if(d.filtre!==undefined){filtreContenant=d.filtre;rendre();return}
@@ -791,12 +939,16 @@ document.addEventListener("click",e=>{
   else if(act==="pdfLivre"){const recs=recettesLivre();if(!recs.length){toast("Aucune recette dans le livre");return}fairePdf(recs,true,`mel-dantan-livre-de-recettes.pdf`,"Mon livre de recettes · Mel d’antan")}
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
+  else if(act==="dicter")dicter();
+  else if(act==="voixMel"){try{localStorage.setItem("carnet.voixMel",voixMel()?"0":"1")}catch(x){}if(!voixMel()&&"speechSynthesis" in window)speechSynthesis.cancel();rendre()}
+  else if(act==="effacerMel"){if(confirm("Effacer la conversation avec Mel ?")){D.discussion=[];melErreur="";sauver();rendre()}}
   else if(act==="quitterPlein")quitterPlein();
   else if(act==="pdfOuvrir")ouvrirFichierPdf();
   else if(act==="installer")installer();
 });
 document.addEventListener("input",e=>{
   const t=e.target;
+  if(t.id==="questionMel"){t.style.height="auto";t.style.height=Math.min(160,t.scrollHeight)+"px";return}
   if(t.id==="recherche"){recherche=t.value;const pos=t.selectionStart;rendre();const n=document.getElementById("recherche");n.focus();n.setSelectionRange(pos,pos);return}
   if(t.dataset.b&&brouillon){let v=t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}fixer(brouillon,t.dataset.b,v);majApercu()}
 });
@@ -810,7 +962,10 @@ document.addEventListener("change",async e=>{
   if(t.id==="importer"&&t.files[0])importer(t.files[0]);
 });
 document.addEventListener("submit",e=>{
-  e.preventDefault();if(e.target.id!=="fProduit")return;
+  e.preventDefault();
+  if(e.target.id==="fMel"){const z=document.getElementById("questionMel");const q=z.value;z.value="";if(ecoute)ecoute.stop();demanderMel(q);return}
+  if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}rendre();return}
+  if(e.target.id!=="fProduit")return;
   const g=id=>document.getElementById(id).value;
   const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim()};
   if(!p.nom)return;
@@ -819,7 +974,10 @@ document.addEventListener("submit",e=>{
   if(retour&&brouillon){brouillon.couches[retour.i].ingredients[retour.j].produit=p.id}
   const y=scrollY;rendre();scrollTo(0,y);toast("Produit enregistré");
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque();else if(e.key==="Escape"&&pleinLivre)quitterPlein();
+document.addEventListener("keydown",e=>{
+  // Entrée envoie la question à Mel (Maj + Entrée pour aller à la ligne)
+  if(e.key==="Enter"&&!e.shiftKey&&e.target.id==="questionMel"){e.preventDefault();document.getElementById("fMel").requestSubmit();return}
+  if(e.key==="Escape"&&calque)fermerCalque();else if(e.key==="Escape"&&pleinLivre)quitterPlein();
   if(vue==="livre"&&!calque&&(e.key==="ArrowRight"||e.key==="ArrowLeft"))tourner(e.key==="ArrowRight"?1:-1)});
 // Le petit sélecteur de couleur prend aussi la couleur choisie pour « Utiliser cette couleur »
 document.addEventListener("input",e=>{if(e.target.id==="pCouleur")document.getElementById("pAvecCouleur").checked=true});
@@ -832,7 +990,7 @@ function exporter(){
 async function importer(file){
   try{const o=JSON.parse(await file.text());if(!o||o.app!=="carnet-bougies"||!Array.isArray(o.recettes)||!Array.isArray(o.produits))throw 0;
     if(!confirm(`Remplacer le carnet actuel par cette sauvegarde (${o.recettes.length} recettes, ${o.produits.length} produits) ?`))return;
-    D={produits:o.produits,recettes:o.recettes};sauver();rendre();toast("Sauvegarde restaurée")}
+    D={produits:o.produits,recettes:o.recettes,discussion:Array.isArray(o.discussion)?o.discussion:[]};sauver();rendre();toast("Sauvegarde restaurée")}
   catch(x){toast("Ce fichier n’est pas une sauvegarde du carnet")}
 }
 
