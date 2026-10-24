@@ -249,6 +249,29 @@ nav.haut .ico-mel{width:22px;height:22px}
 .saisie .rond{width:46px;height:46px;font-size:1.15rem}
 .btn.rond.ecoute{background:var(--alerte);color:#fff;box-shadow:0 0 0 4px rgba(181,86,47,.25)}
 .mel-outils{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:8px}
+/* Pastille et volet de Mel */
+.pastille-mel{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:6;border:0;background:var(--carte);border-radius:999px;padding:4px 14px 4px 4px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 6px 18px rgba(70,40,20,.35),0 0 0 2px var(--cafe);font-weight:700;color:var(--cafe);font-family:var(--f-main);font-size:1.35rem}
+.pastille-mel img{width:52px;height:52px;border-radius:50%}
+:root[data-mode="site"] .pastille-mel{bottom:24px;right:max(18px,calc((100% - 1240px)/2 + 24px))}
+.flottant{right:150px}
+:root[data-mode="site"] .flottant{right:max(150px,calc((100% - 1240px)/2 + 156px))}
+.voile-mel{position:fixed;inset:0;z-index:18;background:rgba(30,15,8,.35);animation:apparait .25s}
+.volet-mel{position:fixed;z-index:19;background:var(--fond);display:flex;flex-direction:column;box-shadow:0 0 30px rgba(40,20,10,.4);animation:monte .3s cubic-bezier(.2,.8,.3,1)}
+:root[data-mode="site"] .volet-mel{top:0;right:0;bottom:0;width:min(460px,100%);animation-name:glisse}
+:root[data-mode="appli"] .volet-mel{left:0;right:0;bottom:0;height:min(86dvh,900px);border-radius:22px 22px 0 0}
+@keyframes monte{from{transform:translateY(100%)}to{transform:none}}
+@keyframes glisse{from{transform:translateX(100%)}to{transform:none}}
+@keyframes apparait{from{opacity:0}to{opacity:1}}
+.volet-mel>header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--ligne);background:var(--tete)}
+.volet-mel>header img{width:46px;height:46px;border-radius:50%;box-shadow:0 0 0 2px var(--cafe)}
+.volet-mel>header div{flex:1;min-width:0}
+.volet-mel>header b{font-family:var(--f-main);font-size:1.6rem;font-weight:500;color:var(--cafe);display:block;line-height:1}
+.volet-mel>header small{color:var(--doux);font-size:.78rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.volet-corps{flex:1;overflow:auto;padding:12px 14px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
+.volet-corps .fil{flex:1;min-height:0}
+.volet-corps .saisie{position:sticky;bottom:0;margin-top:auto}
+.volet-corps .bulle{max-width:92%}
+.volet-corps .puces .puce{font-size:.85rem}
 /* Livre en plein écran : rien d'autre que le livre, sur fond sombre */
 :root.plein header,:root.plein nav.bas{display:none}
 :root.plein body{padding:0;background:radial-gradient(circle at 50% 40%,#4a2e1d,#1e130c 75%)}
@@ -282,6 +305,7 @@ nav.haut .ico-mel{width:22px;height:22px}
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
+<div id="voletMel"></div>
 <script>
 "use strict";
 /* ---------- Données : tout reste sur l'appareil (IndexedDB), avec sauvegarde en fichier ---------- */
@@ -485,12 +509,13 @@ function rendre(){
   nav();
   const a=document.getElementById("app");
   a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
-  rendreCalque();
+  rendreCalque();rendreVolet();
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
 addEventListener("popstate",e=>{
   if(calque){calque=null;rendreCalque();return}
   if(pleinLivre&&!(e.state&&e.state.plein)){quitterPlein(false);return}
+  if(voletMel&&!(e.state&&e.state.volet)){fermerVolet(false);return}
   const s=e.state||{vue:"recettes"};
   if(s.vue===vue&&s.id===courant)return;
   if(vue==="editer"&&brouillon&&modifie()&&!confirm("Quitter sans enregistrer les changements ?")){history.pushState({vue,id:courant},"");return}
@@ -756,7 +781,7 @@ const codeMel=()=>{try{return localStorage.getItem("carnet.codeMel")||""}catch(e
 const voixMel=()=>{try{return localStorage.getItem("carnet.voixMel")==="1"}catch(e){return false}};
 async function verifierMel(){
   try{const r=await fetch("api/mel/etat",{cache:"no-store"});melEtat=r.ok?await r.json():{absent:true}}catch(e){melEtat={absent:true,horsLigne:!navigator.onLine}}
-  if(vue==="mel")rendre();
+  majMel();
 }
 // Ce que Mel sait du carnet : inventaire et recettes en texte (sans les photos)
 function contexteCarnet(){
@@ -784,6 +809,7 @@ function formeMel(t,enCours){
 const sansAccent=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 // Fiche proposée par Mel → brouillon dans l'éditeur ; les produits absents sont ajoutés à l'inventaire
 function ouvrirFicheMel(f){
+  if(voletMel){voletMel=false;rendreVolet();if(history.state&&history.state.volet)history.replaceState({vue,id:courant},"")}
   const types=TYPES.map(t=>t[0]),unites=UNITES.map(u=>u[0]),textures=TEXTURES.map(t=>t[0]);let nouveaux=0;
   const produit=x=>{const n=sansAccent(x.produit);let p=D.produits.find(q=>sansAccent(q.nom)===n);
     if(!p&&x.produit){p={id:nouvelId(),nom:String(x.produit).slice(0,60),type:types.includes(x.type)?x.type:"autre",unite:unites.includes(x.unite)?x.unite:"g",couleur:"",stock:null,alerte:null,note:"Ajouté par Mel"};D.produits.push(p);nouveaux++}
@@ -796,11 +822,9 @@ function ouvrirFicheMel(f){
   toast(nouveaux?`Fiche ouverte · ${nouveaux} produit${nouveaux>1?"s":""} ajouté${nouveaux>1?"s":""} à l’inventaire`:"Fiche ouverte : vérifie et enregistre");
 }
 function bulleMel(t,enCours){return`<div class="de-mel"><img src="mel-avatar.png" alt="Mel"><div class="bulle">${t?formeMel(t,enCours):`<span class="reflechit" aria-label="Mel réfléchit"><span></span><span></span><span></span></span>`}</div></div>`}
-function vMel(){
+function corpsMel(volet){
   if(!melEtat){verifierMel();}
   const fil=D.discussion||[];
-  const carte=`<aside class="mel-carte"><h2>Mel</h2><p>Ton assistante d’atelier</p><img src="mel.webp" alt="Mel, la mascotte, en tablier Mel d’antan"></aside>`;
-  const bandeau=`<div class="mel-bandeau"><img src="mel-avatar.png" alt="Mel"><div><b>Mel</b><span class="aide" style="margin:0">Ton assistante d’atelier</span></div></div>`;
   let corps;
   if(!melEtat)corps=`<p class="aide">Mel arrive…</p>`;
   else if(melEtat.absent)corps=`<div class="carte"><p style="margin-top:0"><b>${melEtat.horsLigne?"Pas d’internet pour le moment.":"Mel n’est pas encore branchée ici."}</b></p><p class="aide">${melEtat.horsLigne?"Mel a besoin d’internet pour répondre. Le reste du carnet marche sans.":"Mel répond depuis la version de l’appli hébergée sur Cloudflare (adresse en …workers.dev). Ouvre l’appli à cette adresse pour lui parler."}</p></div>`;
@@ -811,12 +835,55 @@ function vMel(){
     corps=`<div class="mel-outils">${"speechSynthesis" in window?`<button class="btn leger petit" data-act="voixMel">${voixMel()?"🔊 Mel parle":"🔈 Mel se tait"}</button>`:""}${fil.length?`<button class="btn leger petit" data-act="effacerMel">Nouvelle conversation</button>`:""}</div>
      <div class="fil" id="fil">${fil.length?"":bulleMel(`Bonjour Mel ! Je connais tout ton carnet : ${D.recettes.length} recette${D.recettes.length>1?"s":""} et ${D.produits.length} produit${D.produits.length>1?"s":""}. Demande-moi une quantité, une température, ce qui te manque en stock, ou une idée de nouvelle bougie.`,false)}${msgs}${melAttente?`<div id="enCours">${bulleMel(melTexte,true)}</div>`:""}
      ${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</div>
-     ${!fil.length||!melAttente?`<div class="puces" style="margin-top:14px">${MEL_SUGGESTIONS.map(q=>`<button class="puce" data-question-mel="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
+     ${!melAttente?`<div class="puces" style="margin-top:14px">${suggestionsMel(volet).map(q=>`<button class="puce" data-question-mel="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
      <form class="saisie" id="fMel"><textarea id="questionMel" rows="1" placeholder="Pose ta question à Mel…" maxlength="4000" ${melAttente?"disabled":""}></textarea>
       ${ecouteDispo()?`<button type="button" class="btn leger rond ${ecoute?"ecoute":""}" data-act="dicter" aria-label="Dicter ma question">🎤</button>`:""}<button class="btn rond" aria-label="Envoyer" ${melAttente?"disabled":""}>➤</button></form>`;
   }
-  return `<div class="mel-page">${carte}<div>${bandeau}${corps}</div></div>`;
+  return corps;
 }
+function vMel(){
+  const carte=`<aside class="mel-carte"><h2>Mel</h2><p>Ton assistante d’atelier</p><img src="mel.webp" alt="Mel, la mascotte, en tablier Mel d’antan"></aside>`;
+  const bandeau=`<div class="mel-bandeau"><img src="mel-avatar.png" alt="Mel"><div><b>Mel</b><span class="aide" style="margin:0">Ton assistante d’atelier</span></div></div>`;
+  return `<div class="mel-page">${carte}<div>${bandeau}${corpsMel(false)}</div></div>`;
+}
+// Ce que Mel a sous les yeux : la page ouverte (recette, éditeur, inventaire…), pour des réponses et suggestions à propos
+function pageCourante(){
+  const r=vue==="voir"?R(courant):null;
+  if(r)return`Mel a ouvert la fiche de la recette « ${r.nom} » (quantités affichées pour ${nb(mult)} bougie${mult>1?"s":""}).`;
+  if(vue==="editer"&&brouillon){const b=brouillon;return`Mel est en train d’écrire la recette « ${b.nom||"sans nom"} » (pas encore enregistrée) : ${CONTENANTS[b.contenant]?.nom}, `+b.couches.map((c,i)=>`couche ${i+1} « ${c.nom||"sans nom"} » : ${c.ingredients.filter(x=>x.produit).map(x=>phrase(+x.q||0,P(x.produit))).join(" ; ")||"vide"}`).join(" / ")+(b.notes?`. Notes : ${b.notes}`:"")+"."}
+  return{recettes:"Mel regarde la liste de ses recettes.",livre:"Mel feuillette son livre de recettes.",inventaire:"Mel regarde son inventaire.",sauvegarde:"Mel est dans les réglages de l’appli.",mel:"Mel est sur la page de conversation."}[vue]||"";
+}
+// Sous-titre du volet, adressé à Mel
+function libellePage(){
+  const r=vue==="voir"?R(courant):null;
+  if(r)return`Tu regardes « ${r.nom} »`;
+  if(vue==="editer"&&brouillon)return brouillon.nom?`Tu écris « ${brouillon.nom} »`:"Tu écris une nouvelle recette";
+  return{recettes:"Tu es dans tes recettes",livre:"Tu feuillettes ton livre",inventaire:"Tu es dans ton inventaire",sauvegarde:"Tu es dans les réglages"}[vue]||"Ton assistante d’atelier";
+}
+function suggestionsMel(volet){
+  const r=vue==="voir"?R(courant):null;
+  if(volet&&r)return[`Qu’est-ce qui me manque pour couler « ${r.nom} » ?`,`Double les quantités de « ${r.nom} »`,`Une idée pour varier « ${r.nom} » ?`];
+  if(volet&&vue==="editer")return["Vérifie ma recette en cours","Combien de parfum pour cette recette ?","Quelle mèche pour ce contenant ?"];
+  if(volet&&vue==="inventaire")return["Qu’est-ce qui sera bientôt épuisé ?","Que puis-je couler avec mon stock ?","Qu’est-ce que je devrais commander ?"];
+  return volet?MEL_SUGGESTIONS.slice(0,3):MEL_SUGGESTIONS;
+}
+/* Volet de Mel : la pastille en bas de chaque page ouvre la conversation par-dessus, sans quitter la page */
+let voletMel=false;
+function rendreVolet(){
+  const z=document.getElementById("voletMel");if(!z)return;
+  const visible=vue!=="mel"&&!pleinLivre;
+  if(!voletMel){z.innerHTML=visible?`<button class="pastille-mel" data-act="ouvrirVolet" aria-label="Parler à Mel"><img src="mel-avatar.png" alt=""><span>Mel</span></button>`:"";return}
+  const avant=document.getElementById("questionMel"),texte=avant?avant.value:"";
+  z.innerHTML=`<div class="voile-mel" data-act="fermerVolet"></div><section class="volet-mel" role="dialog" aria-label="Conversation avec Mel">
+    <header><img src="mel-avatar.png" alt=""><div><b>Mel</b><small>${esc(libellePage())}</small></div>
+     <button class="btn leger rond" data-act="agrandirMel" aria-label="Ouvrir en grand" title="Ouvrir en grand">⤢</button><button class="btn leger rond" data-act="fermerVolet" aria-label="Fermer">✕</button></header>
+    <div class="volet-corps">${corpsMel(true)}</div></section>`;
+  const apres=document.getElementById("questionMel");if(apres&&texte)apres.value=texte;
+}
+function ouvrirVolet(){voletMel=true;history.pushState({vue,id:courant,volet:1},"");rendreVolet();finFil();if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>document.getElementById("questionMel")?.focus({preventScroll:true}),250)}
+function fermerVolet(retour=true){if(!voletMel)return;voletMel=false;if(ecoute)ecoute.stop();rendreVolet();if(retour&&history.state&&history.state.volet)history.back()}
+// Met à jour la conversation là où elle est affichée (onglet Mel ou volet)
+function majMel(){if(vue==="mel")rendre();else if(voletMel)rendreVolet()}
 const Reco=window.SpeechRecognition||window.webkitSpeechRecognition;
 const ecouteDispo=()=>!!Reco;
 function dicter(){
@@ -824,9 +891,9 @@ function dicter(){
   const z=document.getElementById("questionMel");const debut=z?z.value:"";
   try{ecoute=new Reco();ecoute.lang="fr-FR";ecoute.interimResults=true;ecoute.continuous=false;
     ecoute.onresult=e=>{const t=[...e.results].map(x=>x[0].transcript).join("");const zz=document.getElementById("questionMel");if(zz)zz.value=(debut?debut+" ":"")+t};
-    ecoute.onend=()=>{ecoute=null;const zz=document.getElementById("questionMel");const v=zz?zz.value:"";rendre();const n=document.getElementById("questionMel");if(n){n.value=v;n.focus()}};
+    ecoute.onend=()=>{ecoute=null;const zz=document.getElementById("questionMel");const v=zz?zz.value:"";majMel();const n=document.getElementById("questionMel");if(n){n.value=v;n.focus()}};
     ecoute.onerror=e=>{if(e.error==="not-allowed")toast("Autorise le micro pour dicter à Mel")};
-    ecoute.start();rendre();
+    ecoute.start();majMel();
   }catch(e){ecoute=null;toast("La dictée n’est pas disponible ici")}
 }
 function parler(t){
@@ -840,10 +907,10 @@ const finFil=()=>{const f=document.getElementById("enCours")||document.getElemen
 async function demanderMel(question){
   question=question.trim();if(!question||melAttente)return;
   D.discussion=D.discussion||[];D.discussion.push({role:"user",content:question,date:new Date().toISOString()});
-  melAttente=true;melTexte="";melErreur="";sauver();rendre();finFil();
+  melAttente=true;melTexte="";melErreur="";sauver();majMel();finFil();
   try{
     const r=await fetch("api/mel",{method:"POST",headers:{"content-type":"application/json","x-code-mel":codeMel()},
-      body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content})=>({role,content})),contexte:contexteCarnet()})});
+      body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content})=>({role,content})),contexte:(pageCourante()?`EN CE MOMENT : ${pageCourante()}\n\n`:"")+contexteCarnet()})});
     if(!r.ok){const e=await r.json().catch(()=>({}));if(e.code){try{localStorage.removeItem("carnet.codeMel")}catch(x){}}throw new Error(e.erreur||"Mel ne répond pas pour le moment.")}
     const lecteur=r.body.getReader(),dec=new TextDecoder();let prevu=false;
     for(;;){const{done,value}=await lecteur.read();if(done)break;melTexte+=dec.decode(value,{stream:true});
@@ -854,7 +921,7 @@ async function demanderMel(question){
   finally{
     if(D.discussion.length>80)D.discussion=D.discussion.slice(-80);
     melAttente=false;melTexte="";sauver();
-    if(vue==="mel"){const q=melErreur?question:"";rendre();finFil();const z=document.getElementById("questionMel");if(z&&q)z.value=q}
+    const q=melErreur?question:"";majMel();finFil();const z=document.getElementById("questionMel");if(z&&q)z.value=q;
   }
 }
 
@@ -958,8 +1025,11 @@ document.addEventListener("click",e=>{
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
   else if(act==="dicter")dicter();
-  else if(act==="voixMel"){try{localStorage.setItem("carnet.voixMel",voixMel()?"0":"1")}catch(x){}if(!voixMel()&&"speechSynthesis" in window)speechSynthesis.cancel();rendre()}
-  else if(act==="effacerMel"){if(confirm("Effacer la conversation avec Mel ?")){D.discussion=[];melErreur="";sauver();rendre()}}
+  else if(act==="ouvrirVolet")ouvrirVolet();
+  else if(act==="fermerVolet")fermerVolet();
+  else if(act==="agrandirMel"){voletMel=false;if(history.state&&history.state.volet)history.replaceState({vue,id:courant},"");aller("mel")}
+  else if(act==="voixMel"){try{localStorage.setItem("carnet.voixMel",voixMel()?"0":"1")}catch(x){}if(!voixMel()&&"speechSynthesis" in window)speechSynthesis.cancel();majMel()}
+  else if(act==="effacerMel"){if(confirm("Effacer la conversation avec Mel ?")){D.discussion=[];melErreur="";sauver();majMel()}}
   else if(act==="quitterPlein")quitterPlein();
   else if(act==="pdfOuvrir")ouvrirFichierPdf();
   else if(act==="installer")installer();
@@ -982,7 +1052,7 @@ document.addEventListener("change",async e=>{
 document.addEventListener("submit",e=>{
   e.preventDefault();
   if(e.target.id==="fMel"){const z=document.getElementById("questionMel");const q=z.value;z.value="";if(ecoute)ecoute.stop();demanderMel(q);return}
-  if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}rendre();return}
+  if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}melErreur="";majMel();return}
   if(e.target.id!=="fProduit")return;
   const g=id=>document.getElementById(id).value;
   const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim()};
@@ -995,7 +1065,7 @@ document.addEventListener("submit",e=>{
 document.addEventListener("keydown",e=>{
   // Entrée envoie la question à Mel (Maj + Entrée pour aller à la ligne)
   if(e.key==="Enter"&&!e.shiftKey&&e.target.id==="questionMel"){e.preventDefault();document.getElementById("fMel").requestSubmit();return}
-  if(e.key==="Escape"&&calque)fermerCalque();else if(e.key==="Escape"&&pleinLivre)quitterPlein();
+  if(e.key==="Escape"&&calque)fermerCalque();else if(e.key==="Escape"&&voletMel)fermerVolet();else if(e.key==="Escape"&&pleinLivre)quitterPlein();
   if(vue==="livre"&&!calque&&(e.key==="ArrowRight"||e.key==="ArrowLeft"))tourner(e.key==="ArrowRight"?1:-1)});
 // Le petit sélecteur de couleur prend aussi la couleur choisie pour « Utiliser cette couleur »
 document.addEventListener("input",e=>{if(e.target.id==="pCouleur")document.getElementById("pAvecCouleur").checked=true});
