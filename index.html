@@ -127,6 +127,66 @@ input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-ra
 .fenetre{background:var(--carte);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
 @media (min-width:700px){.voile{align-items:center}.fenetre{border-radius:20px}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--encre);color:var(--fond);padding:10px 16px;border-radius:999px;z-index:30;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
+/* Tampon « Approuvé » : logo et mot à l'encre chocolat, encrage irrégulier */
+.tampon{--encre-tampon:#4b2414;display:inline-flex;flex-direction:column;align-items:center;width:150px;transform:rotate(-12deg);opacity:.9;pointer-events:none;
+  -webkit-mask-image:var(--grain-tampon);mask-image:var(--grain-tampon);-webkit-mask-size:160px;mask-size:160px}
+:root{--grain-tampon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.tampon img{width:100%;display:block}
+.tampon span{font-family:var(--f-titre);font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--encre-tampon);border:3px solid var(--encre-tampon);border-radius:6px;padding:1px 6px 1px 10px;font-size:1.05rem;margin-top:-8px;background:rgba(255,255,255,0)}
+.tampon.coin{position:absolute;right:12px;top:8px;width:96px}
+.tampon.coin span{font-size:.72rem;border-width:2px;margin-top:-5px}
+.tampon.mini{width:50px}.tampon.mini span{font-size:.42rem;border-width:1.5px;padding:0 2px 0 4px;letter-spacing:.1em;margin-top:-3px}
+.tampon.frappe{animation:frappe .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes frappe{0%{transform:rotate(-12deg) scale(2.4);opacity:0}55%{opacity:1}100%{transform:rotate(-12deg) scale(1);opacity:.9}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .recette-papier .tampon{filter:brightness(2.6) saturate(.8)}}
+:root[data-theme="dark"] .recette-papier .tampon{filter:brightness(2.6) saturate(.8)}
+.recette-papier{position:relative}
+.badge-ok{position:absolute;left:6px;top:6px;background:rgba(250,243,228,.85);border-radius:50%;padding:3px}
+/* Le livre */
+.livre-zone{display:flex;flex-direction:column;align-items:center;gap:10px}
+.livre{--h:max(420px,calc(100dvh - 300px));position:relative;perspective:2400px;height:var(--h);border-radius:6px;box-shadow:0 16px 36px rgba(50,25,10,.38);touch-action:pan-y;user-select:none;-webkit-user-select:none;display:flex}
+.livre.double{width:min(100%,calc(var(--h) * 1.45))}
+.livre.simple{width:min(100%,calc(var(--h) * .74));overflow:hidden}
+.moitie{position:relative;flex:1;height:100%}
+.feuille{position:absolute;top:0;height:100%;transform-style:preserve-3d;z-index:4}
+.feuille.cote-d{left:50%;width:50%;transform-origin:0 50%}
+.feuille.cote-g{left:0;width:50%;transform-origin:100% 50%}
+.feuille.plein{left:0;width:100%;transform-origin:0 50%}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.face.arriere{transform:rotateY(180deg)}
+.page{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch}
+/* Papier couleur café, lignes de cahier et marge rouge */
+.papier{background-color:#e2c9a2;color:#3b2414;padding:34px 22px 30px 62px;background-attachment:local;
+  background-image:linear-gradient(90deg,transparent 46px,rgba(165,60,48,.38) 46px 48px,transparent 48px),repeating-linear-gradient(180deg,transparent 0 33px,rgba(100,60,30,.3) 33px 34px),radial-gradient(circle at 30% 20%,rgba(255,240,210,.35),transparent 60%)}
+.pg-g{box-shadow:inset -22px 0 26px -14px rgba(60,30,10,.45)}
+.pg-d{box-shadow:inset 22px 0 26px -14px rgba(60,30,10,.45)}
+.livre.simple .papier{box-shadow:inset 14px 0 20px -12px rgba(60,30,10,.4)}
+.page.centre{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:40px}
+.titre-main{font-family:var(--f-main);font-weight:500;font-size:2.3rem;line-height:68px;margin:-6px 0 0;color:#4b2414}
+.contenant-main{font-family:var(--f-main);font-size:1.25rem;line-height:34px;margin:0;color:#7a5a40}
+.couche-main{font-family:var(--f-main);font-weight:500;font-size:1.6rem;line-height:34px;margin:0;color:#7a3f1f;display:flex;align-items:center;gap:8px}
+.lignes-main{list-style:none;margin:0;padding:0 0 0 18px;font-family:var(--f-main);font-size:1.45rem;line-height:34px}
+.notes-main{font-family:var(--f-main);font-size:1.35rem;line-height:34px;white-space:pre-wrap;margin:0}
+.page .tampon{display:flex;margin:6px 6px 0 auto;width:40%;max-width:170px}
+.num{text-align:center;font-family:var(--f-main);font-size:1.2rem;color:#7a5a40;margin-top:16px}
+.sommaire{list-style:none;margin:0;padding:0;font-family:var(--f-main);font-size:1.45rem;line-height:34px}
+.sommaire button{all:unset;cursor:pointer;display:flex;width:100%;gap:6px}
+.sommaire button span{margin-left:auto;padding-left:10px}
+.sommaire .ok{color:#7a3f1f}
+.polaroid{background:#fffdf8;padding:10px 10px 6px;margin:8px auto 18px;width:min(84%,330px);transform:rotate(-2.5deg);box-shadow:0 6px 16px rgba(60,35,15,.3);position:relative}
+.polaroid::before{content:"";position:absolute;top:-12px;left:50%;width:90px;height:26px;transform:translateX(-50%) rotate(3deg);background:rgba(240,226,192,.8);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.polaroid img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.polaroid .dessin{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(#faf3e4,#e9d7b8)}
+.polaroid .dessin svg{height:94%}
+.polaroid figcaption{font-family:var(--f-main);font-size:1.4rem;text-align:center;color:#3b2414;margin:2px 0 0}
+.petit-dessin{display:flex;align-items:center;gap:10px;font-family:var(--f-main);font-size:1.25rem;color:#7a5a40}
+.petit-dessin svg{height:70px}
+.couverture{background:radial-gradient(circle at 30% 20%,#6e4229,#3d2215 72%);display:flex;align-items:center;justify-content:center;padding:22px}
+.cadre-or{border:2px solid #c9a35c;outline:1px solid #c9a35c;outline-offset:5px;border-radius:6px;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center}
+.cadre-or img{width:62%;max-width:300px;border-radius:50%;box-shadow:0 0 0 4px #c9a35c,0 10px 24px rgba(0,0,0,.45)}
+.titre-or{font-family:var(--f-titre);font-style:italic;font-size:1.6rem;color:#e8c98a;margin:6px 0 0}
+.sous-or{color:#d9b97a;margin:0;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase}
+.livre-cmd{justify-content:center;gap:18px;color:var(--doux)}
 @media (max-width:720px){
   .fiche,.editeur{grid-template-columns:1fr}
   .scene{position:static}
@@ -210,6 +270,34 @@ const CONTENANTS={
     clip:"M36 110 V160 q0 56 56 56 q56 0 56 -56 V110 Z",
     verre:`<ellipse class="v-fond" cx="96" cy="234" rx="78" ry="10"/><path class="v-fond" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100 Z"/><path class="v-anse" d="M154 122 q30 2 28 30 q-2 26 -34 30"/>`,
     devant:`<path class="v-trait" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100"/><ellipse class="v-trait" cx="92" cy="100" rx="64" ry="6"/>`},
+  yaourt:{nom:"Pot de yaourt en verre",haut:118,bas:234,cx:100,larg:98,
+    clip:"M52 118 L59 220 q1 14 15 14 H126 q14 0 15 -14 L148 118 Z",
+    verre:`<path class="v-fond" d="M44 108 L51 224 q2 20 22 20 H127 q20 0 22 -20 L156 108 Z"/><rect class="v-col" x="40" y="98" width="120" height="14" rx="6"/>`,
+    devant:`<path class="v-trait" d="M44 108 L51 224 q2 20 22 20 H127 q20 0 22 -20 L156 108"/><rect class="v-trait" x="40" y="98" width="120" height="14" rx="6"/>`},
+  confiture:{nom:"Pot à confiture",haut:112,bas:234,cx:100,larg:104,
+    clip:"M54 112 q-8 8 -8 20 V214 q0 20 20 20 H134 q20 0 20 -20 V132 q0 -12 -8 -20 Z",
+    verre:`<path class="v-fond" d="M46 104 q-12 10 -12 28 V216 q0 28 28 28 H138 q28 0 28 -28 V132 q0 -18 -12 -28 Z"/><rect class="v-col" x="54" y="80" width="92" height="24" rx="5"/>`,
+    devant:`<path class="v-trait" d="M46 104 q-12 10 -12 28 V216 q0 28 28 28 H138 q28 0 28 -28 V132 q0 -18 -12 -28 Z"/><rect class="v-trait" x="54" y="80" width="92" height="24" rx="5"/><path class="v-trait fin" d="M54 88 H146 M54 96 H146"/>`},
+  tumbler:{nom:"Verre à whisky",haut:120,bas:214,cx:100,larg:108,
+    clip:"M44 120 L50 210 q0 4 4 4 H146 q4 0 4 -4 L156 120 Z",
+    verre:`<path class="v-fond" d="M36 112 L44 232 q1 10 11 10 H145 q10 0 11 -10 L164 112 Z"/><path class="v-col" d="M50 214 H150 L148 238 H52 Z"/>`,
+    devant:`<path class="v-trait" d="M36 112 L44 232 q1 10 11 10 H145 q10 0 11 -10 L164 112"/><ellipse class="v-trait" cx="100" cy="112" rx="64" ry="5"/>`},
+  champagne:{nom:"Coupe à champagne",haut:96,bas:146,cx:100,larg:144,
+    clip:"M28 96 Q34 142 100 146 Q166 142 172 96 Z",
+    verre:`<path class="v-fond" d="M20 90 Q26 152 100 154 Q174 152 180 90 Z"/><path class="v-fond" d="M96 152 L97 222 H103 L104 152 Z"/><ellipse class="v-fond" cx="100" cy="228" rx="48" ry="8"/>`,
+    devant:`<path class="v-trait" d="M20 90 Q26 152 100 154 Q174 152 180 90"/><ellipse class="v-trait" cx="100" cy="90" rx="80" ry="6"/><path class="v-trait" d="M96 152 L97 222 M104 152 L103 222"/><ellipse class="v-trait" cx="100" cy="228" rx="48" ry="8"/>`},
+  vin:{nom:"Verre à pied",haut:60,bas:164,cx:100,larg:84,
+    clip:"M58 60 C54 120 66 160 100 164 C134 160 146 120 142 60 Z",
+    verre:`<path class="v-fond" d="M50 52 C46 126 60 170 100 172 C140 170 154 126 150 52 Z"/><path class="v-fond" d="M96 170 L97 224 H103 L104 170 Z"/><ellipse class="v-fond" cx="100" cy="230" rx="44" ry="8"/>`,
+    devant:`<path class="v-trait" d="M50 52 C46 126 60 170 100 172 C140 170 154 126 150 52"/><ellipse class="v-trait" cx="100" cy="52" rx="50" ry="5"/><path class="v-trait" d="M96 170 L97 224 M104 170 L103 224"/><ellipse class="v-trait" cx="100" cy="230" rx="44" ry="8"/>`},
+  bol:{nom:"Bol",haut:130,bas:226,cx:100,larg:148,
+    clip:"M26 130 Q30 222 100 226 Q170 222 174 130 Z",
+    verre:`<path class="v-fond" d="M18 122 Q22 234 100 236 Q178 234 182 122 Z"/><path class="v-col" d="M74 234 h52 l-4 9 h-44 z"/>`,
+    devant:`<path class="v-trait" d="M18 122 Q22 234 100 236 Q178 234 182 122"/><ellipse class="v-trait" cx="100" cy="122" rx="82" ry="7"/>`},
+  the:{nom:"Tasse à thé ancienne",haut:120,bas:200,cx:100,larg:124,
+    clip:"M38 120 Q40 196 100 200 Q160 196 162 120 Z",
+    verre:`<ellipse class="v-fond" cx="100" cy="216" rx="86" ry="13"/><path class="v-fond" d="M30 112 Q32 206 100 208 Q168 206 170 112 Z"/><path class="v-anse" d="M168 130 q26 0 24 22 q-2 20 -30 24"/>`,
+    devant:`<path class="v-trait" d="M30 112 Q32 206 100 208 Q168 206 170 112"/><ellipse class="v-trait" cx="100" cy="112" rx="70" ry="6"/><ellipse class="v-trait" cx="100" cy="216" rx="86" ry="13"/>`},
 };
 const CIRE="#f3e6cf";
 // Hasard reproductible : les bulles et paillettes restent à la même place d'un dessin à l'autre
@@ -269,19 +357,20 @@ function dessin(rec,{mini=false}={}){
 let vue="recettes",courant=null,brouillon=null,mult=1,recherche="",calque=null,filtreContenant="";
 const ICO={
   recettes:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6M9 11h4"/>',
+  livre:'<path d="M2 5c3-1 6-1 10 1 4-2 7-2 10-1v14c-3-1-6-1-10 1-4-2-7-2-10-1z"/><path d="M12 6v14"/>',
   inventaire:'<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/>',
   sauvegarde:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'};
 function nav(){
   const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
-  document.getElementById("nav").innerHTML=[["recettes","Recettes"],["inventaire","Inventaire"],["sauvegarde","Réglages"]].map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
-  const titres={recettes:"Mel d’antan",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  document.getElementById("nav").innerHTML=[["recettes","Recettes"],["livre","Mon livre"],["inventaire","Inventaire"],["sauvegarde","Réglages"]].map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
+  const titres={recettes:"Mel d’antan",livre:"Mon livre",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
   document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
 }
 function rendre(){
   nav();
   const a=document.getElementById("app");
-  a.innerHTML=vue==="voir"?vVoir():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
+  a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
   rendreCalque();
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
@@ -301,7 +390,7 @@ function vRecettes(){
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
   return `${q||filtreContenant?"":`<div class="accueil"><img src="logo.jpg" alt="Mel d’antan"></div>`}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
-  ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt=""><div class="mini-verre">${dessin(r,{mini:true})}</div>`:dessin(r,{mini:true})}</div>
+  ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt=""><div class="mini-verre">${dessin(r,{mini:true})}</div>`:dessin(r,{mini:true})}${r.approuve?`<div class="badge-ok">${tamponHTML("mini")}</div>`:""}</div>
     <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
    :`<div class="vide">${D.recettes.length?"Aucune recette ne correspond.":`<p style="font-family:var(--f-main);font-size:1.6rem">Le carnet est encore vide.</p><p>Touchez « Nouvelle recette » pour noter votre première création.</p>`}</div>`}
   <button class="btn flottant" data-act="nouvelle">＋ Nouvelle recette</button>`;
@@ -309,21 +398,22 @@ function vRecettes(){
 
 /* ---------- Écran : fiche d'une recette ---------- */
 function besoins(r,k){const b={};r.couches.forEach(c=>c.ingredients.forEach(x=>{if(x.produit)b[x.produit]=(b[x.produit]||0)+(+x.q||0)*k}));return b}
+let frappe=false;
 function vVoir(){
-  const r=R(courant);if(!r)return `<p class="vide">Recette introuvable.</p>`;
+  const r=R(courant);setTimeout(()=>frappe=false);if(!r)return `<p class="vide">Recette introuvable.</p>`;
   const b=besoins(r,mult);
   const total=r.couches.reduce((a,c)=>a+poidsCouche(c),0)*mult;
   return `<div class="fiche"><div class="scene">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant]?.nom||"")}</div></div>
   <div>${r.photo?`<img class="photo-grande" src="${r.photo}" alt="Photo de ${esc(r.nom)}">`:""}
-   <div class="recette-papier"><h2>${esc(r.nom||"Sans nom")}</h2>
+   <div class="recette-papier">${r.approuve?tamponHTML("coin"+(frappe?" frappe":"")):""}<h2>${esc(r.nom||"Sans nom")}</h2>
     <div class="ligne" style="margin:10px 0 2px"><span class="aide" style="margin:0">Quantités pour</span><div class="puces">${[.5,1,2,3,4].map(k=>`<button class="puce ${mult===k?"on":""}" data-mult="${k}">${k===.5?"½":k} bougie${k>1?"s":""}</button>`).join("")}</div></div>
     ${r.couches.map((c,i)=>`<div class="couche-titre"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${i+1}`)}${c.texture&&c.texture!=="lisse"?` <small class="aide" style="margin:0">· ${esc((TEXTURES.find(t=>t[0]===c.texture)||[,""])[1])}</small>`:""}</div>
      <ul class="manuscrit">${c.ingredients.filter(x=>x.produit).map(x=>{const p=P(x.produit);const manque=p&&p.stock!=null&&p.stock!==""&&b[x.produit]>+p.stock;return `<li class="${manque?"manque":""}">${esc(phrase((+x.q||0)*mult,p))}${manque?` <small>(stock : ${nb(+p.stock)})</small>`:""}</li>`}).join("")||`<li style="color:var(--doux)">—</li>`}</ul>`).join("")}
     ${total?`<div class="total">Poids total (cires, liquides) : <b>${nb(total)} g</b></div>`:""}
     ${r.notes?`<div class="couche-titre">Notes</div><p class="notes">${esc(r.notes)}</p>`:""}
    </div>
-   <div class="ligne" style="margin-top:14px"><button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="couler">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
-   <p class="aide">« J’ai coulé » retire les quantités utilisées de l’inventaire (pour les produits dont vous suivez le stock).</p>
+   <div class="ligne" style="margin-top:14px">${r.approuve?`<button class="btn leger" data-act="approuver">Retirer « Approuvé »</button>`:`<button class="btn" data-act="approuver">✓ Approuver la recette</button>`}<button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="pdfRecette">Partager en PDF</button><button class="btn leger" data-act="couler">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
+   <p class="aide">Une recette approuvée reçoit le tampon Mel d’antan dans « Mon livre ». « J’ai coulé » retire les quantités utilisées de l’inventaire (pour les produits dont vous suivez le stock).</p>
   </div></div>`;
 }
 
@@ -363,6 +453,157 @@ function fixer(o,chemin,val){const k=chemin.split(".");for(let i=0;i<k.length-1;
 // Photo réduite dans le navigateur (≈ 1000 px) pour garder le carnet léger
 function reduirePhoto(file,max=1000){return new Promise((ok,ko)=>{const u=URL.createObjectURL(file),im=new Image();im.onerror=()=>ko(new Error("Image illisible"));im.onload=()=>{const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",.82))};im.src=u})}
 
+/* ---------- Écran : mon livre (couverture, sommaire, une recette par page, les pages tournent) ---------- */
+let lp=0,livreFiltre="toutes",tourne=false,glisse=null;
+// Tablette à l'horizontale : livre ouvert sur deux pages (photo à gauche, recette à droite) ; à la verticale : une page
+const enDouble=()=>innerWidth>=880&&innerWidth>innerHeight;
+const recettesLivre=()=>D.recettes.filter(r=>livreFiltre!=="approuvees"||r.approuve).sort((a,b)=>(a.cree||"").localeCompare(b.cree||""));
+const tamponHTML=(cls="")=>`<div class="tampon ${cls}" aria-label="Approuvé"><img src="tampon.png" alt=""><span>Approuvé</span></div>`;
+const nomContenant=r=>esc(CONTENANTS[r.contenant]?.nom||"");
+function pCouverture(n){return `<div class="page couverture"><div class="cadre-or"><img src="logo.jpg" alt="Mel d’antan"><p class="titre-or">Mon livre de recettes</p><p class="sous-or">${n} recette${n>1?"s":""}${livreFiltre==="approuvees"?" approuvée"+(n>1?"s":""):""}</p></div></div>`}
+const pDos=()=>`<div class="page couverture"><div class="cadre-or"><img src="logo.jpg" alt="" style="width:38%"></div></div>`;
+function pSommaire(recs,decal){return `<div class="page papier pg-d"><h2 class="titre-main">Sommaire</h2><ol class="sommaire">${recs.map((r,i)=>`<li><button data-livre-aller="${i+decal}">${esc(r.nom)}${r.approuve?` <b class="ok">✓</b>`:""}<span>${i+1}</span></button></li>`).join("")||`<li>${livreFiltre==="approuvees"?"Aucune recette approuvée pour l’instant.":"Le carnet est encore vide."}</li>`}</ol></div>`}
+const polaroid=r=>`<figure class="polaroid">${r.photo?`<img src="${r.photo}" alt="">`:`<div class="dessin">${dessin(r)}</div>`}<figcaption>${esc(r.nom)}</figcaption></figure>`;
+function texteLivre(r){
+  return `<h2 class="titre-main">${esc(r.nom)}</h2><p class="contenant-main">${nomContenant(r)}</p>${r.couches.map((c,k)=>`<h3 class="couche-main"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${k+1}`)}</h3>
+   <ul class="lignes-main">${c.ingredients.filter(x=>x.produit).map(x=>`<li>${esc(phrase(+x.q||0,P(x.produit)))}</li>`).join("")}</ul>`).join("")}
+   ${r.notes?`<h3 class="couche-main">Notes</h3><p class="notes-main">${esc(r.notes)}</p>`:""}${r.approuve?tamponHTML():""}`;
+}
+function feuillets(){
+  const recs=recettesLivre();
+  if(enDouble())return[{g:pCouverture(recs.length),d:pSommaire(recs,1)},
+    ...recs.map((r,i)=>({g:`<div class="page papier pg-g centre">${polaroid(r)}${r.photo?`<div class="petit-dessin">${dessin(r,{mini:true})}<span>${nomContenant(r)}</span></div>`:""}</div>`,
+      d:`<div class="page papier pg-d">${texteLivre(r)}<div class="num">${i+1}</div></div>`})),
+    {g:`<div class="page papier pg-g centre"><p class="titre-main">Fin</p></div>`,d:pDos()}];
+  return[pCouverture(recs.length),pSommaire(recs,2),...recs.map((r,i)=>`<div class="page papier">${polaroid(r)}${texteLivre(r)}<div class="num">${i+1}</div></div>`),pDos()];
+}
+function vLivre(){
+  const F=feuillets(),dbl=enDouble();lp=Math.max(0,Math.min(lp,F.length-1));const f=F[lp],der=F.length-1;
+  const ou=lp===0?(dbl?"Couverture · sommaire":"Couverture"):lp===der?"Fin":dbl?`Recette ${lp} sur ${der-1}`:lp===1?"Sommaire":`Recette ${lp-1} sur ${der-2}`;
+  return `<div class="livre-zone"><div class="puces"><button class="puce ${livreFiltre==="toutes"?"on":""}" data-livre-filtre="toutes">Toutes les recettes</button><button class="puce ${livreFiltre==="approuvees"?"on":""}" data-livre-filtre="approuvees">Approuvées seulement</button></div>
+   <div class="livre ${dbl?"double":"simple"}" id="livre">${dbl?`<div class="moitie g">${f.g}</div><div class="moitie d">${f.d}</div>`:`<div class="moitie">${f}</div>`}</div>
+   <div class="ligne livre-cmd"><button class="btn leger rond" data-tourner="-1" ${lp?"":"disabled"} aria-label="Page précédente">‹</button><span>${ou}</span><button class="btn leger rond" data-tourner="1" ${lp<der?"":"disabled"} aria-label="Page suivante">›</button></div>
+   <p class="aide" style="text-align:center;margin:0">Faites glisser la page du doigt pour la tourner.</p>
+   <button class="btn leger petit" data-act="pdfLivre">Partager le livre en PDF</button></div>`;
+}
+// Une feuille se soulève et tourne : recto = page actuelle, verso = page qui arrive
+function tourner(dir){
+  if(tourne)return;const F=feuillets(),n=lp+dir;if(n<0||n>=F.length)return;
+  const L=document.getElementById("livre");
+  if(!L||!L.animate||matchMedia("(prefers-reduced-motion: reduce)").matches){lp=n;rendre();return}
+  tourne=true;const dbl=enDouble();let html,de=0,a;
+  if(dbl){
+    if(dir>0){L.querySelector(".moitie.d").innerHTML=F[n].d;html=`<div class="feuille cote-d"><div class="face">${F[lp].d}</div><div class="face arriere">${F[n].g}</div></div>`;a=-180}
+    else{L.querySelector(".moitie.g").innerHTML=F[n].g;html=`<div class="feuille cote-g"><div class="face">${F[lp].g}</div><div class="face arriere">${F[n].d}</div></div>`;a=180}
+  }else{
+    const verso=`<div class="face arriere"><div class="page papier"></div></div>`;
+    if(dir>0){L.querySelector(".moitie").innerHTML=F[n];html=`<div class="feuille plein"><div class="face">${F[lp]}</div>${verso}</div>`;a=-180}
+    else{html=`<div class="feuille plein"><div class="face">${F[n]}</div>${verso}</div>`;de=-180;a=0}
+  }
+  L.insertAdjacentHTML("beforeend",html);
+  const fin=()=>{lp=n;tourne=false;rendre()};
+  L.lastElementChild.animate([{transform:`rotateY(${de}deg)`},{transform:`rotateY(${a}deg)`}],{duration:800,easing:"cubic-bezier(.45,.05,.35,1)"}).finished.then(fin,fin);
+}
+// Sommaire : les pages tournent une à une jusqu'à la recette choisie (au-delà de 3, on y va directement)
+function allerPage(n){if(Math.abs(n-lp)>3){lp=n;rendre();return}const pas=()=>{if(lp===n)return;tourner(n>lp?1:-1);setTimeout(pas,850)};pas()}
+document.addEventListener("pointerdown",e=>{glisse=vue==="livre"&&e.target.closest("#livre")?{x:e.clientX,y:e.clientY}:null});
+document.addEventListener("pointerup",e=>{if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;glisse=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.4)tourner(dx<0?1:-1)});
+let attenteTaille=null;
+addEventListener("resize",()=>{if(vue!=="livre")return;clearTimeout(attenteTaille);attenteTaille=setTimeout(()=>{if(!tourne)rendre()},200)});
+
+/* ---------- PDF : une recette ou tout le livre, papier café ligné, photo, tampon ---------- */
+let jsPdfPret=null,pdfEnCours=false;
+const chargerPdf=()=>jsPdfPret||(jsPdfPret=new Promise((ok,ko)=>{const sc=document.createElement("script");sc.src="vendor/jspdf.umd.min.js";sc.onload=()=>ok(window.jspdf.jsPDF);sc.onerror=()=>{jsPdfPret=null;ko(new Error("Le module PDF n’a pas pu se charger"))};document.head.appendChild(sc)}));
+const chargerImage=src=>new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ko(new Error("Image illisible"));im.src=src});
+const nomFichier=t=>String(t||"recette").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,50)||"recette";
+// Logo posé sur la couleur du papier, en JPEG : PDF bien plus léger qu'avec un PNG transparent
+function surFond(im,fond,l=420){const c=document.createElement("canvas");c.width=c.height=l;const x=c.getContext("2d");x.fillStyle=fond;x.fillRect(0,0,l,l);x.drawImage(im,0,0,l,l);return c.toDataURL("image/jpeg",.85)}
+const rvb=c=>{const m=/^#?([0-9a-f]{6})$/i.exec(c||"");const n=m?parseInt(m[1],16):0xf3e6cf;return[n>>16,n>>8&255,n&255]};
+// Dessin du contenant en image (quand la recette n'a pas de photo)
+async function dessinImage(r,l=700){
+  let svg=dessin(r);const vb=svg.match(/viewBox="0 (-?[\d.]+) 200 ([\d.]+)"/);const h=vb?+vb[2]:264;
+  svg=svg.replace("<svg ",`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="${400*h/200}" `);
+  const u=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml"}));
+  try{const im=await chargerImage(u),c=document.createElement("canvas");c.width=c.height=l;const x=c.getContext("2d");
+    const g=x.createLinearGradient(0,0,0,l);g.addColorStop(0,"#faf3e4");g.addColorStop(1,"#e9d7b8");x.fillStyle=g;x.fillRect(0,0,l,l);
+    const k=Math.min(l/im.width,l/im.height)*.9;x.drawImage(im,(l-im.width*k)/2,(l-im.height*k)/2,im.width*k,im.height*k);return c.toDataURL("image/jpeg",.9)}
+  finally{URL.revokeObjectURL(u)}
+}
+// Tampon « Approuvé » encré (logo + mot encadré, penché, grain irrégulier)
+async function tamponImage(){
+  const im=await chargerImage("tampon.png"),W=560,H=600,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  x.translate(W/2,H/2);x.rotate(-12*Math.PI/180);x.translate(-W/2,-H/2);
+  x.drawImage(im,(W-400)/2,30,400,400);
+  x.fillStyle=x.strokeStyle="#4b2414";x.font="bold 50px Georgia, serif";x.textBaseline="middle";
+  const mot="APPROUVÉ",esp=12,larg=[...mot].reduce((a,ch)=>a+x.measureText(ch).width+esp,-esp),x0=(W-larg)/2,y0=460;
+  x.lineWidth=8;x.beginPath();x.roundRect?x.roundRect(x0-22,y0-40,larg+44,80,10):x.rect(x0-22,y0-40,larg+44,80);x.stroke();
+  let cx=x0;for(const ch of mot){x.fillText(ch,cx,y0+3);cx+=x.measureText(ch).width+esp}
+  const d=x.getImageData(0,0,W,H),p=d.data;for(let i=3;i<p.length;i+=4)if(Math.random()<.22)p[i]=p[i]*Math.random()*.4;x.putImageData(d,0,0);
+  // Réduit de moitié pour le PDF
+  const p2=document.createElement("canvas");p2.width=W/2;p2.height=H/2;p2.getContext("2d").drawImage(c,0,0,W/2,H/2);
+  return p2.toDataURL("image/png");
+}
+function fondPapier(doc){
+  doc.setFillColor(226,201,162);doc.rect(0,0,210,297,"F");
+  doc.setDrawColor(196,160,118);doc.setLineWidth(.25);for(let y=44;y<292;y+=8.5)doc.line(0,y,210,y);
+  doc.setDrawColor(190,110,95);doc.setLineWidth(.5);doc.line(24,0,24,297);
+}
+function piedPage(doc){doc.setFont("times","italic");doc.setFontSize(9);doc.setTextColor(122,90,64);doc.text("Mel d’antan · carnet de recettes",105,292,{align:"center"})}
+async function pageRecette(doc,r,res){
+  fondPapier(doc);doc.addImage(res.logo,"JPEG",174,6,28,28,"logo");
+  doc.setTextColor(75,36,20);doc.setFont("times","bolditalic");doc.setFontSize(26);doc.text(doc.splitTextToSize(r.nom,138)[0],30,27);
+  doc.setFont("times","italic");doc.setFontSize(12);doc.setTextColor(122,90,64);doc.text(CONTENANTS[r.contenant]?.nom||"",30,37);
+  // Photo (ou dessin) façon polaroïd, à droite
+  const px=128,py=50,pw=66;doc.setFillColor(255,253,248);doc.setDrawColor(200,180,150);doc.setLineWidth(.2);doc.rect(px,py,pw,pw+11,"FD");
+  doc.addImage(r.photo||await dessinImage(r),"JPEG",px+3,py+3,pw-6,pw-6);
+  doc.setFont("times","italic");doc.setFontSize(11);doc.setTextColor(59,36,20);doc.text(doc.splitTextToSize(r.nom,pw-6)[0],px+pw/2,py+pw+6,{align:"center"});
+  doc.setFillColor(240,226,192);doc.rect(px+pw/2-14,py-4,28,8,"F");
+  // Le texte suit les lignes du cahier ; il passe sous la photo une fois celle-ci dépassée
+  let n=1;const yb=()=>44+8.5*n-1.8,largeur=()=>yb()<py+pw+16?92:166;
+  const ligne=()=>{n++;if(yb()>286){piedPage(doc);doc.addPage();fondPapier(doc);n=1}};
+  const ecrire=(t,{taille=13,style="normal",couleur=[59,36,20],retrait=0,puce=null}={})=>{
+    doc.setFont("times",style);doc.setFontSize(taille);doc.setTextColor(...couleur);
+    doc.splitTextToSize(t,largeur()-retrait).forEach((m,k)=>{
+      if(puce&&!k){doc.setFillColor(...puce);doc.setDrawColor(120,90,60);doc.setLineWidth(.2);doc.circle(32,yb()-1.6,1.9,"FD")}
+      doc.text(m,30+retrait,yb());ligne()})};
+  r.couches.forEach((c,k)=>{
+    ecrire(c.nom||`Couche ${k+1}`,{taille:15,style:"bolditalic",couleur:[122,63,31],retrait:5,puce:rvb(couleurCouche(c))});
+    c.ingredients.filter(x=>x.produit).forEach(x=>ecrire(phrase(+x.q||0,P(x.produit)),{retrait:8}));
+  });
+  if(r.notes){ecrire("Notes",{taille:15,style:"bolditalic",couleur:[122,63,31]});r.notes.split("\n").forEach(l=>ecrire(l||" ",{style:"italic"}))}
+  if(r.approuve&&res.tampon){const y=Math.min(Math.max(yb()-4,170),236);doc.addImage(res.tampon,"PNG",146,y,50,53.6,"tampon","FAST")}
+  piedPage(doc);
+}
+async function fairePdf(recs,livre,nom,titre){
+  if(pdfEnCours)return;pdfEnCours=true;toast("Préparation du PDF…");
+  try{
+    const J=await chargerPdf(),doc=new J({unit:"mm",format:"a4"});
+    const rond=await chargerImage("logo-rond.png");
+    const res={logo:surFond(rond,"#e2c9a2",240),tampon:recs.some(r=>r.approuve)?await tamponImage():null};
+    if(livre){
+      doc.setFillColor(61,34,21);doc.rect(0,0,210,297,"F");doc.setDrawColor(201,163,92);doc.setLineWidth(.8);doc.rect(12,12,186,273);doc.setLineWidth(.3);doc.rect(15,15,180,267);
+      doc.addImage(surFond(rond,"#3d2215",700),"JPEG",45,50,120,120);
+      doc.setFont("times","italic");doc.setFontSize(30);doc.setTextColor(232,201,138);doc.text("Mon livre de recettes",105,205,{align:"center"});
+      doc.setFont("times","normal");doc.setFontSize(11);doc.setTextColor(217,185,122);doc.text(`${recs.length} RECETTE${recs.length>1?"S":""} · ${new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}).toUpperCase()}`,105,218,{align:"center"});
+      doc.addPage();fondPapier(doc);doc.setFont("times","bolditalic");doc.setFontSize(26);doc.setTextColor(75,36,20);doc.text("Sommaire",30,27);
+      doc.setFontSize(13);recs.forEach((r,i)=>{const y=44+8.5*(i%28+1)-1.8;if(i&&i%28===0){piedPage(doc);doc.addPage();fondPapier(doc)}doc.setFont("times","normal");doc.setTextColor(59,36,20);doc.text(`${i+1}.  ${r.nom}${r.approuve?"  — approuvée":""}`,30,y);doc.setFont("times","italic");doc.setTextColor(122,90,64);doc.text(CONTENANTS[r.contenant]?.nom||"",196,y,{align:"right"})});
+      piedPage(doc);
+    }
+    for(let i=0;i<recs.length;i++){if(livre||i)doc.addPage();await pageRecette(doc,recs[i],res)}
+    calque={pdf:{blob:doc.output("blob"),nom,titre}};history.pushState({vue,id:courant,calque:1},"");rendreCalque();
+  }catch(e){toast(e.message||"Le PDF n’a pas pu être créé")}
+  finally{pdfEnCours=false}
+}
+async function partagerPdf(){
+  const {blob,nom,titre}=calque.pdf,f=new File([blob],nom,{type:"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:titre});fermerCalque()}catch(e){if(e.name!=="AbortError")toast("Partage impossible : utilisez « Ouvrir / enregistrer »")}return}
+  ouvrirFichierPdf();
+}
+function ouvrirFichierPdf(){
+  const {blob,nom}=calque.pdf,a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nom;a.target="_blank";a.rel="noopener";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+}
+
 /* ---------- Écran : inventaire ---------- */
 function vInventaire(){
   return `<div class="ligne" style="justify-content:space-between;margin-bottom:6px"><p class="aide" style="margin:0;flex:1;min-width:200px">Vos cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand vous coulez une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
@@ -389,6 +630,9 @@ const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("dat
 function rendreCalque(){
   const z=document.getElementById("calque");
   if(!calque){z.innerHTML="";return}
+  if(calque.pdf){z.innerHTML=`<div class="voile" data-fermer><div class="fenetre"><h2 style="font-size:1.3rem">Le PDF est prêt</h2><p class="aide" style="margin:0">${esc(calque.pdf.nom)} · ${Math.max(1,Math.round(calque.pdf.blob.size/1024))} Ko</p>
+    <div class="ligne"><button class="btn" data-act="pdfPartager">Partager…</button><button class="btn leger" data-act="pdfOuvrir">Ouvrir / enregistrer</button><button class="btn leger" data-fermer>Fermer</button></div>
+    <p class="aide" style="margin:0">« Partager » l’envoie par message, e-mail, WhatsApp… ; « Ouvrir » l’affiche pour l’imprimer ou le ranger dans Fichiers.</p></div></div>`;return}
   const p=calque.p;
   z.innerHTML=`<div class="voile" data-fermer><form class="fenetre" id="fProduit"><h2 style="font-size:1.3rem">${p.id?"Modifier le produit":"Nouveau produit"}</h2>
    <label class="champ">Nom<input type="text" id="pNom" required maxlength="60" value="${esc(p.nom||"")}" placeholder="Cire de soja, Colorant bleu, Parfum vanille…"></label>
@@ -405,7 +649,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],#retour,#logo");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],#retour,#logo");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -413,6 +657,9 @@ document.addEventListener("click",e=>{
   if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
   if(d.voir){mult=1;aller("voir",{id:d.voir});return}
   if(d.mult){mult=+d.mult;rendre();return}
+  if(d.tourner){tourner(+d.tourner);return}
+  if(d.livreAller){allerPage(+d.livreAller);return}
+  if(d.livreFiltre){livreFiltre=d.livreFiltre;lp=0;rendre();return}
   if(d.filtre!==undefined){filtreContenant=d.filtre;rendre();return}
   if(d.themeChoix){localStorage.setItem("carnet.theme",d.themeChoix);fondThemes(d.themeChoix);rendre();return}
   if(d.contenant){brouillon.contenant=d.contenant;const y=scrollY;rendre();scrollTo(0,y);return}
@@ -422,7 +669,8 @@ document.addEventListener("click",e=>{
   const garder=f=>{const y=scrollY;f();rendre();scrollTo(0,y)};
   if(act==="nouvelle"){brouillon=recetteVide();instantane=JSON.stringify(brouillon);aller("editer")}
   else if(act==="modifier"){brouillon=copie(R(courant));instantane=JSON.stringify(brouillon);aller("editer")}
-  else if(act==="dupliquer"){const r=copie(R(courant));r.id=nouvelId();r.neuve=true;r.nom=r.nom+" (copie)";brouillon=r;instantane="";aller("editer")}
+  else if(act==="approuver"){const r=R(courant);r.approuve=r.approuve?null:new Date().toISOString();frappe=!!r.approuve;sauver();rendre();toast(r.approuve?"Recette approuvée : le tampon est dans votre livre":"Tampon retiré")}
+  else if(act==="dupliquer"){const r=copie(R(courant));r.id=nouvelId();r.neuve=true;delete r.approuve;r.nom=r.nom+" (copie)";brouillon=r;instantane="";aller("editer")}
   else if(act==="supprimer"){const r=R(courant);if(confirm(`Supprimer « ${r.nom} » du carnet ?`)){D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")}}
   else if(act==="couler"){const r=R(courant),b=besoins(r,mult);let n=0;for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){p.stock=Math.max(0,Math.round((+p.stock-q)*100)/100);n++}}
     sauver();rendre();toast(n?`Inventaire mis à jour (${n} produit${n>1?"s":""})`:"Aucun produit suivi en stock dans cette recette");
@@ -444,6 +692,10 @@ document.addEventListener("click",e=>{
   else if(act==="nouveauProduit")ouvrirProduit({});
   else if(act==="supprimerProduit"){const p=calque.p,n=utilisations(p.id);if(confirm(n?`« ${p.nom} » sert dans ${n} recette${n>1?"s":""}. Le supprimer quand même ?`:`Supprimer « ${p.nom} » ?`)){D.produits=D.produits.filter(x=>x.id!==p.id);sauver();fermerCalque();rendre()}}
   else if(act==="exporter")exporter();
+  else if(act==="pdfRecette"){const rec=R(courant);fairePdf([rec],false,`${nomFichier(rec.nom)}.pdf`,rec.nom)}
+  else if(act==="pdfLivre"){const recs=recettesLivre();if(!recs.length){toast("Aucune recette dans le livre");return}fairePdf(recs,true,`mel-dantan-livre-de-recettes.pdf`,"Mon livre de recettes · Mel d’antan")}
+  else if(act==="pdfPartager")partagerPdf();
+  else if(act==="pdfOuvrir")ouvrirFichierPdf();
   else if(act==="installer")installer();
 });
 document.addEventListener("input",e=>{
@@ -470,7 +722,8 @@ document.addEventListener("submit",e=>{
   if(retour&&brouillon){brouillon.couches[retour.i].ingredients[retour.j].produit=p.id}
   const y=scrollY;rendre();scrollTo(0,y);toast("Produit enregistré");
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque();
+  if(vue==="livre"&&!calque&&(e.key==="ArrowRight"||e.key==="ArrowLeft"))tourner(e.key==="ArrowRight"?1:-1)});
 // Le petit sélecteur de couleur prend aussi la couleur choisie pour « Utiliser cette couleur »
 document.addEventListener("input",e=>{if(e.target.id==="pCouleur")document.getElementById("pAvecCouleur").checked=true});
 
