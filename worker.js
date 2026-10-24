@@ -89,6 +89,8 @@ function nettoyer(corps) {
   return { messages, contexte: String(corps.contexte || "").slice(0, MAX_CONTEXTE) };
 }
 
+// Réponse donnée par l'IA de Cloudflare à la place de Claude : l'appli l'affiche
+const relais = (r, pourquoi = "credits") => { const h = new Headers(r.headers); h.set("x-mel-relais", pourquoi === "panne" ? "panne" : "1"); return new Response(r.body, { status: r.status, headers: h }); };
 // Le texte de la réponse part vers l'appli au fil de l'eau
 function flux(ecrire) {
   const { readable, writable } = new TransformStream();
@@ -132,7 +134,35 @@ async function repondreClaude(env, { messages, contexte }) {
   });
 }
 
+// Crédits Claude épuisés ou limite de dépense atteinte : Claude se met en pause, l'IA gratuite de Cloudflare prend le relais
+const CREDIT_EPUISE = /credit balance|insufficient|billing|usage limit|spend(ing)? limit|quota/i;
+const creditEpuise = e => e instanceof Anthropic.APIError && [400, 402, 403, 429].includes(e.status) && CREDIT_EPUISE.test(String(e.message || ""));
+const REESSAI_CLAUDE = 6 * 3600 * 1000;   // on réessaie Claude toutes les 6 heures (crédits renouvelés, limite relevée…)
+let pauseClaudeMemoire = 0;
+async function pauseClaude(env) {
+  if (Date.now() - pauseClaudeMemoire < REESSAI_CLAUDE) return true;
+  if (!env.DB) return false;
+  try { await preparer(env); const l = await env.DB.prepare("SELECT v FROM reglages WHERE k = 'claude_pause'").first(); pauseClaudeMemoire = l ? +l.v : 0; } catch { return false; }
+  return Date.now() - pauseClaudeMemoire < REESSAI_CLAUDE;
+}
+async function mettreClaudeEnPause(env, oui) {
+  pauseClaudeMemoire = oui ? Date.now() : 0;
+  if (!env.DB) return;
+  try {
+    await preparer(env);
+    if (oui) await env.DB.prepare("INSERT INTO reglages (k, v) VALUES ('claude_pause', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(String(pauseClaudeMemoire)).run();
+    else await env.DB.prepare("DELETE FROM reglages WHERE k = 'claude_pause'").run();
+  } catch (e) { console.error("pause Claude", e); }
+}
+// Moteur réellement utilisé maintenant
+async function moteurActuel(env) {
+  const m = moteur(env);
+  return m === "claude" && env.AI && await pauseClaude(env) ? "cloudflare" : m;
+}
+
 function erreurClaude(e) {
+  if (creditEpuise(e)) return Object.assign(new Error("Les crédits Claude sont épuisés pour ce mois."), { statut: 402, cause: e });
+  if (e instanceof Anthropic.APIError && (e.status >= 500 || e.status === 529)) return Object.assign(new Error(`Claude ne répond pas pour le moment (erreur ${e.status}). Réessaie dans un instant.`), { statut: 502, cause: e });
   if (e instanceof Anthropic.AuthenticationError) return Object.assign(new Error("La clé Claude (ANTHROPIC_API_KEY) est refusée : vérifie-la dans Cloudflare."), { statut: 502 });
   if (e instanceof Anthropic.PermissionDeniedError) return Object.assign(new Error("Le compte Claude n'a pas accès à ce modèle."), { statut: 502 });
   if (e instanceof Anthropic.RateLimitError) return Object.assign(new Error("Beaucoup de questions d'un coup : réessaie dans une minute."), { statut: 429 });
@@ -141,7 +171,7 @@ function erreurClaude(e) {
 }
 
 async function repondreCloudflare(env, { messages, contexte }) {
-  if (messages.some(m => m.photo)) throw Object.assign(new Error("Pour regarder tes photos, Mel a besoin de Claude (clé ANTHROPIC_API_KEY dans Cloudflare)."), { statut: 400 });
+  if (messages.length && messages[messages.length - 1].photo) throw Object.assign(new Error(env.ANTHROPIC_API_KEY ? "Les crédits Claude du mois sont épuisés : Mel ne peut pas regarder les photos avant leur renouvellement. Pose-moi ta question par écrit !" : "Pour regarder tes photos, Mel a besoin de Claude (clé ANTHROPIC_API_KEY dans Cloudflare)."), { statut: 400 });
   messages = messages.map(({ role, content }) => ({ role, content }));
   const sortie = await env.AI.run(MODELE_CLOUDFLARE, {
     messages: [{ role: "system", content: PERSONNAGE + "\n\nLe carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)") }, ...messages],
@@ -347,7 +377,7 @@ async function notifs(env, request, chemin) {
 
 async function api(request, env, chemin) {
   const m = moteur(env);
-  if (chemin === "mel/etat") return json({ actif: !!m, moteur: m, code: !!env.CODE_MEL, sync: !!env.DB });
+  if (chemin === "mel/etat") { const ma = await moteurActuel(env); return json({ actif: !!m, moteur: ma, relais: m === "claude" && ma === "cloudflare", code: !!env.CODE_MEL, sync: !!env.DB }); }
   // Carnet partagé : même code que Mel
   const photo = chemin.match(/^photo\/([0-9a-f]{64})$/);
   if (chemin.startsWith("notifs/")) {
@@ -374,7 +404,21 @@ async function api(request, env, chemin) {
   try { corps = nettoyer(JSON.parse(await request.text())); } catch { corps = null; }
   if (!corps) return json({ erreur: "Question illisible." }, 400);
   try {
-    return m === "claude" ? await repondreClaude(env, corps) : await repondreCloudflare(env, corps);
+    if (m === "claude" && env.AI && await pauseClaude(env)) return relais(await repondreCloudflare(env, corps));
+    if (m !== "claude") return await repondreCloudflare(env, corps);
+    try {
+      const r = await repondreClaude(env, corps);
+      if (pauseClaudeMemoire) await mettreClaudeEnPause(env, false);   // Claude répond de nouveau : fin de la pause
+      return r;
+    } catch (e) {
+      const cause = e && e.cause;
+      // Claude surchargé ou en panne un instant : Cloudflare répond à cette question, sans pause
+      if (env.AI && cause instanceof Anthropic.APIError && (cause.status >= 500 || cause.status === 529)) return relais(await repondreCloudflare(env, corps), "panne");
+      if (!env.AI || !creditEpuise(cause || e)) throw e;
+      console.warn("Crédits Claude épuisés : relais par l'IA de Cloudflare", String((cause || e).message));
+      await mettreClaudeEnPause(env, true);
+      return relais(await repondreCloudflare(env, corps));
+    }
   } catch (e) {
     console.error(e);
     return json({ erreur: e.statut ? e.message : "Mel ne répond pas pour le moment. Réessaie dans un instant." }, e.statut || 500);

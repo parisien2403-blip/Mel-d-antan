@@ -1083,7 +1083,7 @@ function corpsMel(volet){
   else if(melEtat.code&&!codeMel())corps=`<form class="carte" id="fCodeMel"><p style="margin-top:0">Bonjour Mel ! Pour que je sois rien qu’à toi, tape ton code une seule fois.</p><div class="ligne"><input type="password" id="codeMel" placeholder="Code de Mel" autocomplete="current-password" style="flex:1"><button class="btn">Entrer</button></div>${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</form>`;
   else{
     const msgs=fil.map((m,i)=>m.role==="user"?`<div class="bulle de-moi">${m.image?`<img class="photo-envoyee" src="${m.image}" alt="Ta photo">`:""}${esc(m.content).replace(/\n/g,"<br>")}</div>`:bulleMel(m.content,false,m,i)).join("");
-    corps=`<div class="mel-outils"><span class="aide" style="margin:0 auto 0 0;align-self:center">${melEtat.moteur==="claude"?"✨ Mel répond avec Claude":"Mel répond avec l’IA gratuite de Cloudflare"}</span>${"speechSynthesis" in window?`<button class="btn leger petit" data-act="voixMel">${voixMel()?"🔊 Mel parle":"🔈 Mel se tait"}</button>`:""}${fil.length?`<button class="btn leger petit" data-act="effacerMel">Nouvelle conversation</button>`:""}</div>
+    corps=`<div class="mel-outils"><span class="aide" style="margin:0 auto 0 0;align-self:center">${melEtat.moteur==="claude"?"✨ Mel répond avec Claude":melEtat.relais?"🌙 Crédits Claude du mois épuisés : Mel répond avec l’IA gratuite de Cloudflare jusqu’au renouvellement":"Mel répond avec l’IA gratuite de Cloudflare"}</span>${"speechSynthesis" in window?`<button class="btn leger petit" data-act="voixMel">${voixMel()?"🔊 Mel parle":"🔈 Mel se tait"}</button>`:""}${fil.length?`<button class="btn leger petit" data-act="effacerMel">Nouvelle conversation</button>`:""}</div>
      <div class="fil" id="fil">${fil.length?"":bulleMel(`Bonjour Mel ! Je connais tout ton carnet : ${D.recettes.length} recette${D.recettes.length>1?"s":""} et ${D.produits.length} produit${D.produits.length>1?"s":""}. Demande-moi une quantité, une température, ce qui te manque en stock, ou une idée de nouvelle bougie.`,false)}${msgs}${melAttente?`<div id="enCours">${bulleMel(melTexte,true)}</div>`:""}
      ${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</div>
      ${!melAttente?`<div class="puces" style="margin-top:14px">${suggestionsMel(volet).map(q=>`<button class="puce" data-question-mel="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
@@ -1166,6 +1166,10 @@ async function demanderMel(question){
       // Seule la dernière photo repart vers Mel ; les plus anciennes sont rappelées par une mention
       body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content,image},i,l)=>({role,content:image&&i<l.length-1?"[Photo envoyée plus tôt] "+content:content,...(image&&i===l.length-1?{image}:{})})),contexte:(pageCourante()?`EN CE MOMENT : ${pageCourante()}\n\n`:"")+contexteCarnet()})});
     if(!r.ok){const e=await r.json().catch(()=>({}));if(e.code){try{localStorage.removeItem("carnet.codeMel")}catch(x){}}throw new Error(e.erreur||"Mel ne répond pas pour le moment.")}
+    // Relais par l'IA de Cloudflare (crédits Claude épuisés) ou retour de Claude : l'indication suit
+    const relaisNow=r.headers.get("x-mel-relais")==="1";
+    if(relaisNow&&!melEtat.relais){melEtat.relais=true;melEtat.moteur="cloudflare";toast("Crédits Claude du mois épuisés : l’IA gratuite de Cloudflare prend le relais")}
+    else if(!relaisNow&&melEtat.relais){melEtat.relais=false;verifierMel()}
     const lecteur=r.body.getReader(),dec=new TextDecoder();let prevu=false;
     for(;;){const{done,value}=await lecteur.read();if(done)break;melTexte+=dec.decode(value,{stream:true});
       if(!prevu){prevu=true;requestAnimationFrame(()=>{prevu=false;const z=document.getElementById("enCours");if(z){z.innerHTML=bulleMel(melTexte,true);finFil()}})}}
@@ -1531,7 +1535,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="2.7";
+const VERSION="2.8";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

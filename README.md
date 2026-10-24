@@ -57,6 +57,8 @@ Mel a besoin d’un petit serveur (`worker.js`) : l’appli est donc publiée su
 3. Facultatif, dans Workers › mel-d-antan › Paramètres › Variables et secrets :
    - `ANTHROPIC_API_KEY` : Mel répond avec Claude (meilleures réponses en français ; payant à l’usage,
      quelques centimes par question, clé sur console.anthropic.com) ;
+   - quand les crédits Claude du mois sont épuisés (ou la limite de dépense atteinte), Mel passe toute seule sur l’IA
+     gratuite de Cloudflare et réessaie Claude toutes les 6 h ; si Claude est surchargé un instant, Cloudflare répond aussi ;
    - `CODE_MEL` : un code que l’appli demande une fois, pour que personne d’autre ne parle à Mel (conseillé avec Claude).
 Les fichiers listés dans `.assetsignore` (serveur, réglages) ne sont jamais servis en ligne.
 Essai local sans compte : `npm install` puis `node essai-local.mjs` (fausse IA).
