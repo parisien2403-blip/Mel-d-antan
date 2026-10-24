@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7a4a2e">
+<meta name="description" content="Mel d’antan, le carnet de recettes de bougies : recettes, inventaire, photos et aperçu des couches dans le contenant.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mel d’antan">
+<title>Mel d’antan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Caveat:wght@500&display=swap">
+<style>
+:root{
+  --fond:#f6efe6; --carte:#fffaf4; --encre:#3b2a20; --doux:#7d6656; --ligne:#e4d6c6;
+  --cafe:#7a4a2e; --cafe-2:#5c3520; --creme:#f3e6cf; --rose:#d98c8c; --ok:#4f7a4a; --alerte:#b5562f;
+  --ombre:0 2px 10px rgba(80,45,25,.10);
+  --f-titre:"Fraunces", Georgia, serif; --f-main:"Caveat", "Comic Sans MS", cursive;
+  --f-texte:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --fond:#1e1714; --carte:#2a201b; --encre:#f2e7dc; --doux:#c2ae9f; --ligne:#45372f;
+  --cafe:#d9a77e; --cafe-2:#f0c49d; --ok:#8cc184; --alerte:#e89a74; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fond:#1e1714; --carte:#2a201b; --encre:#f2e7dc; --doux:#c2ae9f; --ligne:#45372f;
+  --cafe:#d9a77e; --cafe-2:#f0c49d; --ok:#8cc184; --alerte:#e89a74; --ombre:0 2px 10px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fond);color:var(--encre);font:16px/1.45 var(--f-texte);padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+h1,h2,h3{font-family:var(--f-titre);font-weight:600;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:5;background:var(--cafe);color:#fff6ec;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px;box-shadow:var(--ombre)}
+header h1{font-size:1.25rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .retour{background:none;border:0;color:inherit;font-size:1.5rem;padding:0 6px 0 0;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:16px}
+nav.bas{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--carte);border-top:1px solid var(--ligne);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.bas button{flex:1;background:none;border:0;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.78rem;color:var(--doux);cursor:pointer}
+nav.bas button.on{color:var(--cafe);font-weight:600}
+nav.bas svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:var(--cafe);color:#fff6ec;padding:10px 18px;cursor:pointer;font-weight:600;text-decoration:none}
+:root[data-theme="dark"] .btn,.btn{color:#fffaf4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#1e1714}}
+:root[data-theme="dark"] .btn{color:#1e1714}
+.btn.leger{background:transparent;color:var(--cafe);box-shadow:inset 0 0 0 1.5px var(--cafe)}
+.btn.petit{padding:6px 12px;font-size:.88rem}
+.btn.danger{background:var(--alerte)}
+.btn:disabled{opacity:.5}
+.rond{width:34px;height:34px;padding:0;border-radius:50%;flex:none}
+.ligne{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.carte{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:16px;box-shadow:var(--ombre);margin-bottom:16px}
+.aide{color:var(--doux);font-size:.9rem;margin:4px 0 0}
+label.champ{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--doux);flex:1;min-width:0}
+input[type=text],input[type=number],input[type=search],select,textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:var(--fond);color:var(--encre);min-width:0}
+textarea{resize:vertical;min-height:80px}
+input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-radius:10px;padding:2px;background:var(--fond);flex:none}
+.puces{display:flex;gap:8px;flex-wrap:wrap}
+.puce{border:1px solid var(--ligne);background:var(--carte);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.puce.on{background:var(--cafe);border-color:var(--cafe);color:var(--carte);font-weight:600}
+/* Liste des recettes */
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.vignette{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--ombre);text-align:left;padding:0;display:flex;flex-direction:column}
+.vignette .image{aspect-ratio:1;background:linear-gradient(180deg,#fbf4ea,#efe2d0);display:flex;align-items:center;justify-content:center;position:relative}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}}
+:root[data-theme="dark"] .vignette .image{background:linear-gradient(180deg,#352a24,#2a201b)}
+.vignette .image img{width:100%;height:100%;object-fit:cover}
+.vignette .image svg{height:88%}
+.vignette .image .mini-verre{position:absolute;right:6px;bottom:6px;width:46px;height:60px;background:var(--carte);border-radius:10px;box-shadow:var(--ombre);display:flex;align-items:center;justify-content:center}
+.vignette .image .mini-verre svg{height:52px}
+.vignette .txt{padding:10px 12px 12px}
+.vignette b{font-family:var(--f-titre);font-size:1.02rem;display:block}
+.vignette small{color:var(--doux)}
+.vide{text-align:center;padding:40px 16px;color:var(--doux)}
+.flottant{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:4;box-shadow:0 6px 18px rgba(80,45,25,.3);padding:14px 20px}
+/* Fiche recette */
+.fiche{display:grid;grid-template-columns:minmax(240px,340px) 1fr;gap:20px;align-items:start}
+.scene{background:linear-gradient(180deg,#fbf4ea,#ecdcc6);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:76px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .scene{background:linear-gradient(180deg,#342822,#261d18)}}
+:root[data-theme="dark"] .scene{background:linear-gradient(180deg,#342822,#261d18)}
+.scene svg{width:100%;max-width:300px;height:auto}
+.scene .nom-contenant{font-size:.85rem;color:var(--doux)}
+.photo-grande{width:100%;border-radius:14px;display:block;max-height:420px;object-fit:cover;margin-bottom:14px}
+.recette-papier{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:18px 20px;box-shadow:var(--ombre);
+  background-image:repeating-linear-gradient(180deg,transparent 0 31px,rgba(122,74,46,.12) 31px 32px)}
+.recette-papier h2{font-size:1.6rem}
+.couche-titre{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font-family:var(--f-titre);font-size:1.05rem}
+.pastille{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.15);flex:none}
+.manuscrit{list-style:none;margin:0;padding:0 0 0 24px;font-family:var(--f-main);font-size:1.45rem;line-height:32px}
+.manuscrit li.manque{color:var(--alerte)}
+.manuscrit li small{font-family:var(--f-texte);font-size:.75rem;color:var(--alerte)}
+.notes{font-family:var(--f-main);font-size:1.35rem;line-height:32px;white-space:pre-wrap;margin:6px 0 0}
+.total{margin-top:14px;font-size:.9rem;color:var(--doux)}
+/* Éditeur */
+.editeur{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:20px;align-items:start}
+.couche{border:1px solid var(--ligne);border-left:8px solid var(--c,#ccc);border-radius:14px;padding:12px;margin-bottom:12px;background:var(--fond)}
+.couche-tete{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.ingr{display:grid;grid-template-columns:1fr 92px 34px;gap:6px;align-items:center;margin-top:8px}
+.ingr .unite{grid-column:2;font-size:.75rem;color:var(--doux);margin-top:-4px}
+.choix-contenants{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px}
+.choix-contenants button{border:1.5px solid var(--ligne);background:var(--carte);border-radius:12px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-size:.75rem;gap:2px}
+.choix-contenants button.on{border-color:var(--cafe);box-shadow:inset 0 0 0 1.5px var(--cafe);font-weight:600}
+.choix-contenants svg{height:62px}
+.photo-zone{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.photo-zone img{width:90px;height:90px;object-fit:cover;border-radius:12px}
+.barre-enreg{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--fond);padding:10px 0;display:flex;gap:10px;z-index:3}
+/* Inventaire */
+.groupe h3{font-size:1.1rem;margin:18px 0 8px}
+.produit{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--carte);border:1px solid var(--ligne);border-radius:12px;margin-bottom:8px}
+.produit .nom{flex:1;min-width:0}
+.produit .nom b{display:block;overflow:hidden;text-overflow:ellipsis}
+.produit .nom small{color:var(--doux)}
+.stock{display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.stock b{min-width:5ch;text-align:center}
+.bas-stock{color:var(--alerte)}
+/* Fenêtre */
+.voile{position:fixed;inset:0;background:rgba(30,15,8,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.fenetre{background:var(--carte);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+@media (min-width:700px){.voile{align-items:center}.fenetre{border-radius:20px}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--encre);color:var(--fond);padding:10px 16px;border-radius:999px;z-index:30;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
+@media (max-width:720px){
+  .fiche,.editeur{grid-template-columns:1fr}
+  .scene{position:static}
+  .editeur .scene{position:sticky;top:60px;z-index:2;flex-direction:row;padding:8px 12px;box-shadow:var(--ombre)}
+  .editeur .scene svg{width:110px}
+}
+</style>
+</head>
+<body>
+<header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><h1 id="titre">Mel d’antan</h1></header>
+<main id="app"></main>
+<nav class="bas" id="nav"></nav>
+<div id="calque"></div>
+<script>
+"use strict";
+/* ---------- Données : tout reste sur l'appareil (IndexedDB), avec sauvegarde en fichier ---------- */
+const BASE={nom:"carnet-bougies",magasin:"kv"};
+function ouvrirBase(){return new Promise((ok,ko)=>{const r=indexedDB.open(BASE.nom,1);r.onupgradeneeded=()=>r.result.createObjectStore(BASE.magasin);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}
+let base=null;
+async function lire(cle){try{base=base||await ouvrirBase();return await new Promise((ok,ko)=>{const r=base.transaction(BASE.magasin).objectStore(BASE.magasin).get(cle);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}catch(e){return null}}
+async function ecrire(cle,val){try{base=base||await ouvrirBase();await new Promise((ok,ko)=>{const t=base.transaction(BASE.magasin,"readwrite");t.objectStore(BASE.magasin).put(val,cle);t.oncomplete=ok;t.onerror=()=>ko(t.error)})}catch(e){toast("Enregistrement impossible sur cet appareil")}}
+let D={produits:[],recettes:[]};
+let minuteur=null;
+function sauver(){clearTimeout(minuteur);minuteur=setTimeout(()=>ecrire("donnees",D),250)}
+const nouvelId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const copie=o=>JSON.parse(JSON.stringify(o));
+
+/* ---------- Vocabulaire ---------- */
+const TYPES=[["cire","Cires"],["colorant","Colorants"],["parfum","Parfums"],["meche","Mèches"],["deco","Décors & inclusions"],["additif","Additifs"],["autre","Autres"]];
+const UNITES=[["g","g"],["ml","ml"],["gouttes","gouttes"],["pieces","pièce(s)"],["cuilleres","cuillère(s)"],["pincees","pincée(s)"],["pourcent","%"]];
+const TEXTURES=[["lisse","Lisse"],["chantilly","Chantilly / crème fouettée"],["mousse","Mousse (bulles)"],["marbre","Marbré"],["paillettes","Paillettes"],["morceaux","Morceaux / inclusions"],["granite","Granité"]];
+const libType=k=>(TYPES.find(t=>t[0]===k)||TYPES[6])[1];
+const P=id=>D.produits.find(p=>p.id===id);
+const R=id=>D.recettes.find(r=>r.id===id);
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+const nb=n=>{const x=Math.round(n*100)/100;return String(x).replace(".",",")};
+// « 500 g de cire de soja », « 3 gouttes de colorant bleu », « 1 mèche coton »
+function phrase(q,p){
+  if(!p)return `${nb(q)} ? (produit supprimé)`;
+  const nom=p.nom.charAt(0).toLowerCase()+p.nom.slice(1);
+  const de=/^[aeiouyhàâéèêëîïôöûü]/i.test(nom)?"d’":"de ";
+  const u=p.unite;
+  if(u==="pieces")return `${nb(q)} ${nom}`;
+  if(u==="pourcent")return `${nb(q)} % ${de}${nom}`;
+  const lib={g:"g",ml:"ml",gouttes:q>1?"gouttes":"goutte",cuilleres:q>1?"cuillères":"cuillère",pincees:q>1?"pincées":"pincée"}[u]||u;
+  return `${nb(q)} ${lib} ${de}${nom}`;
+}
+
+/* ---------- Les contenants : dessin du verre, forme intérieure (où se rangent les couches) ---------- */
+// haut / bas : limites de l'intérieur ; larg : largeur intérieure en haut (pour la chantilly qui dépasse)
+const CONTENANTS={
+  verrine:{nom:"Verrine",haut:70,bas:240,cx:100,larg:96,
+    clip:"M52 70 V226 q0 14 14 14 H134 q14 0 14 -14 V70 Z",
+    verre:`<path class="v-fond" d="M44 60 V228 q0 20 20 20 H136 q20 0 20 -20 V60 Z"/>`,
+    devant:`<path class="v-trait" d="M44 60 V228 q0 20 20 20 H136 q20 0 20 -20 V60"/><ellipse class="v-trait" cx="100" cy="60" rx="56" ry="5"/>`},
+  coupe:{nom:"Coupe de glace",haut:62,bas:160,cx:100,larg:140,
+    clip:"M30 62 C30 128 62 160 100 160 C138 160 170 128 170 62 Z",
+    verre:`<path class="v-fond" d="M22 56 C22 134 58 168 100 168 C142 168 178 134 178 56 Z"/><path class="v-fond" d="M93 166 Q97 200 90 222 H110 Q103 200 107 166 Z"/><ellipse class="v-fond" cx="100" cy="228" rx="44" ry="9"/>`,
+    devant:`<path class="v-trait" d="M22 56 C22 134 58 168 100 168 C142 168 178 134 178 56"/><ellipse class="v-trait" cx="100" cy="56" rx="78" ry="7"/><path class="v-trait" d="M93 166 Q97 200 90 222 M107 166 Q103 200 110 222"/><ellipse class="v-trait" cx="100" cy="228" rx="44" ry="9"/>`},
+  doubleparoi:{nom:"Verre double paroi (cappuccino)",haut:60,bas:204,cx:100,larg:100,
+    clip:"M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60 Z",
+    verre:`<path class="v-fond" d="M32 50 V194 q0 46 46 46 H122 q46 0 46 -46 V50 Z"/><path class="v-paroi" d="M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60"/>`,
+    devant:`<path class="v-trait" d="M32 50 V194 q0 46 46 46 H122 q46 0 46 -46 V50"/><path class="v-trait fin" d="M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60"/><path class="v-trait" d="M32 50 Q41 46 50 60 M168 50 Q159 46 150 60"/>`},
+  liegeois:{nom:"Verre à café liégeois",haut:40,bas:226,cx:100,larg:78,
+    clip:"M61 40 C58 110 70 168 80 214 q3 12 14 12 H106 q11 0 14 -12 C130 168 142 110 139 40 Z",
+    verre:`<path class="v-fond" d="M54 32 C50 112 63 170 73 216 q4 16 20 16 H107 q16 0 20 -16 C137 170 150 112 146 32 Z"/><path class="v-fond" d="M70 232 q30 16 60 0 v8 q-30 14 -60 0 Z"/>`,
+    devant:`<path class="v-trait" d="M54 32 C50 112 63 170 73 216 q4 16 20 16 H107 q16 0 20 -16 C137 170 150 112 146 32"/><ellipse class="v-trait" cx="100" cy="32" rx="46" ry="5"/><path class="v-trait" d="M70 232 v8 q30 14 60 0 v-8"/>`},
+  mug:{nom:"Mug en verre",haut:84,bas:232,cx:94,larg:108,
+    clip:"M40 84 V196 q0 36 36 36 H112 q36 0 36 -36 V84 Z",
+    verre:`<path class="v-fond" d="M32 74 V198 q0 44 44 44 H112 q44 0 44 -44 V74 Z"/><path class="v-anse" d="M156 108 q32 0 32 36 q0 36 -32 36"/>`,
+    devant:`<path class="v-trait" d="M32 74 V198 q0 44 44 44 H112 q44 0 44 -44 V74"/><ellipse class="v-trait" cx="94" cy="74" rx="62" ry="6"/>`},
+  bocal:{nom:"Bocal / pot",haut:84,bas:236,cx:100,larg:104,
+    clip:"M48 92 q0 -8 10 -8 H142 q10 0 10 8 V220 q0 16 -16 16 H64 q-16 0 -16 -16 Z",
+    verre:`<path class="v-fond" d="M40 90 q0 -14 16 -14 H144 q16 0 16 14 V222 q0 22 -22 22 H62 q-22 0 -22 -22 Z"/><rect class="v-col" x="54" y="56" width="92" height="20" rx="4"/>`,
+    devant:`<path class="v-trait" d="M40 90 q0 -14 16 -14 H144 q16 0 16 14 V222 q0 22 -22 22 H62 q-22 0 -22 -22 Z"/><rect class="v-trait" x="54" y="56" width="92" height="20" rx="4"/>`},
+  ramequin:{nom:"Ramequin",haut:146,bas:232,cx:100,larg:132,
+    clip:"M34 146 L42 220 q2 12 14 12 H144 q12 0 14 -12 L166 146 Z",
+    verre:`<path class="v-fond" d="M24 138 L34 224 q3 18 21 18 H145 q18 0 21 -18 L176 138 Z"/>`,
+    devant:`<path class="v-trait" d="M24 138 L34 224 q3 18 21 18 H145 q18 0 21 -18 L176 138"/><ellipse class="v-trait" cx="100" cy="138" rx="76" ry="6"/>`},
+  tasse:{nom:"Tasse à café",haut:110,bas:216,cx:92,larg:112,
+    clip:"M36 110 V160 q0 56 56 56 q56 0 56 -56 V110 Z",
+    verre:`<ellipse class="v-fond" cx="96" cy="234" rx="78" ry="10"/><path class="v-fond" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100 Z"/><path class="v-anse" d="M154 122 q30 2 28 30 q-2 26 -34 30"/>`,
+    devant:`<path class="v-trait" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100"/><ellipse class="v-trait" cx="92" cy="100" rx="64" ry="6"/>`},
+};
+const CIRE="#f3e6cf";
+// Hasard reproductible : les bulles et paillettes restent à la même place d'un dessin à l'autre
+function graine(n){let s=n*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280)}
+function bord(texture,y){
+  let d=`M-10 ${y}`;
+  for(let x=-10;x<210;x+=20){
+    if(texture==="chantilly")d+=` a10 7 0 0 1 20 0`;
+    else if(texture==="granite")d+=` l10 -5 l10 5`;
+    else d+=` q10 -3 20 0`;
+  }
+  return d+` V300 H-10 Z`;
+}
+function decor(texture,c,y1,y2,i){
+  const h=y2-y1;if(h<3)return"";const r=graine(i+7);let s="";
+  if(texture==="mousse")for(let k=0;k<Math.min(40,h*1.2);k++)s+=`<circle cx="${20+r()*160}" cy="${y1+4+r()*(h-6)}" r="${1+r()*3}" fill="#fff" opacity=".55"/>`;
+  if(texture==="paillettes")for(let k=0;k<Math.min(60,h*2);k++)s+=`<circle cx="${20+r()*160}" cy="${y1+3+r()*(h-4)}" r="${.6+r()*1.3}" fill="${k%3?"#e9c46a":"#fff"}" opacity=".9"/>`;
+  if(texture==="morceaux")for(let k=0;k<Math.min(16,h/3);k++)s+=`<rect x="${20+r()*160}" y="${y1+4+r()*(h-8)}" width="${4+r()*5}" height="${3+r()*4}" rx="2" fill="${fonce(c,.35)}" transform="rotate(${r()*90} 100 ${y1})" opacity=".8"/>`;
+  if(texture==="marbre")for(let k=0;k<3;k++){const y=y1+h*(.25+k*.25);s+=`<path d="M10 ${y} q30 ${-h*.18} 60 0 t60 0 t60 0" stroke="${fonce(c,-.35)}" stroke-width="${2+k}" fill="none" opacity=".7"/>`}
+  return s;
+}
+// Assombrit (k>0) ou éclaircit (k<0) une couleur #rrggbb
+function fonce(c,k){const m=/^#?([0-9a-f]{6})$/i.exec(c||"");if(!m)return c;const n=parseInt(m[1],16);const f=v=>Math.max(0,Math.min(255,Math.round(k>0?v*(1-k):v+(255-v)*-k)));return"#"+[n>>16,n>>8&255,n&255].map(f).map(v=>v.toString(16).padStart(2,"0")).join("")}
+const poidsCouche=c=>(c.ingredients||[]).reduce((a,x)=>{const p=P(x.produit);return a+(p&&(p.unite==="g"||p.unite==="ml")?+x.q||0:0)},0);
+function couleurCouche(c){if(c.couleur)return c.couleur;const col=(c.ingredients||[]).map(x=>P(x.produit)).find(p=>p&&p.type==="colorant"&&p.couleur);return col?col.couleur:CIRE}
+let numSvg=0;
+function dessin(rec,{mini=false}={}){
+  const C=CONTENANTS[rec.contenant]||CONTENANTS.verrine,n=++numSvg;
+  const couches=rec.couches||[];
+  const remp=(C.bas-C.haut)*((rec.remplissage??88)/100);
+  const poids=couches.map(poidsCouche),tot=poids.reduce((a,b)=>a+b,0);
+  // Hauteur de chaque couche : selon son poids (g / ml), sinon parts égales
+  const parts=couches.map((c,i)=>tot>0?(poids[i]||tot*.04)/(tot+couches.reduce((a,_,j)=>a+(poids[j]?0:tot*.04),0)):1/Math.max(1,couches.length));
+  let y=C.bas,bandes=[];
+  couches.forEach((c,i)=>{const h=remp*parts[i];bandes.push({c,haut:y-h,bas:y,i});y-=h});
+  let fond="",motifs="";
+  // De la couche du haut vers celle du bas : chacune recouvre le bas de la précédente et garde son bord visible
+  [...bandes].reverse().forEach(b=>{const col=couleurCouche(b.c);fond+=`<path d="${bord(b.c.texture,b.haut)}" fill="${col}"/>`});
+  bandes.forEach(b=>{motifs+=decor(b.c.texture,couleurCouche(b.c),b.haut,b.bas,b.i)});
+  const dessus=C.bas-remp,cx=C.cx;
+  let dome="";const derniere=couches[couches.length-1];
+  if(derniere&&derniere.texture==="chantilly"&&rec.dome!==false){
+    const col=couleurCouche(derniere),w=C.larg/2;
+    dome=`<g fill="${col}" stroke="${fonce(col,.12)}" stroke-width="1.2"><ellipse cx="${cx}" cy="${dessus-4}" rx="${w*.86}" ry="${w*.22}"/><ellipse cx="${cx}" cy="${dessus-w*.3}" rx="${w*.62}" ry="${w*.2}"/><ellipse cx="${cx}" cy="${dessus-w*.55}" rx="${w*.38}" ry="${w*.16}"/><path d="M${cx} ${dessus-w*.9} q${w*.16} ${w*.16} 0 ${w*.24} q${-w*.16} ${-w*.08} 0 ${-w*.24}z"/></g>`;
+  }
+  const sommet=dome?dessus-(C.larg/2)*.86:dessus;
+  const meche=couches.length&&rec.meche!==false?`<line x1="${cx}" y1="${sommet+2}" x2="${cx}" y2="${sommet-16}" stroke="#3a2a20" stroke-width="2.4" stroke-linecap="round"/>${mini?"":`<path d="M${cx} ${sommet-38} q9 12 0 20 q-9 -8 0 -20z" fill="#f2a93b"/><path d="M${cx} ${sommet-30} q4 6 0 10 q-4 -4 0 -10z" fill="#fff3c4"/>`}`:"";
+  const vb=Math.min(0,sommet-44);
+  return `<svg viewBox="0 ${vb} 200 ${264-vb}" role="img" aria-label="${esc(C.nom)}"><defs><clipPath id="cl${n}"><path d="${C.clip}"/></clipPath>
+    <linearGradient id="re${n}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".25" stop-color="#fff" stop-opacity=".05"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".25"/></linearGradient>
+    <style>.v-fond{fill:rgba(220,235,240,.35);stroke:none}.v-paroi{fill:rgba(255,255,255,.25);stroke:none}.v-col{fill:rgba(220,235,240,.5)}.v-anse{fill:none;stroke:rgba(190,210,220,.9);stroke-width:9;stroke-linecap:round}.v-trait{fill:none;stroke:rgba(120,140,150,.75);stroke-width:2}.v-trait.fin{stroke-width:1.2;stroke-dasharray:3 3}</style></defs>
+    ${C.verre}<g clip-path="url(#cl${n})">${fond}${motifs}</g>${dome}${meche}
+    <path d="${C.clip}" fill="url(#re${n})"/>${C.devant}</svg>`;
+}
+
+/* ---------- État de l'écran ---------- */
+let vue="recettes",courant=null,brouillon=null,mult=1,recherche="",calque=null,filtreContenant="";
+const ICO={
+  recettes:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6M9 11h4"/>',
+  inventaire:'<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/>',
+  sauvegarde:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'};
+function nav(){
+  const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
+  document.getElementById("nav").innerHTML=[["recettes","Recettes"],["inventaire","Inventaire"],["sauvegarde","Réglages"]].map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join("");
+  const titres={recettes:"Mel d’antan · mes recettes",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
+  document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
+}
+function rendre(){
+  nav();
+  const a=document.getElementById("app");
+  a.innerHTML=vue==="voir"?vVoir():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
+  rendreCalque();
+}
+function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
+addEventListener("popstate",e=>{
+  if(calque){calque=null;rendreCalque();return}
+  const s=e.state||{vue:"recettes"};
+  if(s.vue===vue&&s.id===courant)return;
+  if(vue==="editer"&&brouillon&&modifie()&&!confirm("Quitter sans enregistrer les changements ?")){history.pushState({vue,id:courant},"");return}
+  vue=s.vue;courant=s.id;if(vue!=="editer")brouillon=null;if(vue==="editer"&&!brouillon)vue="recettes";rendre();scrollTo(0,0)});
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
+
+/* ---------- Écran : liste des recettes ---------- */
+function vRecettes(){
+  const q=recherche.trim().toLowerCase();
+  const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
+  const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
+  return `${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:200px"></div>
+   ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
+  ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt=""><div class="mini-verre">${dessin(r,{mini:true})}</div>`:dessin(r,{mini:true})}</div>
+    <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
+   :`<div class="vide">${D.recettes.length?"Aucune recette ne correspond.":`<p style="font-family:var(--f-main);font-size:1.6rem">Le carnet est encore vide.</p><p>Touchez « Nouvelle recette » pour noter votre première création.</p>`}</div>`}
+  <button class="btn flottant" data-act="nouvelle">＋ Nouvelle recette</button>`;
+}
+
+/* ---------- Écran : fiche d'une recette ---------- */
+function besoins(r,k){const b={};r.couches.forEach(c=>c.ingredients.forEach(x=>{if(x.produit)b[x.produit]=(b[x.produit]||0)+(+x.q||0)*k}));return b}
+function vVoir(){
+  const r=R(courant);if(!r)return `<p class="vide">Recette introuvable.</p>`;
+  const b=besoins(r,mult);
+  const total=r.couches.reduce((a,c)=>a+poidsCouche(c),0)*mult;
+  return `<div class="fiche"><div class="scene">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant]?.nom||"")}</div></div>
+  <div>${r.photo?`<img class="photo-grande" src="${r.photo}" alt="Photo de ${esc(r.nom)}">`:""}
+   <div class="recette-papier"><h2>${esc(r.nom||"Sans nom")}</h2>
+    <div class="ligne" style="margin:10px 0 2px"><span class="aide" style="margin:0">Quantités pour</span><div class="puces">${[.5,1,2,3,4].map(k=>`<button class="puce ${mult===k?"on":""}" data-mult="${k}">${k===.5?"½":k} bougie${k>1?"s":""}</button>`).join("")}</div></div>
+    ${r.couches.map((c,i)=>`<div class="couche-titre"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${i+1}`)}${c.texture&&c.texture!=="lisse"?` <small class="aide" style="margin:0">· ${esc((TEXTURES.find(t=>t[0]===c.texture)||[,""])[1])}</small>`:""}</div>
+     <ul class="manuscrit">${c.ingredients.filter(x=>x.produit).map(x=>{const p=P(x.produit);const manque=p&&p.stock!=null&&p.stock!==""&&b[x.produit]>+p.stock;return `<li class="${manque?"manque":""}">${esc(phrase((+x.q||0)*mult,p))}${manque?` <small>(stock : ${nb(+p.stock)})</small>`:""}</li>`}).join("")||`<li style="color:var(--doux)">—</li>`}</ul>`).join("")}
+    ${total?`<div class="total">Poids total (cires, liquides) : <b>${nb(total)} g</b></div>`:""}
+    ${r.notes?`<div class="couche-titre">Notes</div><p class="notes">${esc(r.notes)}</p>`:""}
+   </div>
+   <div class="ligne" style="margin-top:14px"><button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="couler">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
+   <p class="aide">« J’ai coulé » retire les quantités utilisées de l’inventaire (pour les produits dont vous suivez le stock).</p>
+  </div></div>`;
+}
+
+/* ---------- Écran : création / modification ---------- */
+function recetteVide(){return{id:nouvelId(),neuve:true,nom:"",contenant:"verrine",photo:null,notes:"",remplissage:88,couches:[{nom:"Base",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}]}}
+let instantane="";
+const modifie=()=>brouillon&&JSON.stringify(brouillon)!==instantane;
+function optionsProduits(sel){
+  return `<option value="">Choisir un produit…</option>${TYPES.map(([k,l])=>{const ps=D.produits.filter(p=>p.type===k).sort((a,b)=>a.nom.localeCompare(b.nom));return ps.length?`<optgroup label="${l}">${ps.map(p=>`<option value="${p.id}" ${sel===p.id?"selected":""}>${esc(p.nom)}</option>`).join("")}</optgroup>`:""}).join("")}<option value="__nouveau">＋ Nouveau produit dans l’inventaire…</option>`;
+}
+function vEditer(){
+  const r=brouillon;
+  return `<div class="editeur"><div class="scene" id="apercu">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant].nom)}</div></div>
+  <div>
+   <div class="carte"><label class="champ">Nom de la recette<input type="text" data-b="nom" value="${esc(r.nom)}" placeholder="Café liégeois, Fraisier, Coupe vanille…" maxlength="80"></label>
+    <div class="photo-zone" style="margin-top:12px">${r.photo?`<img src="${r.photo}" alt="">`:""}<label class="btn leger petit">${r.photo?"Changer la photo":"📷 Ajouter une photo"}<input type="file" accept="image/*" id="photo" hidden></label>${r.photo?`<button class="btn leger petit" data-act="sansPhoto">Retirer</button>`:""}</div></div>
+   <div class="carte"><b>Le contenant</b><div class="choix-contenants" style="margin-top:10px">${Object.entries(CONTENANTS).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span></button>`).join("")}</div>
+    <label class="champ" style="margin-top:12px"><span>Remplissage : <b id="rempVal">${r.remplissage}</b> %</span><input type="range" min="30" max="100" data-b="remplissage" value="${r.remplissage}"></label></div>
+   <div class="carte"><div class="ligne" style="justify-content:space-between"><b>Les couches (du bas vers le haut)</b></div>
+    <p class="aide">La hauteur de chaque couche suit son poids en grammes. La couleur se règle à la main, ou prend celle du colorant.</p>
+    <div style="margin-top:10px">${r.couches.map((c,i)=>`<div class="couche" style="--c:${couleurCouche(c)}">
+     <div class="couche-tete"><label class="champ" style="flex:2;min-width:140px">Couche ${i+1}<input type="text" data-b="couches.${i}.nom" value="${esc(c.nom)}" placeholder="Base café, crème, chantilly…" maxlength="40"></label>
+      <label class="champ" style="flex:none">Couleur<input type="color" data-b="couches.${i}.couleur" value="${c.couleur||couleurCouche(c)}"></label>
+      <label class="champ" style="flex:1;min-width:130px">Aspect<select data-b="couches.${i}.texture">${TEXTURES.map(([k,l])=>`<option value="${k}" ${c.texture===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+     ${c.ingredients.map((x,j)=>{const p=P(x.produit);return `<div class="ingr"><select data-ingr="${i}.${j}" aria-label="Produit">${optionsProduits(x.produit)}</select><input type="number" inputmode="decimal" min="0" step="any" data-b="couches.${i}.ingredients.${j}.q" value="${esc(x.q)}" placeholder="Quantité"><button class="btn leger rond" data-act="retirerIngr:${i}:${j}" aria-label="Retirer">×</button>${p?`<span class="unite">${esc((UNITES.find(u=>u[0]===p.unite)||[,""])[1])}</span>`:""}</div>`}).join("")}
+     <div class="ligne" style="margin-top:10px"><button class="btn leger petit" data-act="ajoutIngr:${i}">＋ Produit</button><span style="flex:1"></span>
+      ${i>0?`<button class="btn leger rond" data-act="versBas:${i}" aria-label="Descendre la couche">↓</button>`:""}${i<r.couches.length-1?`<button class="btn leger rond" data-act="versHaut:${i}" aria-label="Monter la couche">↑</button>`:""}
+      ${r.couches.length>1?`<button class="btn leger petit" data-act="retirerCouche:${i}">Retirer la couche</button>`:""}</div></div>`).reverse().join("")}</div>
+    <button class="btn leger" data-act="ajoutCouche">＋ Ajouter une couche au-dessus</button></div>
+   <div class="carte"><label class="champ">Notes (température, temps de prise, astuces…)<textarea data-b="notes" rows="4" maxlength="3000" placeholder="Couler à 65 °C, attendre 40 min entre les couches…">${esc(r.notes)}</textarea></label></div>
+   <div class="barre-enreg"><button class="btn" data-act="enregistrer">Enregistrer la recette</button><button class="btn leger" data-act="annuler">Annuler</button></div>
+  </div></div>`;
+}
+function majApercu(){const z=document.getElementById("apercu");if(z&&brouillon)z.innerHTML=`${dessin(brouillon)}<div class="nom-contenant">${esc(CONTENANTS[brouillon.contenant].nom)}</div>`;
+  document.querySelectorAll(".couche").forEach((el,k)=>{const i=brouillon.couches.length-1-k;el.style.setProperty("--c",couleurCouche(brouillon.couches[i]))})}
+function fixer(o,chemin,val){const k=chemin.split(".");for(let i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=val}
+// Photo réduite dans le navigateur (≈ 1000 px) pour garder le carnet léger
+function reduirePhoto(file,max=1000){return new Promise((ok,ko)=>{const u=URL.createObjectURL(file),im=new Image();im.onerror=()=>ko(new Error("Image illisible"));im.onload=()=>{const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",.82))};im.src=u})}
+
+/* ---------- Écran : inventaire ---------- */
+function vInventaire(){
+  return `<div class="ligne" style="justify-content:space-between;margin-bottom:6px"><p class="aide" style="margin:0;flex:1;min-width:200px">Vos cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand vous coulez une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
+  ${D.produits.length?TYPES.map(([k,l])=>{const ps=D.produits.filter(p=>p.type===k).sort((a,b)=>a.nom.localeCompare(b.nom));return ps.length?`<div class="groupe"><h3>${l}</h3>${ps.map(p=>{const suivi=p.stock!=null&&p.stock!=="";const pas=p.unite==="g"||p.unite==="ml"?50:1;const bas=suivi&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte;
+   return `<div class="produit">${p.couleur?`<span class="pastille" style="background:${p.couleur};width:22px;height:22px"></span>`:""}<div class="nom"><b>${esc(p.nom)}</b><small>${esc((UNITES.find(u=>u[0]===p.unite)||[,""])[1])}${p.note?" · "+esc(p.note):""}${utilisations(p.id)?` · ${utilisations(p.id)} recette${utilisations(p.id)>1?"s":""}`:""}</small></div>
+    ${suivi?`<div class="stock ${bas?"bas-stock":""}"><button class="btn leger rond" data-stock="${p.id}:-${pas}" aria-label="Moins">−</button><b>${nb(+p.stock)}</b><button class="btn leger rond" data-stock="${p.id}:${pas}" aria-label="Plus">+</button></div>`:""}
+    <button class="btn leger petit" data-produit="${p.id}">Modifier</button></div>`}).join("")}</div>`:""}).join(""):`<div class="vide"><p>Aucun produit pour l’instant.</p></div>`}`;
+}
+const utilisations=id=>D.recettes.filter(r=>r.couches.some(c=>c.ingredients.some(x=>x.produit===id))).length;
+
+/* ---------- Écran : réglages et sauvegarde ---------- */
+function vReglages(){
+  const theme=localStorage.getItem("carnet.theme")||"auto";
+  return `<div class="carte"><b>Sauvegarde</b><p class="aide">Tout le carnet est rangé sur cet appareil. Faites de temps en temps une sauvegarde (un fichier avec les recettes, les photos et l’inventaire) : elle sert aussi à passer le carnet sur un autre téléphone ou un ordinateur.</p>
+   <div class="ligne" style="margin-top:12px"><button class="btn" data-act="exporter">Télécharger une sauvegarde</button><label class="btn leger">Restaurer une sauvegarde<input type="file" accept="application/json,.json" id="importer" hidden></label></div>
+   <p class="aide">${D.recettes.length} recette${D.recettes.length>1?"s":""} · ${D.produits.length} produit${D.produits.length>1?"s":""}${localStorage.getItem("carnet.derniereSauvegarde")?` · dernière sauvegarde le ${new Date(localStorage.getItem("carnet.derniereSauvegarde")).toLocaleDateString("fr-FR")}`:""}</p></div>
+  <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
+  <div class="carte"><b>Installer sur le téléphone</b><p class="aide"><b>iPhone</b> : dans Safari, bouton Partager › « Sur l’écran d’accueil ».<br><b>Android</b> : dans Chrome, menu ⋮ › « Installer l’application » (ou « Ajouter à l’écran d’accueil »).<br>L’appli s’ouvre ensuite comme les autres, même sans internet.</p>
+   ${installable?`<button class="btn" data-act="installer" style="margin-top:10px">Installer l’application</button>`:""}</div>`;
+}
+const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t)};
+
+/* ---------- Fenêtre : produit de l'inventaire ---------- */
+function rendreCalque(){
+  const z=document.getElementById("calque");
+  if(!calque){z.innerHTML="";return}
+  const p=calque.p;
+  z.innerHTML=`<div class="voile" data-fermer><form class="fenetre" id="fProduit"><h2 style="font-size:1.3rem">${p.id?"Modifier le produit":"Nouveau produit"}</h2>
+   <label class="champ">Nom<input type="text" id="pNom" required maxlength="60" value="${esc(p.nom||"")}" placeholder="Cire de soja, Colorant bleu, Parfum vanille…"></label>
+   <div class="ligne"><label class="champ">Catégorie<select id="pType">${TYPES.map(([k,l])=>`<option value="${k}" ${p.type===k?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="champ">Unité<select id="pUnite">${UNITES.map(([k,l])=>`<option value="${k}" ${p.unite===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+   <div class="ligne" style="align-items:flex-end"><label class="champ" style="flex:none">Couleur<input type="color" id="pCouleur" value="${p.couleur||"#f3e6cf"}"></label><label class="ligne" style="gap:6px;font-size:.9rem;color:var(--doux);flex:1"><input type="checkbox" id="pAvecCouleur" ${p.couleur?"checked":""}> Utiliser cette couleur dans le dessin (colorants, cires teintées…)</label></div>
+   <div class="ligne"><label class="champ">Stock actuel (facultatif)<input type="number" inputmode="decimal" step="any" min="0" id="pStock" value="${esc(p.stock??"")}"></label><label class="champ">M’alerter sous (facultatif)<input type="number" inputmode="decimal" step="any" min="0" id="pAlerte" value="${esc(p.alerte??"")}"></label></div>
+   <label class="champ">Note (marque, fournisseur, prix…)<input type="text" id="pNote" maxlength="120" value="${esc(p.note||"")}"></label>
+   <div class="ligne" style="margin-top:6px"><button class="btn">Enregistrer</button><button type="button" class="btn leger" data-fermer>Annuler</button>${p.id?`<button type="button" class="btn leger" data-act="supprimerProduit" style="margin-left:auto">Supprimer</button>`:""}</div></form></div>`;
+  if(!p.id)setTimeout(()=>document.getElementById("pNom")?.focus(),50);
+}
+function ouvrirProduit(p,retour){calque={p:{type:"cire",unite:"g",...p},retour};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
+function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.state&&history.state.calque)history.back()}
+
+/* ---------- Actions ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],#retour");
+  if(!t)return;const d=t.dataset;
+  if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
+  if(t.id==="retour"){history.back();return}
+  if(d.aller){if(vue==="editer"&&modifie()&&!confirm("Quitter sans enregistrer les changements ?"))return;brouillon=null;aller(d.aller);return}
+  if(d.voir){mult=1;aller("voir",{id:d.voir});return}
+  if(d.mult){mult=+d.mult;rendre();return}
+  if(d.filtre!==undefined){filtreContenant=d.filtre;rendre();return}
+  if(d.themeChoix){localStorage.setItem("carnet.theme",d.themeChoix);fondThemes(d.themeChoix);rendre();return}
+  if(d.contenant){brouillon.contenant=d.contenant;const y=scrollY;rendre();scrollTo(0,y);return}
+  if(d.produit){ouvrirProduit(copie(P(d.produit)));return}
+  if(d.stock){const[id,s]=d.stock.split(":");const p=P(id);p.stock=Math.max(0,Math.round((+p.stock+ +s)*100)/100);sauver();rendre();return}
+  const a=d.act||"";const[act,i,j]=a.split(":");
+  const garder=f=>{const y=scrollY;f();rendre();scrollTo(0,y)};
+  if(act==="nouvelle"){brouillon=recetteVide();instantane=JSON.stringify(brouillon);aller("editer")}
+  else if(act==="modifier"){brouillon=copie(R(courant));instantane=JSON.stringify(brouillon);aller("editer")}
+  else if(act==="dupliquer"){const r=copie(R(courant));r.id=nouvelId();r.neuve=true;r.nom=r.nom+" (copie)";brouillon=r;instantane="";aller("editer")}
+  else if(act==="supprimer"){const r=R(courant);if(confirm(`Supprimer « ${r.nom} » du carnet ?`)){D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")}}
+  else if(act==="couler"){const r=R(courant),b=besoins(r,mult);let n=0;for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){p.stock=Math.max(0,Math.round((+p.stock-q)*100)/100);n++}}
+    sauver();rendre();toast(n?`Inventaire mis à jour (${n} produit${n>1?"s":""})`:"Aucun produit suivi en stock dans cette recette");
+    const bas=D.produits.filter(p=>b[p.id]&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte);if(bas.length)setTimeout(()=>toast("Bientôt épuisé : "+bas.map(p=>p.nom).join(", ")),2700)}
+  else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
+  else if(act==="retirerCouche"){if(confirm("Retirer cette couche ?"))garder(()=>brouillon.couches.splice(+i,1))}
+  else if(act==="versBas")garder(()=>{const c=brouillon.couches;[c[+i-1],c[+i]]=[c[+i],c[+i-1]]});
+  else if(act==="versHaut")garder(()=>{const c=brouillon.couches;[c[+i+1],c[+i]]=[c[+i],c[+i+1]]});
+  else if(act==="ajoutIngr")garder(()=>brouillon.couches[+i].ingredients.push({produit:"",q:""}));
+  else if(act==="retirerIngr")garder(()=>brouillon.couches[+i].ingredients.splice(+j,1));
+  else if(act==="sansPhoto")garder(()=>brouillon.photo=null);
+  else if(act==="enregistrer"){
+    const r=brouillon;if(!r.nom.trim()){toast("Donnez un nom à la recette");document.querySelector('[data-b="nom"]')?.focus();return}
+    r.nom=r.nom.trim();r.couches.forEach(c=>c.ingredients=c.ingredients.filter(x=>x.produit));
+    r.maj=new Date().toISOString();if(!r.cree)r.cree=r.maj;const neuve=r.neuve;delete r.neuve;
+    const k=D.recettes.findIndex(x=>x.id===r.id);if(k>=0)D.recettes[k]=r;else D.recettes.push(r);
+    sauver();brouillon=null;courant=r.id;mult=1;vue="voir";history.replaceState({vue,id:courant},"");rendre();scrollTo(0,0);toast(neuve?"Recette ajoutée au carnet":"Recette enregistrée")}
+  else if(act==="annuler"){history.back()}
+  else if(act==="nouveauProduit")ouvrirProduit({});
+  else if(act==="supprimerProduit"){const p=calque.p,n=utilisations(p.id);if(confirm(n?`« ${p.nom} » sert dans ${n} recette${n>1?"s":""}. Le supprimer quand même ?`:`Supprimer « ${p.nom} » ?`)){D.produits=D.produits.filter(x=>x.id!==p.id);sauver();fermerCalque();rendre()}}
+  else if(act==="exporter")exporter();
+  else if(act==="installer")installer();
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.id==="recherche"){recherche=t.value;const pos=t.selectionStart;rendre();const n=document.getElementById("recherche");n.focus();n.setSelectionRange(pos,pos);return}
+  if(t.dataset.b&&brouillon){let v=t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}fixer(brouillon,t.dataset.b,v);majApercu()}
+});
+document.addEventListener("change",async e=>{
+  const t=e.target;
+  if(t.dataset.ingr){const[i,j]=t.dataset.ingr.split(".").map(Number);
+    if(t.value==="__nouveau"){t.value=brouillon.couches[i].ingredients[j].produit||"";ouvrirProduit({},{i,j});return}
+    brouillon.couches[i].ingredients[j].produit=t.value;const y=scrollY;rendre();scrollTo(0,y);return}
+  if(t.dataset.b&&brouillon&&t.tagName==="SELECT"){fixer(brouillon,t.dataset.b,t.value);majApercu()}
+  if(t.id==="photo"&&t.files[0]){try{brouillon.photo=await reduirePhoto(t.files[0]);const y=scrollY;rendre();scrollTo(0,y)}catch(x){toast("Cette photo n’a pas pu être lue")}}
+  if(t.id==="importer"&&t.files[0])importer(t.files[0]);
+});
+document.addEventListener("submit",e=>{
+  e.preventDefault();if(e.target.id!=="fProduit")return;
+  const g=id=>document.getElementById(id).value;
+  const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim()};
+  if(!p.nom)return;
+  if(!p.id){p.id=nouvelId();D.produits.push(p)}else D.produits[D.produits.findIndex(x=>x.id===p.id)]=p;
+  const retour=calque.retour;sauver();fermerCalque();
+  if(retour&&brouillon){brouillon.couches[retour.i].ingredients[retour.j].produit=p.id}
+  const y=scrollY;rendre();scrollTo(0,y);toast("Produit enregistré");
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&calque)fermerCalque()});
+// Le petit sélecteur de couleur prend aussi la couleur choisie pour « Utiliser cette couleur »
+document.addEventListener("input",e=>{if(e.target.id==="pCouleur")document.getElementById("pAvecCouleur").checked=true});
+
+function exporter(){
+  const blob=new Blob([JSON.stringify({app:"carnet-bougies",version:1,date:new Date().toISOString(),...D})],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`mel-dantan-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);localStorage.setItem("carnet.derniereSauvegarde",new Date().toISOString());rendre();
+}
+async function importer(file){
+  try{const o=JSON.parse(await file.text());if(!o||o.app!=="carnet-bougies"||!Array.isArray(o.recettes)||!Array.isArray(o.produits))throw 0;
+    if(!confirm(`Remplacer le carnet actuel par cette sauvegarde (${o.recettes.length} recettes, ${o.produits.length} produits) ?`))return;
+    D={produits:o.produits,recettes:o.recettes};sauver();rendre();toast("Sauvegarde restaurée")}
+  catch(x){toast("Ce fichier n’est pas une sauvegarde du carnet")}
+}
+
+/* ---------- Installation (PWA) ---------- */
+let invite=null,installable=false;
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installable=true;if(vue==="sauvegarde")rendre()});
+async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
+if("serviceWorker"in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* ---------- Premier lancement : un petit inventaire et une recette d'exemple ---------- */
+function exemple(){
+  const p=(nom,type,unite,couleur="",stock=null)=>({id:nouvelId(),nom,type,unite,couleur,stock,alerte:null,note:""});
+  const soja=p("Cire de soja","cire","g","",2000),colza=p("Cire de colza","cire","g","",1000),fouet=p("Cire à chantilly","cire","g","#fbf6ee",800),
+    brun=p("Colorant brun café","colorant","gouttes","#6f4326"),beige=p("Colorant caramel","colorant","gouttes","#c8925a"),bleu=p("Colorant bleu","colorant","gouttes","#5b8fd1"),
+    cafe=p("Parfum café","parfum","gouttes"),vanille=p("Parfum vanille","parfum","gouttes"),meche=p("Mèche coton","meche","pieces","",30),grains=p("Grains de café","deco","pieces"),cacao=p("Poudre de cacao (déco)","deco","pincees","#5a3420");
+  D.produits=[soja,colza,fouet,brun,beige,bleu,cafe,vanille,meche,grains,cacao];
+  const maj=new Date().toISOString();
+  D.recettes=[{id:nouvelId(),nom:"Café liégeois",contenant:"liegeois",photo:null,remplissage:80,cree:maj,maj,
+    notes:"Couler la base à 70 °C, attendre qu’elle fige avant la couche caramel.\nChantilly fouettée à 50 °C, posée à la poche douille.",
+    couches:[{nom:"Café",couleur:"",texture:"lisse",ingredients:[{produit:soja.id,q:120},{produit:brun.id,q:4},{produit:cafe.id,q:20},{produit:meche.id,q:1}]},
+      {nom:"Crème caramel",couleur:"",texture:"marbre",ingredients:[{produit:soja.id,q:60},{produit:beige.id,q:2},{produit:vanille.id,q:8}]},
+      {nom:"Chantilly",couleur:"",texture:"chantilly",ingredients:[{produit:fouet.id,q:60},{produit:vanille.id,q:6},{produit:grains.id,q:3},{produit:cacao.id,q:1}]}]}];
+}
+(async()=>{
+  fondThemes(localStorage.getItem("carnet.theme")||"auto");
+  const lu=await lire("donnees");
+  if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();sauver()}
+  history.replaceState({vue:"recettes"},"");rendre();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Mel d’antan",
+  "short_name": "Mel d’antan",
+  "description": "Le carnet de recettes de bougies de Mélanie : mes recettes de bougies, mon inventaire et l’aperçu des couches dans le contenant.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6efe6",
+  "theme_color": "#7a4a2e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
