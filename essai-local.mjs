@@ -4,8 +4,14 @@ import worker from "./worker.js";
 const dir=path.dirname(new URL(import.meta.url).pathname);
 const types={".html":"text/html",".js":"text/javascript",".png":"image/png",".jpg":"image/jpeg",".webp":"image/webp",".webmanifest":"application/json"};
 let derniere=null;
+// Fausse base D1 (SQLite en mémoire) pour essayer le carnet partagé
+import { DatabaseSync } from "node:sqlite";
+const sql=new DatabaseSync(process.env.BASE||":memory:");
+const ordre=(q,v=[])=>({bind:(...x)=>ordre(q,x),run:async()=>{sql.prepare(q).run(...v);return{}},all:async()=>({results:sql.prepare(q).all(...v)}),first:async()=>sql.prepare(q).get(...v)||null,_x(){return /^\s*select/i.test(q)?{results:sql.prepare(q).all(...v)}:(sql.prepare(q).run(...v),{})}});
+const DB={prepare:q=>ordre(q),batch:async l=>l.map(o=>o._x())};
 const env={
   CODE_MEL:process.env.CODE_MEL||undefined,
+  DB,
   ANTHROPIC_API_KEY:process.env.ANTHROPIC_API_KEY||undefined,
   AI:{async run(modele,opts){derniere=opts;
     if(modele.includes("flux"))return{image:fs.readFileSync(path.join(dir,"logo.jpg")).toString("base64")};const morceaux=["Bonjour Mel ! ","D’après ton carnet, ta **chantilly** se fouette à **50 °C**.\n\n","- Fouette 2 min\n- Pose à la poche douille\n\n","Voici une idée :\n```recette\n",'{"nom":"Tiramisu","contenant":"verrine","remplissage":85,"notes":"Couler à 65 °C","couches":[{"nom":"Biscuit café","couleur":"#6f4326","texture":"lisse","ingredients":[{"produit":"Cire de soja","type":"cire","unite":"g","q":100},{"produit":"Parfum mascarpone","type":"parfum","unite":"gouttes","q":15}]},{"nom":"Crème","couleur":"#f6ecd8","texture":"chantilly","ingredients":[{"produit":"Cire à chantilly","type":"cire","unite":"g","q":60}]}]}',"\n```\n\nEt voici à quoi elle pourrait ressembler :\n```image\nA tiramisu candle in a glass verrine, coffee layer, mascarpone whipped top dusted with cocoa\n```"];

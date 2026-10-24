@@ -178,9 +178,73 @@ async function dessiner(env, request) {
   }
 }
 
+// ---------- Carnet partagé entre les appareils (base D1 de Cloudflare) ----------
+// Chaque produit et chaque recette est rangé à part ; les photos le sont une seule fois, sous leur empreinte.
+const SCHEMA = [
+  "CREATE TABLE IF NOT EXISTS elements (id TEXT PRIMARY KEY, genre TEXT NOT NULL, data TEXT NOT NULL, maj INTEGER NOT NULL, supprime INTEGER NOT NULL DEFAULT 0)",
+  "CREATE TABLE IF NOT EXISTS photos (hash TEXT PRIMARY KEY, data TEXT NOT NULL)",
+];
+let basePrete = null;
+const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
+const GENRES = ["produit", "recette"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
+async function empreinteHex(t) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+async function lireCarnet(env) {
+  const { results } = await env.DB.prepare("SELECT id, genre, data, maj FROM elements WHERE supprime = 0").all();
+  return results.map(r => ({ id: r.id, genre: r.genre, data: JSON.parse(r.data), maj: r.maj }));
+}
+async function synchroniser(env, request) {
+  let corps = {};
+  try { corps = JSON.parse(await request.text()) || {}; } catch { return json({ erreur: "Requête illisible." }, 400); }
+  const changes = Array.isArray(corps.changes) ? corps.changes.slice(0, 3000) : [];
+  const suppressions = Array.isArray(corps.suppressions) ? corps.suppressions.slice(0, 3000) : [];
+  const maintenant = Date.now(), ordres = [];
+  for (const c of changes) {
+    if (!c || typeof c.id !== "string" || !/^[\w-]{1,40}$/.test(c.id) || !GENRES.includes(c.genre) || !c.data || typeof c.data !== "object") continue;
+    const texte = JSON.stringify({ ...c.data, id: c.id });
+    // Les photos voyagent à part (/api/photo) : jamais dans un élément
+    if (texte.length > MAX_ELEMENT || texte.includes("data:image")) return json({ erreur: "Élément trop lourd." }, 413);
+    ordres.push(env.DB.prepare("INSERT INTO elements (id, genre, data, maj, supprime) VALUES (?, ?, ?, ?, 0) ON CONFLICT(id) DO UPDATE SET genre = excluded.genre, data = excluded.data, maj = excluded.maj, supprime = 0")
+      .bind(c.id, c.genre, texte, maintenant));
+  }
+  for (const id of suppressions)
+    if (typeof id === "string" && /^[\w-]{1,40}$/.test(id)) ordres.push(env.DB.prepare("UPDATE elements SET supprime = 1, maj = ? WHERE id = ?").bind(maintenant, id));
+  if (ordres.length) await env.DB.batch(ordres);
+  return json({ elements: await lireCarnet(env) });
+}
+async function envoyerPhoto(env, request) {
+  let corps = {};
+  try { corps = JSON.parse(await request.text()) || {}; } catch { return json({ erreur: "Requête illisible." }, 400); }
+  const data = String(corps.data || "");
+  if (data.length > MAX_PHOTO_CARNET || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data)) return json({ erreur: "Photo illisible ou trop lourde." }, 400);
+  const hash = await empreinteHex(data);
+  if (hash !== corps.hash) return json({ erreur: "Photo abîmée pendant l'envoi." }, 400);
+  await env.DB.prepare("INSERT OR IGNORE INTO photos (hash, data) VALUES (?, ?)").bind(hash, data).run();
+  return json({ ok: true });
+}
+async function lirePhoto(env, hash) {
+  const r = await env.DB.prepare("SELECT data FROM photos WHERE hash = ?").bind(hash).first();
+  if (!r) return json({ erreur: "Photo introuvable." }, 404);
+  return new Response(JSON.stringify({ data: r.data }), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, max-age=31536000, immutable" } });
+}
+
 async function api(request, env, chemin) {
   const m = moteur(env);
-  if (chemin === "mel/etat") return json({ actif: !!m, moteur: m, code: !!env.CODE_MEL });
+  if (chemin === "mel/etat") return json({ actif: !!m, moteur: m, code: !!env.CODE_MEL, sync: !!env.DB });
+  // Carnet partagé : même code que Mel
+  const photo = chemin.match(/^photo\/([0-9a-f]{64})$/);
+  if (chemin === "sync" || chemin === "photo" || photo) {
+    if (!env.DB) return json({ erreur: "La base du carnet n'est pas encore branchée." }, 503);
+    if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+    try {
+      await preparer(env);
+      if (photo && request.method === "GET") return await lirePhoto(env, photo[1]);
+      if (request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
+      return chemin === "sync" ? await synchroniser(env, request) : await envoyerPhoto(env, request);
+    } catch (e) { console.error(e); return json({ erreur: "Le carnet en ligne ne répond pas pour le moment." }, 500); }
+  }
   if ((chemin !== "mel" && chemin !== "mel/image") || request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
   if (!m) return json({ erreur: "Mel n'est pas encore branchée : ajoute Workers AI ou la clé ANTHROPIC_API_KEY dans Cloudflare." }, 503);
   if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);

@@ -33,7 +33,12 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
 
 Logo : `logo.jpg` (dans l’en-tête et sur l’accueil) ; icônes de l’appli tirées du même dessin (`icon-*.png`, `apple-touch-icon.png`, `favicon-48.png`).
 
-Tout est enregistré sur l’appareil (IndexedDB) et l'appli marche sans internet une fois installée.
+**Carnet partagé** : sur la version Cloudflare, recettes, photos et inventaire sont synchronisés entre tous les appareils
+(base D1 `mel-dantan`, créée toute seule au déploiement, protégée par `CODE_MEL`). Au premier passage d’un appareil qui a
+déjà son propre carnet, l’appli demande : réunir les deux, prendre celui en ligne, ou garder celui de l’appareil.
+La conversation avec Mel reste propre à chaque appareil.
+
+Tout est aussi enregistré sur l’appareil (IndexedDB) et l'appli marche sans internet une fois installée.
 Penser à faire une sauvegarde de temps en temps.
 
 ## Mel sur Cloudflare (une seule fois)

@@ -11,5 +11,7 @@
   "workers_dev": true,
   "assets": { "directory": "./", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
   "ai": { "binding": "AI" },
+  // Carnet partagé entre les appareils (recettes, inventaire, photos) : base créée toute seule au premier déploiement
+  "d1_databases": [{ "binding": "DB", "database_name": "mel-dantan" }],
   "observability": { "enabled": true }
 }

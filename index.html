@@ -392,6 +392,7 @@ main{padding-bottom:110px}
 <body>
 <header><button class="retour" id="retour" aria-label="Retour" hidden>‹</button><img class="logo" src="logo.jpg" alt="Mel d’antan" id="logo"><h1 id="titre">Mel d’antan</h1><nav class="haut" id="navHaut"></nav><span class="num-version" id="numVersion"></span><button class="bascule" id="bascule"></button></header>
 <div id="majBandeau"></div>
+<div id="syncBandeau"></div>
 <main id="app"></main>
 <nav class="bas" id="nav"></nav>
 <div id="calque"></div>
@@ -406,7 +407,9 @@ async function lire(cle){try{base=base||await ouvrirBase();return await new Prom
 async function ecrire(cle,val){try{base=base||await ouvrirBase();await new Promise((ok,ko)=>{const t=base.transaction(BASE.magasin,"readwrite");t.objectStore(BASE.magasin).put(val,cle);t.oncomplete=ok;t.onerror=()=>ko(t.error)})}catch(e){toast("Enregistrement impossible sur cet appareil")}}
 let D={produits:[],recettes:[]};
 let minuteur=null;
-function sauver(){clearTimeout(minuteur);minuteur=setTimeout(()=>ecrire("donnees",D),250)}
+// Chaque changement est rangé sur l'appareil, puis envoyé au carnet en ligne quelques secondes plus tard
+let sauverExemple=false;
+function sauver(){if(sauverExemple)sauverExemple=false;else delete D.vierge;clearTimeout(minuteur);minuteur=setTimeout(()=>ecrire("donnees",D),250);planifierSync(4000)}
 const nouvelId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const copie=o=>JSON.parse(JSON.stringify(o));
 
@@ -1086,6 +1089,109 @@ function actionImageMel(idx,quoi){
   calque={choixRecette:{image:m.image,suggere:ouverte?ouverte.id:""}};history.pushState({vue,id:courant,calque:1},"");rendreCalque();
 }
 
+/* ---------- Carnet partagé entre les appareils (serveur Cloudflare, /api/sync) ----------
+   Chaque produit et chaque recette est comparé à l'état de la dernière synchronisation : ce qui a changé ici part en ligne,
+   ce qui a changé ailleurs arrive ici. Les photos voyagent une seule fois, sous leur empreinte. */
+let syncEtat={enCours:false,erreur:"",derniere:null,codeRequis:false,attenteChoix:null,bandeauFerme:false},syncMinuteur=null,syncRelancer=false;
+const memEmpreinte=new Map(),parEmpreinte=new Map();
+async function empreinte(t){if(memEmpreinte.has(t))return memEmpreinte.get(t);const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));const h=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");memEmpreinte.set(t,h);parEmpreinte.set(h,t);return h}
+const syncPossible=()=>melEtat&&melEtat.sync&&window.crypto&&crypto.subtle;
+function planifierSync(delai=4000){clearTimeout(syncMinuteur);syncMinuteur=setTimeout(()=>synchroniser(),delai)}
+async function appelCarnet(chemin,corps){
+  const r=await fetch("api/"+chemin,{method:corps?"POST":"GET",headers:{"content-type":"application/json","x-code-mel":codeMel()},body:corps?JSON.stringify(corps):undefined});
+  const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.erreur||"Le carnet en ligne ne répond pas.");e.statut=r.status;e.code=d.code;throw e}return d;
+}
+// Élément tel qu'il est rangé en ligne : la photo est remplacée par son empreinte
+async function enLigne(o){const d={...o};delete d.vierge;if(typeof d.photo==="string"&&d.photo.startsWith("data:"))d.photo="photo:"+await empreinte(d.photo);return d}
+async function photoDe(ref){
+  const h=ref.slice(6);if(parEmpreinte.has(h))return parEmpreinte.get(h);
+  let data=await lire("photo:"+h);
+  if(!data){try{data=(await appelCarnet("photo/"+h)).data;await ecrire("photo:"+h,data)}catch(e){return null}}
+  memEmpreinte.set(data,h);parEmpreinte.set(h,data);return data;
+}
+async function envoyerPhotos(changes){
+  let connues;try{connues=new Set(JSON.parse(localStorage.getItem("carnet.photosEnLigne")||"[]"))}catch(e){connues=new Set()}
+  for(const c of changes){const p=c.data.photo;if(typeof p!=="string"||!p.startsWith("photo:"))continue;const h=p.slice(6);if(connues.has(h))continue;
+    const data=parEmpreinte.get(h);if(!data)continue;await appelCarnet("photo",{hash:h,data});connues.add(h)}
+  try{localStorage.setItem("carnet.photosEnLigne",JSON.stringify([...connues]))}catch(e){}
+}
+const norm=t=>sansAccent(t||"");
+const modifiee=d=>d&&d.maj&&d.cree&&d.maj!==d.cree;
+async function synchroniser(choix){
+  if(!syncPossible())return;
+  if(syncEtat.enCours){syncRelancer=true;return}
+  if(melEtat.code&&!codeMel()){syncEtat.codeRequis=true;rendreSyncBandeau();return}
+  syncEtat.enCours=true;syncEtat.erreur="";let avant=JSON.stringify([D.produits,D.recettes]);
+  try{
+    const base=await lire("sync");
+    const serveur=(await appelCarnet("sync",{})).elements;
+    const local={};
+    for(const p of D.produits)local[p.id]={genre:"produit",data:await enLigne(p)};
+    for(const x of D.recettes)local[x.id]={genre:"recette",data:await enLigne(x)};
+    const srv={};for(const e of serveur)srv[e.id]=e;
+    let changes=[],suppressions=[];
+    if(!base){
+      // Premier passage sur cet appareil
+      if(!serveur.length)changes=Object.entries(local).map(([id,l])=>({id,...l}));
+      else{
+        if(!choix)choix=D.vierge||!D.recettes.length&&!D.produits.length?"serveur":null;
+        if(!choix){syncEtat.attenteChoix={nLocal:D.recettes.length,nServeur:serveur.filter(e=>e.genre==="recette").length};calque={syncChoix:true};rendreCalque();return}
+        syncEtat.attenteChoix=null;
+        if(choix==="local"){changes=Object.entries(local).map(([id,l])=>({id,...l}));suppressions=serveur.filter(e=>!local[e.id]).map(e=>e.id)}
+        else if(choix==="fusion"){
+          // Les produits et recettes du même nom se rejoignent ; la recette retouchée le plus récemment l'emporte
+          const parNom={};for(const e of serveur)parNom[e.genre+":"+norm(e.data.nom)]=e;
+          const remplace={};
+          for(const [id,l] of Object.entries(local)){
+            const e=srv[id]||parNom[l.genre+":"+norm(l.data.nom)];
+            if(!e){changes.push({id,...l});continue}
+            remplace[id]=e.id;
+            if(l.genre==="recette"&&(modifiee(l.data)&&!modifiee(e.data)||modifiee(l.data)===modifiee(e.data)&&(l.data.maj||"")>(e.data.maj||"")))changes.push({id:e.id,genre:"recette",data:{...l.data,id:e.id}});
+          }
+          // Les recettes d'ici pointent vers les produits qui ont rejoint ceux en ligne
+          for(const c of changes)if(c.genre==="recette")c.data.couches=(c.data.couches||[]).map(k=>({...k,ingredients:(k.ingredients||[]).map(i=>({...i,produit:remplace[i.produit]||i.produit}))}));
+        }
+      }
+    }else{
+      const vus=new Set([...Object.keys(local),...Object.keys(srv),...Object.keys(base.el||{})]);
+      for(const id of vus){
+        const l=local[id],e=srv[id],b=base.el[id];
+        const lj=l?JSON.stringify(l.data):null;
+        const ici=l?lj!==(b&&b.j):!!b; // changé ou supprimé sur cet appareil
+        if(!ici)continue;
+        if(l)changes.push({id,...l});
+        else if(e&&JSON.stringify(e.data)===(b&&b.j))suppressions.push(id); // supprimé ici, pas retouché ailleurs
+      }
+    }
+    let fin=serveur;
+    if(changes.length||suppressions.length){await envoyerPhotos(changes);fin=(await appelCarnet("sync",{changes,suppressions})).elements}
+    // Le carnet de l'appareil devient celui en ligne
+    const produits=[],recettes=[];
+    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else produits.push(d)}
+    const el={};for(const e of fin)el[e.id]={j:JSON.stringify(e.data)};
+    await ecrire("sync",{el});
+    if(JSON.stringify([produits,recettes])!==avant&&JSON.stringify([D.produits,D.recettes])===avant){
+      D.produits=produits;D.recettes=recettes;delete D.vierge;await ecrire("donnees",D);
+      if(vue==="voir"&&!R(courant)){vue="recettes"}
+      if(vue==="editer")nav();else{const y=scrollY;rendre();scrollTo(0,y)}
+    }else if(JSON.stringify([D.produits,D.recettes])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
+    syncEtat.derniere=new Date();syncEtat.codeRequis=false;
+  }catch(e){
+    syncEtat.erreur=e.message;if(e.code){syncEtat.codeRequis=true;try{localStorage.removeItem("carnet.codeMel")}catch(x){}}
+  }finally{
+    syncEtat.enCours=false;rendreSyncBandeau();if(vue==="sauvegarde"&&!calque)rendre();
+    if(syncRelancer){syncRelancer=false;planifierSync(1500)}
+  }
+}
+function rendreSyncBandeau(){
+  const z=document.getElementById("syncBandeau");if(!z)return;
+  if(!syncEtat.codeRequis||syncEtat.bandeauFerme||!syncPossible()){z.innerHTML="";return}
+  z.innerHTML=`<form class="maj-bandeau" id="fCodeSync"><img src="mel-avatar.png" alt=""><div><b>Mel : tape ton code pour retrouver ton carnet</b><small>Tes recettes, photos et ton stock seront les mêmes sur tous tes appareils.</small></div>
+    <input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:110px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></form>`;
+}
+setInterval(()=>{if(!document.hidden)synchroniser()},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
+
 /* ---------- Écran : inventaire ---------- */
 function vInventaire(){
   return `<div class="ligne" style="justify-content:space-between;margin-bottom:6px"><p class="aide" style="margin:0;flex:1;min-width:200px">Vos cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand vous coulez une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
@@ -1106,6 +1212,10 @@ function vReglages(){
    <div class="puces" style="margin-top:10px">${[["auto","Automatique"],["appli","Version appli"],["site","Version site"]].map(([k,l])=>`<button class="puce ${prefMode()===k?"on":""}" data-mode-choix="${k}">${l}</button>`).join("")}</div>
    <p class="aide">Automatique : version appli sur téléphone, version site sur ordinateur ; sur tablette, version site à l’horizontale et version appli à la verticale.</p></div>
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
+  ${syncPossible()?`<div class="carte"><b>Carnet partagé entre tes appareils</b>
+   <p class="aide">${syncEtat.codeRequis?"Tape ton code pour retrouver le même carnet sur cet appareil.":syncEtat.erreur?`⚠️ ${esc(syncEtat.erreur)}`:syncEtat.derniere?`✓ À jour · dernière synchronisation à ${syncEtat.derniere.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`:"Synchronisation en cours…"}</p>
+   ${syncEtat.codeRequis?`<form class="ligne" id="fCodeSyncReglages" style="margin-top:10px"><input type="password" id="codeSyncR" placeholder="Code" style="flex:1"><button class="btn">Valider</button></form>`:`<div class="ligne" style="margin-top:10px"><button class="btn leger" data-act="synchroniserMaintenant">Synchroniser maintenant</button></div>`}
+   <p class="aide">Recettes, photos et inventaire sont les mêmes sur le PC, la tablette et le téléphone. Sans internet, l’appli continue de marcher et envoie les changements au retour du réseau. La conversation avec Mel reste propre à chaque appareil.</p></div>`:""}
   <div class="carte"><b>Version</b><p class="aide">Mel d’antan <b>v${VERSION}</b>${majInfo&&!majPlusTard?` · la version ${esc(majInfo.version)} est prête`:""}</p>
    <div class="ligne" style="margin-top:10px">${majInfo?`<button class="btn" data-act="installerMaj">Mettre à jour maintenant</button>`:`<button class="btn leger" data-act="chercherMaj">Rechercher une mise à jour</button>`}
     <button class="btn leger" data-act="notifMaj">${notifMaj()?"🔔 Notifications de mise à jour : oui":"🔕 Me prévenir par une notification"}</button></div>
@@ -1119,6 +1229,11 @@ const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("dat
 function rendreCalque(){
   const z=document.getElementById("calque");
   if(!calque){z.innerHTML="";return}
+  if(calque.syncChoix){const a=syncEtat.attenteChoix||{};z.innerHTML=`<div class="voile"><div class="fenetre"><h2 style="font-size:1.3rem">Ton carnet existe déjà en ligne</h2>
+    <p class="aide" style="margin:0">Un autre appareil a déjà envoyé son carnet (${a.nServeur||0} recette${a.nServeur>1?"s":""}). Cet appareil en a ${a.nLocal||0}. Que veux-tu faire ?</p>
+    <button class="btn" data-act="syncChoix:fusion">Réunir les deux carnets</button>
+    <button class="btn leger" data-act="syncChoix:serveur">Prendre le carnet en ligne (cet appareil est neuf)</button>
+    <button class="btn leger" data-act="syncChoix:local">Garder celui de cet appareil (remplace celui en ligne)</button></div></div>`;return}
   if(calque.choixPdf){const sel=calque.choixPdf,recs=recettesLivre();z.innerHTML=`<div class="voile" data-fermer><div class="fenetre"><h2 style="font-size:1.3rem">Que veux-tu partager ?</h2>
     <p class="aide" style="margin:0">Touche les recettes à mettre dans le PDF. Une seule recette : sa page seule. Plusieurs : avec la couverture et le sommaire.</p>
     <div class="choix-recettes">${recs.map(r=>`<button class="puce ${sel.includes(r.id)?"on":""}" data-sel-pdf="${r.id}">${sel.includes(r.id)?"✓ ":""}${esc(r.nom)}</button>`).join("")}</div>
@@ -1208,6 +1323,9 @@ document.addEventListener("click",e=>{
   else if(act==="pdfPartager")partagerPdf();
   else if(act==="pleinLivre")entrerPlein();
   else if(act==="installerMaj")installerMaj();
+  else if(act.startsWith("syncChoix")){const c=a.split(":")[1];calque=null;rendreCalque();synchroniser(c)}
+  else if(act==="synchroniserMaintenant"){synchroniser();toast("Synchronisation…")}
+  else if(act==="fermerSyncBandeau"){syncEtat.bandeauFerme=true;rendreSyncBandeau()}
   else if(act==="autreAstuce"){astuce=(astuce+1)%ASTUCES.length;const y=scrollY;rendre();scrollTo(0,y)}
   else if(act==="majPlusTard"){majPlusTard=true;rendreMaj()}
   else if(act==="chercherMaj")chercherMaj();
@@ -1242,7 +1360,8 @@ document.addEventListener("change",async e=>{
 document.addEventListener("submit",e=>{
   e.preventDefault();
   if(e.target.id==="fMel"){const z=document.getElementById("questionMel");const q=z.value;z.value="";if(ecoute)ecoute.stop();demanderMel(q);return}
-  if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}melErreur="";majMel();return}
+  if(e.target.id==="fCodeMel"){try{localStorage.setItem("carnet.codeMel",document.getElementById("codeMel").value.trim())}catch(x){}melErreur="";majMel();planifierSync(200);return}
+  if(e.target.id==="fCodeSync"||e.target.id==="fCodeSyncReglages"){const v=(document.getElementById("codeSync")||document.getElementById("codeSyncR")).value.trim();if(!v)return;try{localStorage.setItem("carnet.codeMel",v)}catch(x){}syncEtat.codeRequis=false;rendreSyncBandeau();synchroniser();return}
   if(e.target.id!=="fProduit")return;
   const g=id=>document.getElementById(id).value;
   const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim()};
@@ -1278,7 +1397,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="1.9";
+const VERSION="2.0";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
@@ -1339,8 +1458,9 @@ function exemple(){
 (async()=>{
   fondThemes(localStorage.getItem("carnet.theme")||"auto");appliquerMode("debut");
   const lu=await lire("donnees");
-  if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();sauver()}
+  if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();D.vierge=true;sauverExemple=true;sauver()}
   history.replaceState({vue:"recettes"},"");rendre();
+  verifierMel().then(()=>planifierSync(300));
 })();
 </script>
 </body>
