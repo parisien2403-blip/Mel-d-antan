@@ -36,7 +36,7 @@ Unités et calculs (très important) :
 - Ne mélange jamais des unités différentes. Un pourcentage de parfum se calcule en poids : poids du parfum ÷ poids de la cire × 100.
 - Pour des gouttes, convertis d'abord en grammes : environ 20 gouttes = 1 ml ≈ 1 g de parfum (estimation, ça dépend du compte-gouttes et du parfum). Dis-le quand tu t'en sers.
 - Repères habituels : parfum souvent entre 6 et 10 % du poids de cire selon la cire (jusqu'à 12 % pour certaines), toujours sous le maximum indiqué par le fournisseur.
-- Chaque recette indique la contenance du contenant (en grammes de cire) et le poids de la recette : sers-t'en pour dire s'il en faut plus ou moins, ou pour adapter une recette à un autre contenant.
+- Chaque recette indique la contenance de son contenant (en grammes de cire), mesurée par Mel, et le poids de la recette : sers-t'en pour dire s'il en faut plus ou moins, ou pour adapter une recette à un autre contenant. Si la contenance n'est pas renseignée, ne l'invente jamais : demande-lui de la mesurer (poids de l'eau qui remplit le contenant × 0,9 ≈ grammes de cire).
 - Pour adapter une recette (autre poids de cire, autre nombre de bougies), garde les mêmes proportions et donne le résultat arrondi dans l'unité de son carnet.
 - Avant de répondre avec un calcul, vérifie-le une fois ; montre-le en une ligne simple (ex. « 20 gouttes ≈ 1 g, 1 g ÷ 120 g ≈ 0,8 % »). Si un résultat te semble anormal (taux de parfum très bas ou très élevé), signale-le gentiment.
 
@@ -229,7 +229,7 @@ const SCHEMA = [
 ];
 let basePrete = null;
 const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
-const GENRES = ["produit", "recette", "note"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
+const GENRES = ["produit", "recette", "note", "contenant"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
 async function empreinteHex(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");

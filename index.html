@@ -475,130 +475,132 @@ function phrase(q,p){
 /* ---------- Les contenants : dessin du verre, forme intérieure (où se rangent les couches) ---------- */
 // haut / bas : limites de l'intérieur ; larg : largeur intérieure en haut (pour la chantilly qui dépasse)
 const CONTENANTS={
-  verrine:{g:200,nom:"Verrine",haut:70,bas:240,cx:100,larg:96,
+  verrine:{nom:"Verrine",haut:70,bas:240,cx:100,larg:96,
     clip:"M52 70 V226 q0 14 14 14 H134 q14 0 14 -14 V70 Z",
     verre:`<path class="v-fond" d="M44 60 V228 q0 20 20 20 H136 q20 0 20 -20 V60 Z"/>`,
     devant:`<path class="v-trait" d="M44 60 V228 q0 20 20 20 H136 q20 0 20 -20 V60"/><ellipse class="v-trait" cx="100" cy="60" rx="56" ry="5"/>`},
-  coupe:{g:250,nom:"Coupe de glace",haut:62,bas:160,cx:100,larg:140,
+  coupe:{nom:"Coupe de glace",haut:62,bas:160,cx:100,larg:140,
     clip:"M30 62 C30 128 62 160 100 160 C138 160 170 128 170 62 Z",
     verre:`<path class="v-fond" d="M22 56 C22 134 58 168 100 168 C142 168 178 134 178 56 Z"/><path class="v-fond" d="M93 166 Q97 200 90 222 H110 Q103 200 107 166 Z"/><ellipse class="v-fond" cx="100" cy="228" rx="44" ry="9"/>`,
     devant:`<path class="v-trait" d="M22 56 C22 134 58 168 100 168 C142 168 178 134 178 56"/><ellipse class="v-trait" cx="100" cy="56" rx="78" ry="7"/><path class="v-trait" d="M93 166 Q97 200 90 222 M107 166 Q103 200 110 222"/><ellipse class="v-trait" cx="100" cy="228" rx="44" ry="9"/>`},
-  doubleparoi:{g:230,nom:"Verre double paroi (cappuccino)",haut:60,bas:204,cx:100,larg:100,
+  doubleparoi:{nom:"Verre double paroi (cappuccino)",haut:60,bas:204,cx:100,larg:100,
     clip:"M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60 Z",
     verre:`<path class="v-fond" d="M32 50 V194 q0 46 46 46 H122 q46 0 46 -46 V50 Z"/><path class="v-paroi" d="M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60"/>`,
     devant:`<path class="v-trait" d="M32 50 V194 q0 46 46 46 H122 q46 0 46 -46 V50"/><path class="v-trait fin" d="M50 60 V172 q0 32 32 32 H118 q32 0 32 -32 V60"/><path class="v-trait" d="M32 50 Q41 46 50 60 M168 50 Q159 46 150 60"/>`},
-  liegeois:{g:280,nom:"Verre à café liégeois",haut:40,bas:226,cx:100,larg:78,
+  liegeois:{nom:"Verre à café liégeois",haut:40,bas:226,cx:100,larg:78,
     clip:"M61 40 C58 110 70 168 80 214 q3 12 14 12 H106 q11 0 14 -12 C130 168 142 110 139 40 Z",
     verre:`<path class="v-fond" d="M54 32 C50 112 63 170 73 216 q4 16 20 16 H107 q16 0 20 -16 C137 170 150 112 146 32 Z"/><path class="v-fond" d="M70 232 q30 16 60 0 v8 q-30 14 -60 0 Z"/>`,
     devant:`<path class="v-trait" d="M54 32 C50 112 63 170 73 216 q4 16 20 16 H107 q16 0 20 -16 C137 170 150 112 146 32"/><ellipse class="v-trait" cx="100" cy="32" rx="46" ry="5"/><path class="v-trait" d="M70 232 v8 q30 14 60 0 v-8"/>`},
-  mug:{g:300,nom:"Mug en verre",haut:84,bas:232,cx:94,larg:108,
+  mug:{nom:"Mug en verre",haut:84,bas:232,cx:94,larg:108,
     clip:"M40 84 V196 q0 36 36 36 H112 q36 0 36 -36 V84 Z",
     verre:`<path class="v-fond" d="M32 74 V198 q0 44 44 44 H112 q44 0 44 -44 V74 Z"/><path class="v-anse" d="M156 108 q32 0 32 36 q0 36 -32 36"/>`,
     devant:`<path class="v-trait" d="M32 74 V198 q0 44 44 44 H112 q44 0 44 -44 V74"/><ellipse class="v-trait" cx="94" cy="74" rx="62" ry="6"/>`},
-  bocal:{g:350,nom:"Bocal / pot",haut:84,bas:236,cx:100,larg:104,
+  bocal:{nom:"Bocal / pot",haut:84,bas:236,cx:100,larg:104,
     clip:"M48 92 q0 -8 10 -8 H142 q10 0 10 8 V220 q0 16 -16 16 H64 q-16 0 -16 -16 Z",
     verre:`<path class="v-fond" d="M40 90 q0 -14 16 -14 H144 q16 0 16 14 V222 q0 22 -22 22 H62 q-22 0 -22 -22 Z"/><rect class="v-col" x="54" y="56" width="92" height="20" rx="4"/>`,
     devant:`<path class="v-trait" d="M40 90 q0 -14 16 -14 H144 q16 0 16 14 V222 q0 22 -22 22 H62 q-22 0 -22 -22 Z"/><rect class="v-trait" x="54" y="56" width="92" height="20" rx="4"/>`},
-  ramequin:{g:120,nom:"Ramequin",haut:146,bas:232,cx:100,larg:132,
+  ramequin:{nom:"Ramequin",haut:146,bas:232,cx:100,larg:132,
     clip:"M34 146 L42 220 q2 12 14 12 H144 q12 0 14 -12 L166 146 Z",
     verre:`<path class="v-fond" d="M24 138 L34 224 q3 18 21 18 H145 q18 0 21 -18 L176 138 Z"/>`,
     devant:`<path class="v-trait" d="M24 138 L34 224 q3 18 21 18 H145 q18 0 21 -18 L176 138"/><ellipse class="v-trait" cx="100" cy="138" rx="76" ry="6"/>`},
-  tasse:{g:150,nom:"Tasse à café",haut:110,bas:216,cx:92,larg:112,
+  tasse:{nom:"Tasse à café",haut:110,bas:216,cx:92,larg:112,
     clip:"M36 110 V160 q0 56 56 56 q56 0 56 -56 V110 Z",
     verre:`<ellipse class="v-fond" cx="96" cy="234" rx="78" ry="10"/><path class="v-fond" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100 Z"/><path class="v-anse" d="M154 122 q30 2 28 30 q-2 26 -34 30"/>`,
     devant:`<path class="v-trait" d="M28 100 V162 q0 64 64 64 q64 0 64 -64 V100"/><ellipse class="v-trait" cx="92" cy="100" rx="64" ry="6"/>`},
-  yaourt:{g:110,nom:"Pot de yaourt en verre",haut:118,bas:234,cx:100,larg:98,
+  yaourt:{nom:"Pot de yaourt en verre",haut:118,bas:234,cx:100,larg:98,
     clip:"M52 118 L59 220 q1 14 15 14 H126 q14 0 15 -14 L148 118 Z",
     verre:`<path class="v-fond" d="M44 108 L51 224 q2 20 22 20 H127 q20 0 22 -20 L156 108 Z"/><rect class="v-col" x="40" y="98" width="120" height="14" rx="6"/>`,
     devant:`<path class="v-trait" d="M44 108 L51 224 q2 20 22 20 H127 q20 0 22 -20 L156 108"/><rect class="v-trait" x="40" y="98" width="120" height="14" rx="6"/>`},
-  confiture:{g:300,nom:"Pot à confiture",haut:112,bas:234,cx:100,larg:104,
+  confiture:{nom:"Pot à confiture",haut:112,bas:234,cx:100,larg:104,
     clip:"M54 112 q-8 8 -8 20 V214 q0 20 20 20 H134 q20 0 20 -20 V132 q0 -12 -8 -20 Z",
     verre:`<path class="v-fond" d="M46 104 q-12 10 -12 28 V216 q0 28 28 28 H138 q28 0 28 -28 V132 q0 -18 -12 -28 Z"/><rect class="v-col" x="54" y="80" width="92" height="24" rx="5"/>`,
     devant:`<path class="v-trait" d="M46 104 q-12 10 -12 28 V216 q0 28 28 28 H138 q28 0 28 -28 V132 q0 -18 -12 -28 Z"/><rect class="v-trait" x="54" y="80" width="92" height="24" rx="5"/><path class="v-trait fin" d="M54 88 H146 M54 96 H146"/>`},
-  tumbler:{g:250,nom:"Verre à whisky",haut:120,bas:214,cx:100,larg:108,
+  tumbler:{nom:"Verre à whisky",haut:120,bas:214,cx:100,larg:108,
     clip:"M44 120 L50 210 q0 4 4 4 H146 q4 0 4 -4 L156 120 Z",
     verre:`<path class="v-fond" d="M36 112 L44 232 q1 10 11 10 H145 q10 0 11 -10 L164 112 Z"/><path class="v-col" d="M50 214 H150 L148 238 H52 Z"/>`,
     devant:`<path class="v-trait" d="M36 112 L44 232 q1 10 11 10 H145 q10 0 11 -10 L164 112"/><ellipse class="v-trait" cx="100" cy="112" rx="64" ry="5"/>`},
-  champagne:{g:120,nom:"Coupe à champagne",haut:96,bas:146,cx:100,larg:144,
+  champagne:{nom:"Coupe à champagne",haut:96,bas:146,cx:100,larg:144,
     clip:"M28 96 Q34 142 100 146 Q166 142 172 96 Z",
     verre:`<path class="v-fond" d="M20 90 Q26 152 100 154 Q174 152 180 90 Z"/><path class="v-fond" d="M96 152 L97 222 H103 L104 152 Z"/><ellipse class="v-fond" cx="100" cy="228" rx="48" ry="8"/>`,
     devant:`<path class="v-trait" d="M20 90 Q26 152 100 154 Q174 152 180 90"/><ellipse class="v-trait" cx="100" cy="90" rx="80" ry="6"/><path class="v-trait" d="M96 152 L97 222 M104 152 L103 222"/><ellipse class="v-trait" cx="100" cy="228" rx="48" ry="8"/>`},
-  vin:{g:250,nom:"Verre à pied",haut:60,bas:164,cx:100,larg:84,
+  vin:{nom:"Verre à pied",haut:60,bas:164,cx:100,larg:84,
     clip:"M58 60 C54 120 66 160 100 164 C134 160 146 120 142 60 Z",
     verre:`<path class="v-fond" d="M50 52 C46 126 60 170 100 172 C140 170 154 126 150 52 Z"/><path class="v-fond" d="M96 170 L97 224 H103 L104 170 Z"/><ellipse class="v-fond" cx="100" cy="230" rx="44" ry="8"/>`,
     devant:`<path class="v-trait" d="M50 52 C46 126 60 170 100 172 C140 170 154 126 150 52"/><ellipse class="v-trait" cx="100" cy="52" rx="50" ry="5"/><path class="v-trait" d="M96 170 L97 224 M104 170 L103 224"/><ellipse class="v-trait" cx="100" cy="230" rx="44" ry="8"/>`},
-  bol:{g:300,nom:"Bol",haut:130,bas:226,cx:100,larg:148,
+  bol:{nom:"Bol",haut:130,bas:226,cx:100,larg:148,
     clip:"M26 130 Q30 222 100 226 Q170 222 174 130 Z",
     verre:`<path class="v-fond" d="M18 122 Q22 234 100 236 Q178 234 182 122 Z"/><path class="v-col" d="M74 234 h52 l-4 9 h-44 z"/>`,
     devant:`<path class="v-trait" d="M18 122 Q22 234 100 236 Q178 234 182 122"/><ellipse class="v-trait" cx="100" cy="122" rx="82" ry="7"/>`},
-  the:{g:180,nom:"Tasse à thé ancienne",haut:120,bas:200,cx:100,larg:124,
+  the:{nom:"Tasse à thé ancienne",haut:120,bas:200,cx:100,larg:124,
     clip:"M38 120 Q40 196 100 200 Q160 196 162 120 Z",
     verre:`<ellipse class="v-fond" cx="100" cy="216" rx="86" ry="13"/><path class="v-fond" d="M30 112 Q32 206 100 208 Q168 206 170 112 Z"/><path class="v-anse" d="M168 130 q26 0 24 22 q-2 20 -30 24"/>`,
     devant:`<path class="v-trait" d="M30 112 Q32 206 100 208 Q168 206 170 112"/><ellipse class="v-trait" cx="100" cy="112" rx="70" ry="6"/><ellipse class="v-trait" cx="100" cy="216" rx="86" ry="13"/>`},
   /* Bougies moulées : la bougie a la forme de la pâtisserie, les couches remplissent sa silhouette du bas vers le haut */
-  macaron:{g:40,nom:"Macaron",moule:true,haut:86,bas:194,cx:100,larg:120,
+  macaron:{nom:"Macaron",moule:true,haut:86,bas:194,cx:100,larg:120,
     clip:"M36 132 Q36 86 100 86 Q164 86 164 132 L158 140 L164 148 Q164 194 100 194 Q36 194 36 148 L42 140 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="210" rx="78" ry="10"/>`,
     devant:`<path class="m-trait" d="M36 132 Q36 86 100 86 Q164 86 164 132 L158 140 L164 148 Q164 194 100 194 Q36 194 36 148 L42 140 Z"/><path class="m-pied" d="M40 128 q6 4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 M40 152 q6 -4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0"/>`},
-  tarte:{g:120,nom:"Tartelette",moule:true,haut:132,bas:214,cx:100,larg:150,
+  tarte:{nom:"Tartelette",moule:true,haut:132,bas:214,cx:100,larg:150,
     clip:"M22 140 Q22 132 30 132 H170 Q178 132 178 140 L166 208 Q164 214 156 214 H44 Q36 214 34 208 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="92" ry="10"/>`,
     devant:`<path class="m-trait" d="M22 140 Q22 132 30 132 H170 Q178 132 178 140 L166 208 Q164 214 156 214 H44 Q36 214 34 208 Z"/><path class="m-plis" d="M36 150 L44 210 M52 148 L58 212 M68 148 L72 212 M84 148 L86 212 M100 148 V212 M116 148 L114 212 M132 148 L128 212 M148 148 L142 212 M164 150 L156 210"/>`},
-  cupcake:{g:100,nom:"Cupcake",moule:true,haut:90,bas:224,cx:100,larg:116,
+  cupcake:{nom:"Cupcake",moule:true,haut:90,bas:224,cx:100,larg:116,
     clip:"M48 150 Q44 98 100 90 Q156 98 152 150 L140 224 H60 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="230" rx="64" ry="8"/>`,
     devant:`<path class="m-trait" d="M52 152 L60 224 H140 L148 152 Z"/><path class="m-plis" d="M60 152 L66 224 M72 152 L76 224 M84 152 L86 224 M96 152 L97 224 M108 152 L107 224 M120 152 L118 224 M132 152 L128 224 M142 152 L136 224"/><path class="m-trait" d="M48 150 Q44 98 100 90 Q156 98 152 150"/>`},
-  gateau:{g:400,nom:"Gâteau à étages",moule:true,haut:78,bas:212,cx:100,larg:120,
+  gateau:{nom:"Gâteau à étages",moule:true,haut:78,bas:212,cx:100,larg:120,
     clip:"M40 92 V200 Q40 214 100 214 Q160 214 160 200 V92 Q160 78 100 78 Q40 78 40 92 Z",
     verre:`<path class="m-assiette" d="M18 214 Q18 226 100 226 Q182 226 182 214 Q182 206 100 206 Q18 206 18 214 Z"/><rect class="m-assiette" x="90" y="226" width="20" height="14"/><ellipse class="m-assiette" cx="100" cy="242" rx="40" ry="6"/>`,
     devant:`<path class="m-trait" d="M40 92 V200 Q40 214 100 214 Q160 214 160 200 V92"/><ellipse class="m-trait" cx="100" cy="92" rx="60" ry="14"/>`},
-  donut:{g:120,nom:"Donut",moule:true,trou:true,haut:96,bas:204,cx:100,larg:110,
+  donut:{nom:"Donut",moule:true,trou:true,haut:96,bas:204,cx:100,larg:110,
     clip:"M26 150 A74 54 0 1 0 174 150 A74 54 0 1 0 26 150 Z M78 140 A22 12 0 1 0 122 140 A22 12 0 1 0 78 140 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="212" rx="86" ry="10"/>`,
     devant:`<ellipse class="m-trait" cx="100" cy="150" rx="74" ry="54"/><ellipse class="m-trait" cx="100" cy="140" rx="22" ry="12"/>`},
-  eclair:{g:90,nom:"Éclair",moule:true,haut:122,bas:182,cx:100,larg:120,
+  eclair:{nom:"Éclair",moule:true,haut:122,bas:182,cx:100,larg:120,
     clip:"M24 152 Q24 122 56 122 H144 Q176 122 176 152 Q176 182 144 182 H56 Q24 182 24 152 Z",
     verre:`<rect class="m-assiette" x="14" y="184" width="172" height="10" rx="5"/>`,
     devant:`<path class="m-trait" d="M24 152 Q24 122 56 122 H144 Q176 122 176 152 Q176 182 144 182 H56 Q24 182 24 152 Z"/>`},
-  buche:{g:350,nom:"Bûche",moule:true,haut:108,bas:192,cx:92,larg:110,
+  buche:{nom:"Bûche",moule:true,haut:108,bas:192,cx:92,larg:110,
     clip:"M26 108 H150 Q176 108 176 150 Q176 192 150 192 H26 Q20 150 26 108 Z",
     verre:`<rect class="m-assiette" x="12" y="194" width="176" height="10" rx="5"/>`,
     devant:`<path class="m-trait" d="M26 108 H150 Q176 108 176 150 Q176 192 150 192 H26 Q20 150 26 108 Z"/><ellipse class="m-trait" cx="152" cy="150" rx="18" ry="38"/><ellipse class="m-plis" cx="152" cy="150" rx="10" ry="22"/><path class="m-plis" d="M40 122 q20 -6 40 0 t40 0 M44 178 q20 6 40 0 t40 0"/>`},
-  cookie:{g:60,nom:"Cookie",moule:true,haut:124,bas:190,cx:100,larg:130,
+  cookie:{nom:"Cookie",moule:true,haut:124,bas:190,cx:100,larg:130,
     clip:"M30 150 Q30 124 100 124 Q170 124 170 150 V164 Q170 190 100 190 Q30 190 30 164 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="198" rx="86" ry="10"/>`,
     devant:`<path class="m-trait" d="M30 150 Q30 124 100 124 Q170 124 170 150 V164 Q170 190 100 190 Q30 190 30 164 Z"/><path class="m-plis" d="M30 152 Q30 176 100 176 Q170 176 170 152"/>`},
-  madeleine:{g:40,nom:"Madeleine",moule:true,haut:100,bas:188,cx:100,larg:110,
+  madeleine:{nom:"Madeleine",moule:true,haut:100,bas:188,cx:100,larg:110,
     clip:"M34 172 Q30 106 100 100 Q170 106 166 172 Q134 190 100 188 Q66 190 34 172 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="196" rx="82" ry="9"/>`,
     devant:`<path class="m-trait" d="M34 172 Q30 106 100 100 Q170 106 166 172 Q134 190 100 188 Q66 190 34 172 Z"/><path class="m-plis" d="M100 112 V180 M80 114 L70 178 M120 114 L130 178 M62 124 L48 172 M138 124 L152 172"/>`},
-  religieuse:{g:150,nom:"Religieuse / chou",moule:true,haut:84,bas:222,cx:100,larg:56,
+  religieuse:{nom:"Religieuse / chou",moule:true,haut:84,bas:222,cx:100,larg:56,
     clip:"M56 178 A44 44 0 1 0 144 178 A44 44 0 1 0 56 178 Z M74 112 A26 26 0 1 0 126 112 A26 26 0 1 0 74 112 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="226" rx="70" ry="9"/>`,
     devant:`<circle class="m-trait" cx="100" cy="178" r="44"/><circle class="m-trait" cx="100" cy="112" r="26"/>`},
-  canele:{g:70,nom:"Cannelé",moule:true,haut:96,bas:210,cx:100,larg:84,
+  canele:{nom:"Cannelé",moule:true,haut:96,bas:210,cx:100,larg:84,
     clip:"M58 108 L52 196 Q52 210 100 210 Q148 210 148 196 L142 108 Q142 96 100 96 Q58 96 58 108 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="70" ry="9"/>`,
     devant:`<path class="m-trait" d="M58 108 L52 196 Q52 210 100 210 Q148 210 148 196 L142 108 Q142 96 100 96 Q58 96 58 108 Z"/><path class="m-plis" d="M68 104 L64 206 M80 100 L78 208 M92 98 L91 209 M108 98 L109 209 M120 100 L122 208 M132 104 L136 206"/><ellipse class="m-plis" cx="100" cy="106" rx="30" ry="6"/>`},
-  fraise:{g:60,nom:"Fraise",moule:true,haut:98,bas:214,cx:100,larg:80,
+  fraise:{nom:"Fraise",moule:true,haut:98,bas:214,cx:100,larg:80,
     clip:"M100 214 C60 190 34 150 40 118 C44 96 70 92 100 100 C130 92 156 96 160 118 C166 150 140 190 100 214 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="62" ry="8"/>`,
     devant:`<path class="m-trait" d="M100 214 C60 190 34 150 40 118 C44 96 70 92 100 100 C130 92 156 96 160 118 C166 150 140 190 100 214 Z"/><g fill="#f7e27a" opacity=".8">${[[70,130],[100,126],[130,130],[60,154],[86,150],[114,150],[140,154],[76,174],[100,172],[124,174],[90,194],[110,194]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2" ry="3"/>`).join("")}</g><path d="M100 100 C88 84 70 88 62 96 C78 96 86 100 92 106 C84 110 76 118 74 126 C86 118 96 112 100 106 C104 112 114 118 126 126 C124 118 116 110 108 106 C114 100 122 96 138 96 C130 88 112 84 100 100 Z" fill="#5f8a3c"/>`},
-  pomme:{g:150,nom:"Pomme",moule:true,haut:104,bas:210,cx:100,larg:90,
+  pomme:{nom:"Pomme",moule:true,haut:104,bas:210,cx:100,larg:90,
     clip:"M100 112 C80 96 40 100 38 146 C36 190 70 214 100 204 C130 214 164 190 162 146 C160 100 120 96 100 112 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="72" ry="9"/>`,
     devant:`<path class="m-trait" d="M100 112 C80 96 40 100 38 146 C36 190 70 214 100 204 C130 214 164 190 162 146 C160 100 120 96 100 112 Z"/><path d="M104 108 Q118 88 140 92 Q130 110 104 108 Z" fill="#5f8a3c"/><path class="m-plis" d="M60 130 Q54 150 60 172"/>`},
-  citron:{g:120,nom:"Citron",moule:true,haut:102,bas:210,cx:100,larg:100,
+  citron:{nom:"Citron",moule:true,haut:102,bas:210,cx:100,larg:100,
     clip:"M28 156 Q30 150 38 148 Q60 104 100 102 Q140 104 162 148 Q170 150 172 156 Q170 162 162 164 Q140 208 100 210 Q60 208 38 164 Q30 162 28 156 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="216" rx="80" ry="9"/>`,
     devant:`<path class="m-trait" d="M28 156 Q30 150 38 148 Q60 104 100 102 Q140 104 162 148 Q170 150 172 156 Q170 162 162 164 Q140 208 100 210 Q60 208 38 164 Q30 162 28 156 Z"/><path d="M100 102 Q112 86 130 88 Q120 102 100 102 Z" fill="#5f8a3c"/>`},
-  cerise:{g:50,nom:"Cerises",moule:true,trou:false,haut:142,bas:214,cx:132,larg:56,
+  cerise:{nom:"Cerises",moule:true,trou:false,haut:142,bas:214,cx:132,larg:56,
     clip:"M38 180 A34 34 0 1 0 106 180 A34 34 0 1 0 38 180 Z M98 176 A34 34 0 1 0 166 176 A34 34 0 1 0 98 176 Z",
     verre:`<ellipse class="m-assiette" cx="100" cy="220" rx="80" ry="8"/>`,
     devant:`<circle class="m-trait" cx="72" cy="180" r="34"/><circle class="m-trait" cx="132" cy="176" r="34"/><path d="M74 146 Q86 104 108 88 M122 142 Q116 112 108 88" stroke="#6b4a2a" stroke-width="3" fill="none"/><path d="M108 88 Q128 70 150 80 Q132 96 108 88 Z" fill="#5f8a3c"/>`},
 };
 // Contenance : celle notée dans la recette, sinon la valeur moyenne du contenant (en grammes de cire)
-const contenance=r=>+r.contenance>0?+r.contenance:(CONTENANTS[r.contenant]||{}).g||0;
+const capDe=k=>{const c=(D.contenants||[]).find(x=>x.nom===k);return c&&+c.g>0?+c.g:0};
+const contenance=r=>capDe(r.contenant)||(+r.contenance>0?+r.contenance:0);
+function noterCap(k,g){D.contenants=D.contenants||[];const c=D.contenants.find(x=>x.nom===k);if(g>0){if(c)c.g=g;else D.contenants.push({id:"cap-"+k,nom:k,g})}else D.contenants=D.contenants.filter(x=>x.nom!==k);sauver()}
 const poidsRecette=r=>(r.couches||[]).reduce((a,c)=>a+poidsCouche(c),0);
 const FAMILLES=[["verre","Contenants (verres, pots, tasses…)"],["moule","Bougies moulées (pâtisseries, fruits…)"]];
 const CIRE="#f3e6cf";
@@ -803,7 +805,7 @@ function vVoir(){
     <div class="ligne" style="margin:10px 0 2px"><span class="aide" style="margin:0">Quantités pour</span><div class="puces">${[.5,1,2,3,4].map(k=>`<button class="puce ${mult===k?"on":""}" data-mult="${k}">${k===.5?"½":k} bougie${k>1?"s":""}</button>`).join("")}</div></div>
     ${r.couches.map((c,i)=>`<div class="couche-titre"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${i+1}`)}${c.texture&&c.texture!=="lisse"?` <small class="aide" style="margin:0">· ${esc((TEXTURES.find(t=>t[0]===c.texture)||[,""])[1])}</small>`:""}</div>
      <ul class="manuscrit">${c.ingredients.filter(x=>x.produit).map(x=>{const p=P(x.produit);const manque=p&&p.stock!=null&&p.stock!==""&&b[x.produit]>+p.stock;return `<li class="${manque?"manque":""}">${esc(phrase((+x.q||0)*mult,p))}${manque?` <small>(stock : ${nb(+p.stock)})</small>`:""}</li>`}).join("")||`<li style="color:var(--doux)">—</li>`}</ul>`).join("")}
-    ${total?`<div class="total">Poids total (cires, liquides) : <b>${nb(total)} g</b>${(()=>{const cap=contenance(r),pr=poidsRecette(r),pc=Math.round(pr/cap*100);return cap?` · contenance ${+r.contenance>0?"":"≈ "}${nb(cap*mult)} g${mult!==1?` (${nb(mult)} × ${nb(cap)} g)`:""} · <b class="${pc>100?"deborde":""}">${pc} %</b>${pc>100?" : ça déborde !":""}`:""})()}</div>`:""}
+    ${total?`<div class="total">Poids total (cires, liquides) : <b>${nb(total)} g</b>${(()=>{const cap=contenance(r),pr=poidsRecette(r),pc=Math.round(pr/cap*100);return cap?` · contenance ${nb(cap*mult)} g${mult!==1?` (${nb(mult)} × ${nb(cap)} g)`:""} · <b class="${pc>100?"deborde":""}">${pc} %</b>${pc>100?" : ça déborde !":""}`:""})()}</div>`:""}
     ${r.notes?`<div class="couche-titre">Notes</div><p class="notes">${esc(r.notes)}</p>`:""}
    </div>
    <div class="ligne" style="margin-top:14px">${r.approuve?`<button class="btn leger" data-act="approuver">Retirer « Approuvé »</button>`:`<button class="btn" data-act="approuver">✓ Approuver la recette</button>`}<button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="pdfRecette">Partager en PDF</button><button class="btn leger" data-act="couler">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
@@ -824,10 +826,10 @@ function vEditer(){
   <div>
    <div class="carte"><label class="champ">Nom de la recette<input type="text" data-b="nom" value="${esc(r.nom)}" placeholder="Café liégeois, Fraisier, Coupe vanille…" maxlength="80"></label>
     <div class="photo-zone" style="margin-top:12px">${r.photo?`<img src="${r.photo}" alt="">`:""}<label class="btn leger petit">${r.photo?"Changer la photo":"📷 Ajouter une photo"}<input type="file" accept="image/*" id="photo" hidden></label>${r.photo?`<button class="btn leger petit" data-act="sansPhoto">Retirer</button>`:""}</div></div>
-   <div class="carte"><b>La forme de la bougie</b>${FAMILLES.map(([f,l])=>`<p class="aide" style="margin:12px 0 6px">${l}</p><div class="choix-contenants">${Object.entries(CONTENANTS).filter(([,c])=>(c.moule?"moule":"verre")===f).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span><small class="cap">≈ ${c.g} g</small></button>`).join("")}</div>`).join("")}
-    <div class="ligne" style="margin-top:14px;align-items:flex-end"><label class="champ" style="flex:none;width:170px">Contenance (g de cire)<input type="number" inputmode="decimal" min="1" step="any" data-b="contenance" value="${esc(r.contenance??"")}" placeholder="${CONTENANTS[r.contenant].g}"></label>
+   <div class="carte"><b>La forme de la bougie</b>${FAMILLES.map(([f,l])=>`<p class="aide" style="margin:12px 0 6px">${l}</p><div class="choix-contenants">${Object.entries(CONTENANTS).filter(([,c])=>(c.moule?"moule":"verre")===f).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span>${capDe(k)?`<small class="cap">${nb(capDe(k))} g</small>`:""}</button>`).join("")}</div>`).join("")}
+    <div class="ligne" style="margin-top:14px;align-items:flex-end"><label class="champ" style="flex:none;width:200px">Contenance (g de cire)<input type="number" inputmode="decimal" min="1" step="any" data-cap="${r.contenant}" value="${contenance(r)||""}" placeholder="À mesurer"></label>
      <p class="aide" id="infoCap" style="flex:1;margin:0 0 8px">${infoContenance(r)}</p></div>
-    ${CONTENANTS[r.contenant]?.moule?`<p class="aide" style="margin-top:8px">Bougie moulée : tes couches remplissent la forme, du bas vers le haut (ex. coque, ganache, coque pour un macaron).</p>`:poidsRecette(r)>0?"":`<label class="champ" style="margin-top:12px"><span>Remplissage : <b id="rempVal">${r.remplissage}</b> %</span><input type="range" min="30" max="100" data-b="remplissage" value="${r.remplissage}"></label>`}</div>
+    ${CONTENANTS[r.contenant]?.moule?`<p class="aide" style="margin-top:8px">Bougie moulée : tes couches remplissent la forme, du bas vers le haut (ex. coque, ganache, coque pour un macaron).</p>`:`<label class="champ" id="zoneRemp" style="margin-top:12px" ${poidsRecette(r)>0&&contenance(r)?"hidden":""}><span>Remplissage : <b id="rempVal">${r.remplissage}</b> %</span><input type="range" min="30" max="100" data-b="remplissage" value="${r.remplissage}"></label>`}</div>
    <div class="carte"><div class="ligne" style="justify-content:space-between"><b>Les couches (du bas vers le haut)</b></div>
     <p class="aide">La hauteur de chaque couche suit son poids en grammes. La couleur se règle à la main, ou prend celle du colorant.</p>
     <div style="margin-top:10px">${r.couches.map((c,i)=>`<div class="couche" style="--c:${couleurCouche(c)}">
@@ -845,14 +847,15 @@ function vEditer(){
 }
 // Recette comparée à la contenance : rempli à combien, et si ça déborde
 function infoContenance(r){
-  const cap=contenance(r),pr=poidsRecette(r),moy=!(+r.contenance>0);
-  const base=`${moy?"Valeur moyenne pour ce contenant : mets celle de ton vrai verre si tu la connais.":"Contenance de ton contenant."}`;
-  if(!pr)return base+" Le niveau du dessin se règlera tout seul quand tu mettras des grammes.";
+  const cap=contenance(r),pr=poidsRecette(r),nom=(CONTENANTS[r.contenant]||{}).nom||"";
+  if(!cap)return `Indique combien de grammes de cire contient ton ${esc(nom.toLowerCase())} : tu ne le feras qu’une fois, il servira pour toutes tes recettes dans ce contenant.`;
+  if(!pr)return `Ton ${esc(nom.toLowerCase())} contient ${nb(cap)} g de cire. Le niveau du dessin suivra les grammes de ta recette.`;
   const pc=Math.round(pr/cap*100);
-  return `Ta recette : <b>${nb(pr)} g</b> pour ${nb(cap)} g, soit <b class="${pc>100?"deborde":""}">${pc} %</b>${pc>100?` : ça déborde de ${nb(pr-cap)} g !`:pc<60?` : il reste de la place (${nb(cap-pr)} g).`:"."} ${moy?"(contenance moyenne)":""}`;
+  return `Ta recette : <b>${nb(pr)} g</b> pour ${nb(cap)} g, soit <b class="${pc>100?"deborde":""}">${pc} %</b>${pc>100?` : ça déborde de ${nb(pr-cap)} g !`:pc<60?` : il reste de la place (${nb(cap-pr)} g).`:"."}`;
 }
 function majApercu(){
-  const ic=document.getElementById("infoCap");if(ic&&brouillon)ic.innerHTML=infoContenance(brouillon);const z=document.getElementById("apercu");if(z&&brouillon)z.innerHTML=`${dessin(brouillon)}<div class="nom-contenant">${esc(CONTENANTS[brouillon.contenant].nom)}</div>`;
+  const ic=document.getElementById("infoCap");if(ic&&brouillon)ic.innerHTML=infoContenance(brouillon);
+  const zr=document.getElementById("zoneRemp");if(zr&&brouillon)zr.hidden=poidsRecette(brouillon)>0&&contenance(brouillon)>0;const z=document.getElementById("apercu");if(z&&brouillon)z.innerHTML=`${dessin(brouillon)}<div class="nom-contenant">${esc(CONTENANTS[brouillon.contenant].nom)}</div>`;
   document.querySelectorAll(".couche").forEach((el,k)=>{const i=brouillon.couches.length-1-k;el.style.setProperty("--c",couleurCouche(brouillon.couches[i]))})}
 function fixer(o,chemin,val){const k=chemin.split(".");for(let i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=val}
 // Photo réduite dans le navigateur (≈ 1000 px) pour garder le carnet léger
@@ -1070,7 +1073,7 @@ async function verifierMel(){
 function contexteCarnet(){
   const unite=p=>(UNITES.find(u=>u[0]===p.unite)||[,""])[1];
   const inv=D.produits.map(p=>`- ${p.nom} (${libType(p.type).toLowerCase()}, en ${unite(p)})${p.stock!=null&&p.stock!==""?` : stock ${nb(+p.stock)} ${unite(p)}${p.alerte!=null&&p.alerte!==""?`, alerte sous ${nb(+p.alerte)}`:""}`:" : stock non suivi"}${p.note?` · ${p.note}`:""}`).join("\n");
-  const recs=D.recettes.map(r=>`## ${r.nom}${r.approuve?" (approuvée)":""}\nContenant : ${CONTENANTS[r.contenant]?.nom||r.contenant}, contenance ${nb(contenance(r))} g de cire${+r.contenance>0?" (mesurée par Mel)":" (valeur moyenne)"}, recette ${nb(poidsRecette(r))} g. Notée le ${(r.cree||"").slice(0,10)}.\n`+
+  const recs=D.recettes.map(r=>`## ${r.nom}${r.approuve?" (approuvée)":""}\nContenant : ${CONTENANTS[r.contenant]?.nom||r.contenant}, ${contenance(r)?`contenance ${nb(contenance(r))} g de cire (mesurée par Mel)`:"contenance non renseignée"}, recette ${nb(poidsRecette(r))} g. Notée le ${(r.cree||"").slice(0,10)}.\n`+
     r.couches.map((c,i)=>`Couche ${i+1} (du bas) « ${c.nom||"sans nom"} », aspect ${(TEXTURES.find(t=>t[0]===c.texture)||[,"lisse"])[1].toLowerCase()} : ${c.ingredients.filter(x=>x.produit).map(x=>phrase(+x.q||0,P(x.produit))).join(" ; ")||"aucun produit"}.`).join("\n")+
     (r.notes?`\nNotes : ${r.notes}`:"")).join("\n\n");
   const cor=(D.notes||[]).map(n=>`- ${n.texte}`).join("\n");
@@ -1282,7 +1285,7 @@ async function synchroniser(choix){
   if(!syncPossible())return;
   if(syncEtat.enCours){syncRelancer=true;return}
   if(melEtat.code&&!codeMel()){syncEtat.codeRequis=true;rendreSyncBandeau();return}
-  syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes]);
+  syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];D.contenants=D.contenants||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes,D.contenants]);
   try{
     const base=await lire("sync");
     const serveur=(await appelCarnet("sync",{})).elements;
@@ -1290,6 +1293,7 @@ async function synchroniser(choix){
     for(const p of D.produits)local[p.id]={genre:"produit",data:await enLigne(p)};
     for(const x of D.recettes)local[x.id]={genre:"recette",data:await enLigne(x)};
     for(const x of D.notes)local[x.id]={genre:"note",data:{...x}};
+    for(const x of D.contenants)local[x.id]={genre:"contenant",data:{...x}};
     const srv={};for(const e of serveur)srv[e.id]=e;
     let changes=[],suppressions=[];
     if(!base){
@@ -1328,16 +1332,16 @@ async function synchroniser(choix){
     let fin=serveur;
     if(changes.length||suppressions.length){await envoyerPhotos(changes);fin=(await appelCarnet("sync",{changes,suppressions})).elements}
     // Le carnet de l'appareil devient celui en ligne
-    const produits=[],recettes=[],notes=[];
-    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else if(e.genre==="note")notes.push(d);else produits.push(d)}
+    const produits=[],recettes=[],notes=[],contenants=[];
+    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else if(e.genre==="note")notes.push(d);else if(e.genre==="contenant")contenants.push(d);else produits.push(d)}
     notes.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
     const el={};for(const e of fin)el[e.id]={j:JSON.stringify(e.data)};
     await ecrire("sync",{el});
-    if(JSON.stringify([produits,recettes,notes])!==avant&&JSON.stringify([D.produits,D.recettes,D.notes])===avant){
-      D.produits=produits;D.recettes=recettes;D.notes=notes;delete D.vierge;await ecrire("donnees",D);verifierStocks();
+    if(JSON.stringify([produits,recettes,notes,contenants])!==avant&&JSON.stringify([D.produits,D.recettes,D.notes,D.contenants])===avant){
+      D.produits=produits;D.recettes=recettes;D.notes=notes;D.contenants=contenants;delete D.vierge;await ecrire("donnees",D);verifierStocks();
       if(vue==="voir"&&!R(courant)){vue="recettes"}
       if(vue==="editer")nav();else{const y=scrollY;rendre();scrollTo(0,y)}
-    }else if(JSON.stringify([D.produits,D.recettes,D.notes])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
+    }else if(JSON.stringify([D.produits,D.recettes,D.notes,D.contenants])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
     syncEtat.derniere=new Date();syncEtat.codeRequis=false;
   }catch(e){
     syncEtat.erreur=e.message;if(e.code){syncEtat.codeRequis=true;try{localStorage.removeItem("carnet.codeMel")}catch(x){}}
@@ -1543,7 +1547,8 @@ document.addEventListener("input",e=>{
   const t=e.target;
   if(t.id==="questionMel"){t.style.height="auto";t.style.height=Math.min(160,t.scrollHeight)+"px";return}
   if(t.id==="recherche"){recherche=t.value;const pos=t.selectionStart;rendre();const n=document.getElementById("recherche");n.focus();n.setSelectionRange(pos,pos);return}
-  if(t.dataset.b&&brouillon){let v=t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}if(t.dataset.b==="contenance")v=v===""?null:+v;fixer(brouillon,t.dataset.b,v);majApercu()}
+  if(t.dataset.cap&&brouillon){noterCap(t.dataset.cap,+t.value||0);majApercu();return}
+  if(t.dataset.b&&brouillon){let v=t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}fixer(brouillon,t.dataset.b,v);majApercu()}
 });
 document.addEventListener("change",async e=>{
   const t=e.target;
@@ -1598,7 +1603,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.1";
+const VERSION="3.2";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

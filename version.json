@@ -1,9 +1,8 @@
 {
-  "version": "3.1",
+  "version": "3.2",
   "date": "2026-10-25",
   "notes": [
-    "Chaque contenant indique sa contenance en grammes de cire (modifiable)",
-    "Le niveau dans le dessin suit les grammes, et l’appli prévient si ça déborde",
+    "Contenance : c’est toi qui notes celle de tes vrais contenants, une seule fois",
     "« Corriger Mel » : apprends-lui la bonne réponse"
   ]
 }
