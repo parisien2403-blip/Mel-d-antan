@@ -9,6 +9,8 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   fraise, pomme, citron, cerises) : les couches remplissent alors la forme, couches du bas vers le haut.
   Chaque couche a ses produits pris dans l'inventaire avec leur quantité (500 g de cire de soja, 3 gouttes de colorant bleu…),
   une couleur et un aspect (lisse, chantilly, mousse, marbré, paillettes, morceaux, granité).
+- **Contenance** : chaque contenant et moule a une contenance moyenne en grammes de cire (« ≈ 230 g »), remplaçable
+  par celle du vrai verre dans la recette ; le niveau du dessin suit les grammes et l’appli prévient si ça déborde.
 - **Aperçu** : à gauche, le contenant dessiné avec les couches dedans, à la hauteur de leur poids en grammes ;
   une chantilly en dernière couche fait un dôme au-dessus du verre.
 - **Fiche** : quantités pour ½, 1, 2, 3 ou 4 bougies ; « J'ai coulé » retire les quantités de l'inventaire ;

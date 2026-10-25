@@ -1,9 +1,9 @@
 {
-  "version": "3.0",
+  "version": "3.1",
   "date": "2026-10-25",
   "notes": [
-    "« Corriger Mel » : apprends-lui la bonne réponse, elle s’en souviendra",
-    "On voit quand c’est l’IA gratuite qui a répondu",
-    "L’appli prend tout l’écran"
+    "Chaque contenant indique sa contenance en grammes de cire (modifiable)",
+    "Le niveau dans le dessin suit les grammes, et l’appli prévient si ça déborde",
+    "« Corriger Mel » : apprends-lui la bonne réponse"
   ]
 }
