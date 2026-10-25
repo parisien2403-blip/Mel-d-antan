@@ -357,6 +357,14 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .liste-notes span{flex:1}
 .choix-contenants .cap{font-size:.68rem;color:var(--doux)}
 .deborde{color:var(--alerte)}
+.onglets-inv{display:flex;flex-wrap:wrap;gap:8px;padding:2px 2px 10px;margin-bottom:8px}
+@media (max-width:620px){.onglets-inv{display:grid;grid-template-columns:1fr 1fr}.onglet-inv{justify-content:space-between;padding:9px 12px}}
+.nouv-tete[hidden]{display:none}
+.onglet-inv{flex:none;border:1.5px solid var(--ligne);background:var(--carte);border-radius:14px;padding:9px 14px;cursor:pointer;font-weight:600;color:var(--doux);display:flex;align-items:center;gap:8px;font-size:.95rem}
+.onglet-inv.on{background:var(--cafe);border-color:var(--cafe);color:var(--carte)}
+.onglet-inv .compte{background:rgba(0,0,0,.08);border-radius:999px;padding:1px 8px;font-size:.8rem}
+.onglet-inv.on .compte{background:rgba(255,255,255,.25)}
+.alerte-inv{background:var(--alerte);color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -1373,12 +1381,23 @@ setInterval(()=>{if(!document.hidden)synchroniser()},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
 
 /* ---------- Écran : inventaire ---------- */
-function vInventaire(){
-  return `<div class="ligne" style="justify-content:space-between;margin-bottom:6px"><p class="aide" style="margin:0;flex:1;min-width:200px">Vos cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand vous coulez une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
-  ${D.produits.length?TYPES.map(([k,l])=>{const ps=D.produits.filter(p=>p.type===k).sort((a,b)=>a.nom.localeCompare(b.nom));return ps.length?`<div class="groupe"><h3>${l}</h3>${ps.map(p=>{const suivi=p.stock!=null&&p.stock!=="";const pas=p.unite==="g"||p.unite==="ml"?50:1;const bas=suivi&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte;
-   return `<div class="produit">${p.couleur?`<span class="pastille" style="background:${p.couleur};width:22px;height:22px"></span>`:""}<div class="nom"><b>${esc(p.nom)}</b><small>${esc((UNITES.find(u=>u[0]===p.unite)||[,""])[1])}${p.note?" · "+esc(p.note):""}${utilisations(p.id)?` · ${utilisations(p.id)} recette${utilisations(p.id)>1?"s":""}`:""}</small></div>
+// Inventaire rangé par onglets (cires, colorants, parfums…) : un seul à la fois
+let ongletInv=(()=>{try{return localStorage.getItem("carnet.ongletInv")||""}catch(e){return""}})();
+function ligneProduit(p){
+  const suivi=p.stock!=null&&p.stock!=="";const pas=p.unite==="g"||p.unite==="ml"?50:1;const bas=suivi&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte;
+  return `<div class="produit">${p.couleur?`<span class="pastille" style="background:${p.couleur};width:22px;height:22px"></span>`:""}<div class="nom"><b>${esc(p.nom)}</b><small>${esc((UNITES.find(u=>u[0]===p.unite)||[,""])[1])}${p.note?" · "+esc(p.note):""}${utilisations(p.id)?` · ${utilisations(p.id)} recette${utilisations(p.id)>1?"s":""}`:""}</small></div>
     ${suivi?`<div class="stock ${bas?"bas-stock":""}"><button class="btn leger rond" data-stock="${p.id}:-${pas}" aria-label="Moins">−</button><b>${nb(+p.stock)}</b><button class="btn leger rond" data-stock="${p.id}:${pas}" aria-label="Plus">+</button></div>`:""}
-    <button class="btn leger petit" data-produit="${p.id}">Modifier</button></div>`}).join("")}</div>`:""}).join(""):`<div class="vide"><p>Aucun produit pour l’instant.</p></div>`}`;
+    <button class="btn leger petit" data-produit="${p.id}">Modifier</button></div>`;
+}
+function vInventaire(){
+  const parType=k=>D.produits.filter(p=>p.type===k).sort((a,b)=>a.nom.localeCompare(b.nom));
+  const bas=p=>p.stock!=null&&p.stock!==""&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte;
+  if(!TYPES.some(([k])=>k===ongletInv))ongletInv=(TYPES.find(([k])=>parType(k).length)||TYPES[0])[0];
+  const l=TYPES.find(([k])=>k===ongletInv)[1],ps=parType(ongletInv);
+  return `<div class="ligne" style="justify-content:space-between;margin-bottom:12px"><p class="aide" style="margin:0;flex:1;min-width:200px">Tes cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand tu coules une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
+  <div class="onglets-inv" role="tablist">${TYPES.map(([k,lib])=>{const n=parType(k).length,nbBas=parType(k).filter(bas).length;
+    return `<button role="tab" class="onglet-inv ${k===ongletInv?"on":""}" data-onglet-inv="${k}" aria-selected="${k===ongletInv}">${lib}<span class="compte">${n}</span>${nbBas?`<span class="alerte-inv" title="${nbBas} sous le seuil">!</span>`:""}</button>`}).join("")}</div>
+  <div class="groupe">${ps.length?ps.map(ligneProduit).join(""):`<div class="vide"><p>Aucun produit dans « ${l} » pour l’instant.</p><button class="btn leger" data-act="nouveauProduit">＋ Ajouter dans ${l.toLowerCase()}</button></div>`}</div>`;
 }
 const utilisations=id=>D.recettes.filter(r=>r.couches.some(c=>c.ingredients.some(x=>x.produit===id))).length;
 
@@ -1455,7 +1474,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1472,6 +1491,7 @@ document.addEventListener("click",e=>{
   if(d.questionMel){demanderMel(d.questionMel);return}
   if(d.corriger){const i=+d.corriger,q=(D.discussion||[]).slice(0,i).reverse().find(m=>m.role==="user");calque={correction:{idx:i,question:q?q.content:""}};history.pushState({vue,id:courant,calque:1},"");rendreCalque();return}
   if(d.oublier){demander("Oublier cette correction ?","Mel ne s’en servira plus pour te répondre.",{oui:"Oublier",danger:true}).then(v=>{if(v){D.notes=(D.notes||[]).filter(n=>n.id!==d.oublier);sauver();rendre()}});return}
+  if(d.ongletInv){ongletInv=d.ongletInv;try{localStorage.setItem("carnet.ongletInv",ongletInv)}catch(e){}rendre();return}
   if(d.selPdf){const l=calque&&calque.choixPdf;if(l){const i=l.indexOf(d.selPdf);if(i>=0)l.splice(i,1);else l.push(d.selPdf);rendreCalque()}return}
   if(d.imageMel){const[i,q]=d.imageMel.split(":");actionImageMel(+i,q);return}
   if(d.photoRecette){const r=R(d.photoRecette),img=calque&&calque.choixRecette&&calque.choixRecette.image;if(r&&img){r.photo=img;r.maj=new Date().toISOString();sauver();fermerCalque();rendre();toast(`Photo ajoutée à « ${r.nom} »`)}return}
@@ -1507,7 +1527,7 @@ document.addEventListener("click",e=>{
     const k=D.recettes.findIndex(x=>x.id===r.id);if(k>=0)D.recettes[k]=r;else D.recettes.push(r);
     sauver();brouillon=null;courant=r.id;mult=1;vue="voir";history.replaceState({vue,id:courant},"");rendre();scrollTo(0,0);toast(neuve?"Recette ajoutée au carnet":"Recette enregistrée")}
   else if(act==="annuler"){history.back()}
-  else if(act==="nouveauProduit")ouvrirProduit({});
+  else if(act==="nouveauProduit")ouvrirProduit(vue==="inventaire"&&ongletInv?{type:ongletInv,unite:ongletInv==="colorant"||ongletInv==="parfum"?"ml":ongletInv==="meche"||ongletInv==="deco"?"pieces":"g"}:{});
   else if(act==="supprimerProduit"){const p=calque.p,n=utilisations(p.id);demander(`Supprimer « ${p.nom} » ?`,n?`Ce produit sert dans ${n} recette${n>1?"s":""} : il y apparaîtra comme « produit supprimé ».`:"Il disparaîtra de ton inventaire.",{oui:"Supprimer",danger:true}).then(v=>{if(v){D.produits=D.produits.filter(x=>x.id!==p.id);sauver();fermerCalque();rendre()}})}
   else if(act==="exporter")exporter();
   else if(act==="pdfRecette"){const rec=R(courant);fairePdf([rec],false,`${nomFichier(rec.nom)}.pdf`,rec.nom)}
@@ -1603,7 +1623,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.2";
+const VERSION="3.3";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
