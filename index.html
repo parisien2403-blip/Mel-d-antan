@@ -1073,10 +1073,22 @@ let melEtat=null,melAttente=false,melTexte="",melErreur="",ecoute=null;
 const MEL_SUGGESTIONS=["Dessine-moi une bougie tiramisu en verrine","Qu’est-ce qui me manque en stock pour couler 3 café liégeois ?","À quelle température je coule une chantilly ?","Combien de parfum pour 500 g de cire de soja ?","Invente-moi une bougie tiramisu en verrine","Quelle mèche pour un pot de yaourt en verre ?","Pourquoi ma bougie fait un trou au milieu ?"];
 const codeMel=()=>{try{return localStorage.getItem("carnet.codeMel")||""}catch(e){return""}};
 const voixMel=()=>{try{return localStorage.getItem("carnet.voixMel")==="1"}catch(e){return false}};
-async function verifierMel(){
-  try{const r=await fetch("api/mel/etat",{cache:"no-store"});melEtat=r.ok?await r.json():{absent:true}}catch(e){melEtat={absent:true,horsLigne:!navigator.onLine}}
-  majMel();
+// Adresse sans serveur de Mel (ancienne version sur GitHub Pages)
+const SANS_SERVEUR=/github\.io$/i.test(location.hostname);
+let verifEnCours=null;
+function verifierMel(){
+  // Une seule vérification à la fois ; un échec (réseau coupé, serveur lent) sera retenté à la prochaine ouverture de Mel
+  return verifEnCours||(verifEnCours=(async()=>{
+    for(let essai=0;essai<3;essai++){
+      try{const r=await fetch("api/mel/etat",{cache:"no-store"});if(r.ok){melEtat=await r.json();break}melEtat={absent:true,sansServeur:SANS_SERVEUR||r.status===404}}
+      catch(e){melEtat={absent:true,horsLigne:!navigator.onLine}}
+      if(SANS_SERVEUR||melEtat.horsLigne)break;await new Promise(ok=>setTimeout(ok,1500));
+    }
+    verifEnCours=null;majMel();
+  })());
 }
+addEventListener("online",()=>{if(melEtat&&melEtat.absent)verifierMel().then(()=>planifierSync(300))});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&melEtat&&melEtat.absent)verifierMel()});
 // Ce que Mel sait du carnet : inventaire et recettes en texte (sans les photos)
 function contexteCarnet(){
   const unite=p=>(UNITES.find(u=>u[0]===p.unite)||[,""])[1];
@@ -1127,11 +1139,13 @@ function bulleMel(t,enCours,msg,idx){
   const pied=msg&&idx!=null&&!enCours?`<div class="pied-bulle">${msg.moteur==="cloudflare"?`<span title="Réponse donnée par l’IA gratuite de Cloudflare, moins fiable que Claude">IA gratuite</span>`:""}<button class="lien" data-corriger="${idx}">${msg.corrige?"✓ Corrigé":"Corriger Mel"}</button></div>`:"";
   return`<div class="de-mel"><img src="mel-avatar.png" alt="Mel"><div><div class="bulle">${t?formeMel(t,enCours,msg,idx):`<span class="reflechit" aria-label="Mel réfléchit"><span></span><span></span><span></span></span>`}</div>${pied}</div></div>`}
 function corpsMel(volet){
-  if(!melEtat){verifierMel();}
+  if(!melEtat||melEtat.absent&&!verifEnCours&&!melEtat.sansServeur)verifierMel();
   const fil=D.discussion||[];
   let corps;
   if(!melEtat)corps=`<p class="aide">Mel arrive…</p>`;
-  else if(melEtat.absent)corps=`<div class="carte"><p style="margin-top:0"><b>${melEtat.horsLigne?"Pas d’internet pour le moment.":"Mel n’est pas encore branchée ici."}</b></p><p class="aide">${melEtat.horsLigne?"Mel a besoin d’internet pour répondre. Le reste du carnet marche sans.":"Mel répond depuis la version de l’appli hébergée sur Cloudflare (adresse en …workers.dev). Ouvre l’appli à cette adresse pour lui parler."}</p></div>`;
+  else if(melEtat.absent)corps=melEtat.horsLigne?`<div class="carte"><p style="margin-top:0"><b>Pas d’internet pour le moment.</b></p><p class="aide">Mel a besoin d’internet pour répondre. Le reste du carnet marche sans. Elle revient toute seule dès que la connexion revient.</p></div>`
+    :melEtat.sansServeur?`<div class="carte"><p style="margin-top:0"><b>Tu es sur l’ancienne adresse de l’appli.</b></p><p class="aide">Ici, Mel ne peut pas répondre et ton carnet n’est pas partagé. Ouvre la bonne adresse, puis installe l’appli depuis là :</p><p><a href="https://mel-d-antan.parisien2403.workers.dev/" style="color:var(--cafe);font-weight:700;word-break:break-all">mel-d-antan.parisien2403.workers.dev</a></p><p class="aide">Pense à désinstaller l’ancienne icône ensuite. Fais d’abord une sauvegarde (Réglages) si cette tablette a des recettes que les autres n’ont pas.</p></div>`
+    :`<div class="carte"><p style="margin-top:0"><b>Je n’arrive pas à joindre Mel pour le moment.</b></p><p class="aide">Le serveur ne répond pas. Je réessaie toute seule ; tu peux aussi toucher le bouton.</p><button class="btn leger petit" data-act="reessayerMel">Réessayer</button></div>`;
   else if(!melEtat.actif)corps=`<div class="carte"><p class="aide" style="margin:0">Mel n’a pas encore d’IA : active Workers AI ou ajoute la clé ANTHROPIC_API_KEY dans Cloudflare.</p></div>`;
   else if(melEtat.code&&!codeMel())corps=`<form class="carte" id="fCodeMel"><p style="margin-top:0">Bonjour Mel ! Pour que je sois rien qu’à toi, tape ton code une seule fois.</p><div class="ligne"><input type="password" id="codeMel" placeholder="Code de Mel" autocomplete="current-password" style="flex:1"><button class="btn">Entrer</button></div>${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</form>`;
   else{
@@ -1553,6 +1567,7 @@ document.addEventListener("click",e=>{
   else if(act==="notifMaj")basculerNotifMaj();
   else if(act==="essaiNotif"){(async()=>{if(pushActif()){try{const ab=await regSW.pushManager.getSubscription();await appelCarnet("notifs/essai",{endpoint:ab.endpoint});toast("Notification envoyée par le serveur");return}catch(e){toast(e.message)}}notifier("Mel : coucou !","C’est comme ça que je te préviendrai quand il commencera à manquer quelque chose.",{tag:"essai"})})()}
   else if(act==="dicter")dicter();
+  else if(act==="reessayerMel"){melEtat=null;majMel();verifierMel()}
   else if(act==="retirerPhotoMel"){photoMel=null;majMel()}
   else if(act==="ouvrirVolet")ouvrirVolet();
   else if(act==="fermerVolet")fermerVolet();
@@ -1623,7 +1638,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.3";
+const VERSION="3.4";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

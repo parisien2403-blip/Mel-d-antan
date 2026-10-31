@@ -1,8 +1,8 @@
 {
-  "version": "3.3",
-  "date": "2026-10-25",
+  "version": "3.4",
+  "date": "2026-10-31",
   "notes": [
-    "Inventaire rangé par onglets : cires, colorants, parfums, mèches, décors…",
-    "Contenance : c’est toi qui notes celle de tes vrais contenants"
+    "Mel se reconnecte toute seule si internet a coupé au démarrage",
+    "Inventaire rangé par onglets"
   ]
 }
