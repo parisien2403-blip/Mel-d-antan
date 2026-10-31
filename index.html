@@ -365,6 +365,12 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .onglet-inv .compte{background:rgba(0,0,0,.08);border-radius:999px;padding:1px 8px;font-size:.8rem}
 .onglet-inv.on .compte{background:rgba(255,255,255,.25)}
 .alerte-inv{background:var(--alerte);color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem}
+.memo-mel{margin-top:10px;border-left:4px solid var(--cafe);background:var(--fond);border-radius:10px;padding:8px 12px;font-size:.92rem}
+.memo-mel ul{margin:4px 0 4px;padding-left:18px}.memo-mel.annule{color:var(--doux);border-color:var(--ligne)}
+.photos-envoyees{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.photos-envoyees .photo-envoyee{max-width:140px;margin:0}
+.vignette-jointe{position:relative;flex:none}.vignette-jointe img{width:54px;height:54px;object-fit:cover;border-radius:10px;display:block}
+.vignette-jointe button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--alerte);color:#fff;font-size:.8rem;line-height:1;cursor:pointer}
+.photo-jointe{flex-wrap:wrap}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -1100,9 +1106,23 @@ function contexteCarnet(){
   return `${cor?`CORRECTIONS DE MEL (ce qu'elle t'a appris : à respecter en priorité)\n${cor}\n\n`:""}Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
 }
 // Mise en forme simple des réponses : gras, listes, paragraphes ; la fiche de recette proposée devient une carte
+const imagesDe=m=>m&&Array.isArray(m.images)?m.images:m&&m.image?[m.image]:[];
+// Ce que Mel retient (bloc ```retenir```) : enregistré tout seul dans sa mémoire, annulable
+const lignesRetenir=t=>{const m=String(t||"").match(/```retenir\s*([\s\S]*?)```/);return m?m[1].split("\n").map(l=>l.replace(/^\s*[-•*]\s*/,"").trim()).filter(Boolean).slice(0,8):[]};
+function memoriser(idx){
+  const m=D.discussion[idx];if(!m||m.retenu)return;const l=lignesRetenir(m.content);if(!l.length)return;
+  D.notes=D.notes||[];const deja=new Set(D.notes.map(n=>sansAccent(n.texte)));
+  m.retenu=[];for(const t of l){if(deja.has(sansAccent(t)))continue;const id=nouvelId();D.notes.push({id,nom:t.slice(0,60),texte:t.slice(0,600),date:new Date().toISOString(),source:"conversation"});m.retenu.push(id)}
+  sauver();
+}
 // Description du dessin demandé par Mel (bloc ```image … ```)
 const descriptionImage=t=>{const m=String(t||"").match(/```image\s*([\s\S]*?)```/);return m?m[1].trim():""};
 function formeMel(t,enCours,msg,idx){
+  let memo="";const mr=t.match(/```retenir\s*([\s\S]*?)(```|$)/);
+  if(mr){t=(t.slice(0,mr.index)+t.slice(mr.index+mr[0].length)).trim();const l=lignesRetenir(mr[0]+(mr[2]?"":"```"));
+    memo=enCours&&!mr[2]?`<div class="proposition"><span class="reflechit"><span></span><span></span><span></span></span> Mel prend des notes…</div>`
+     :msg&&msg.retenu?`<div class="memo-mel"><b>📌 ${msg.retenu.length?"J’ai retenu :":"Je savais déjà tout ça."}</b>${msg.retenu.length?`<ul>${msg.retenu.map(id=>(D.notes||[]).find(n=>n.id===id)).filter(Boolean).map(n=>`<li>${esc(n.texte)}</li>`).join("")}</ul><button class="lien" data-annuler-memo="${idx}">Annuler, ne retiens pas</button>`:""}</div>`
+     :msg&&msg.memoAnnule?`<div class="memo-mel annule">Rien retenu.</div>`:l.length?`<div class="memo-mel"><b>📌 À retenir :</b><ul>${l.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
   let dessinMel="";const mi=t.match(/```image\s*([\s\S]*?)(```|$)/);
   if(mi){t=(t.slice(0,mi.index)+t.slice(mi.index+mi[0].length)).trim();
     dessinMel=msg&&msg.image?`<figure class="dessin-mel"><img src="${msg.image}" alt="Dessin de Mel"><figcaption class="ligne"><button class="btn petit" data-image-mel="${idx}:recette">Mettre en photo d’une recette</button><button class="btn leger petit" data-image-mel="${idx}:telecharger">Télécharger</button></figcaption></figure>`
@@ -1118,7 +1138,7 @@ function formeMel(t,enCours,msg,idx){
   if(m&&enCours&&!m[2])carte=`<div class="proposition"><span class="reflechit"><span></span><span></span><span></span></span> Mel prépare la fiche…</div>`;
   else if(fiche&&Array.isArray(fiche.couches)){const apercu={contenant:CONTENANTS[fiche.contenant]?fiche.contenant:"verrine",remplissage:fiche.remplissage||85,couches:fiche.couches.map(c=>({nom:c.nom,couleur:/^#[0-9a-f]{6}$/i.test(c.couleur||"")?c.couleur:"",texture:c.texture,ingredients:[]}))};
     carte=`<div class="proposition">${dessin(apercu,{mini:true})}<div style="flex:1"><b>${esc(fiche.nom||"Nouvelle recette")}</b><small class="aide" style="margin:0">${esc(CONTENANTS[apercu.contenant].nom)} · ${fiche.couches.length} couche${fiche.couches.length>1?"s":""}</small><div style="margin-top:8px"><button class="btn petit" data-fiche-mel="${encodeURIComponent(JSON.stringify(fiche))}" data-msg="${idx??""}">Ouvrir dans l’éditeur</button></div></div></div>`}
-  return blocs+dessinMel+carte;
+  return blocs+memo+dessinMel+carte;
 }
 const sansAccent=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 // Fiche proposée par Mel → brouillon dans l'éditeur ; les produits absents sont ajoutés à l'inventaire
@@ -1149,13 +1169,13 @@ function corpsMel(volet){
   else if(!melEtat.actif)corps=`<div class="carte"><p class="aide" style="margin:0">Mel n’a pas encore d’IA : active Workers AI ou ajoute la clé ANTHROPIC_API_KEY dans Cloudflare.</p></div>`;
   else if(melEtat.code&&!codeMel())corps=`<form class="carte" id="fCodeMel"><p style="margin-top:0">Bonjour Mel ! Pour que je sois rien qu’à toi, tape ton code une seule fois.</p><div class="ligne"><input type="password" id="codeMel" placeholder="Code de Mel" autocomplete="current-password" style="flex:1"><button class="btn">Entrer</button></div>${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</form>`;
   else{
-    const msgs=fil.map((m,i)=>m.role==="user"?`<div class="bulle de-moi">${m.image?`<img class="photo-envoyee" src="${m.image}" alt="Ta photo">`:""}${esc(m.content).replace(/\n/g,"<br>")}</div>`:bulleMel(m.content,false,m,i)).join("");
+    const msgs=fil.map((m,i)=>m.role==="user"?`<div class="bulle de-moi">${imagesDe(m).length?`<div class="photos-envoyees">${imagesDe(m).map(p=>`<img class="photo-envoyee" src="${p}" alt="Ta photo">`).join("")}</div>`:""}${esc(m.content).replace(/\n/g,"<br>")}</div>`:bulleMel(m.content,false,m,i)).join("");
     corps=`<div class="mel-outils"><span class="aide" style="margin:0 auto 0 0;align-self:center">${melEtat.moteur==="claude"?"✨ Mel répond avec Claude":melEtat.relais?"🌙 Crédits Claude du mois épuisés : Mel répond avec l’IA gratuite de Cloudflare jusqu’au renouvellement":"Mel répond avec l’IA gratuite de Cloudflare"}</span>${"speechSynthesis" in window?`<button class="btn leger petit" data-act="voixMel">${voixMel()?"🔊 Mel parle":"🔈 Mel se tait"}</button>`:""}${fil.length?`<button class="btn leger petit" data-act="effacerMel">Nouvelle conversation</button>`:""}</div>
      <div class="fil" id="fil">${fil.length?"":bulleMel(`Bonjour Mel ! Je connais tout ton carnet : ${D.recettes.length} recette${D.recettes.length>1?"s":""} et ${D.produits.length} produit${D.produits.length>1?"s":""}. Demande-moi une quantité, une température, ce qui te manque en stock, ou une idée de nouvelle bougie.`,false)}${msgs}${melAttente?`<div id="enCours">${bulleMel(melTexte,true)}</div>`:""}
      ${melErreur?`<p class="aide" style="color:var(--alerte)">${esc(melErreur)}</p>`:""}</div>
      ${!melAttente?`<div class="puces" style="margin-top:14px">${suggestionsMel(volet).map(q=>`<button class="puce" data-question-mel="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
-     ${photoMel?`<div class="photo-jointe"><img src="${photoMel}" alt="Photo à envoyer"><span>Photo prête : pose ta question</span><button class="btn leger rond" data-act="retirerPhotoMel" aria-label="Retirer la photo">×</button></div>`:""}
-     <form class="saisie" id="fMel"><label class="btn leger rond ${melEtat.moteur==="claude"?"":"desactive"}" aria-label="Envoyer une photo à Mel" title="${melEtat.moteur==="claude"?"Envoyer une photo à Mel":"Pour les photos, Mel a besoin de Claude"}">📷<input type="file" accept="image/*" id="photoMelFichier" hidden ${melEtat.moteur==="claude"&&!melAttente?"":"disabled"}></label><textarea id="questionMel" rows="1" placeholder="${photoMel?"Ta question sur la photo…":"Pose ta question à Mel…"}" maxlength="4000" ${melAttente?"disabled":""}></textarea>
+     ${photosMel.length?`<div class="photo-jointe">${photosMel.map((p,i)=>`<span class="vignette-jointe"><img src="${p}" alt="Photo ${i+1}"><button type="button" data-retirer-photo="${i}" aria-label="Retirer cette photo">×</button></span>`).join("")}<span>${photosMel.length<4?"Ajoute du texte si tu veux, ou envoie tel quel.":"4 photos au plus."}</span><button class="btn leger rond" data-act="retirerPhotoMel" aria-label="Retirer les photos">×</button></div>`:""}
+     <form class="saisie" id="fMel"><label class="btn leger rond ${melEtat.moteur==="claude"?"":"desactive"}" aria-label="Envoyer une photo à Mel" title="${melEtat.moteur==="claude"?"Envoyer une photo à Mel":"Pour les photos, Mel a besoin de Claude"}">📷<input type="file" accept="image/*" multiple id="photoMelFichier" hidden ${melEtat.moteur==="claude"&&!melAttente?"":"disabled"}></label><textarea id="questionMel" rows="1" placeholder="${photosMel.length?"Un mot sur ces photos (facultatif)…":"Pose ta question à Mel…"}" maxlength="4000" ${melAttente?"disabled":""}></textarea>
       ${ecouteDispo()?`<button type="button" class="btn leger rond ${ecoute?"ecoute":""}" data-act="dicter" aria-label="Dicter ma question">🎤</button>`:""}<button class="btn rond" aria-label="Envoyer" ${melAttente?"disabled":""}>➤</button></form>`;
   }
   return corps;
@@ -1217,21 +1237,21 @@ function dicter(){
 }
 function parler(t){
   if(!voixMel()||!("speechSynthesis" in window))return;
-  const propre=t.replace(/```recette[\s\S]*$/,"").replace(/\*\*/g,"").replace(/^\s*[-•*]\s+/gm,"").trim();if(!propre)return;
+  const propre=t.replace(/```(retenir|image)[\s\S]*?(```|$)/g,"").replace(/```recette[\s\S]*$/,"").replace(/\*\*/g,"").replace(/^\s*[-•*]\s+/gm,"").trim();if(!propre)return;
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(propre);u.lang="fr-FR";u.rate=1.02;
   const v=speechSynthesis.getVoices().find(x=>/^fr/i.test(x.lang)&&/female|amelie|audrey|marie|julie|léa|lea|google/i.test(x.name))||speechSynthesis.getVoices().find(x=>/^fr/i.test(x.lang));if(v)u.voice=v;
   speechSynthesis.speak(u);
 }
 const finFil=()=>{const f=document.getElementById("enCours")||document.getElementById("fil");if(f)f.lastElementChild?.scrollIntoView({block:"end",behavior:"smooth"})};
-let photoMel=null;
+let photosMel=[];
 async function demanderMel(question){
-  question=question.trim();if(!question&&photoMel)question="Que penses-tu de ma bougie ?";if(!question||melAttente)return;
-  D.discussion=D.discussion||[];D.discussion.push({role:"user",content:question,date:new Date().toISOString(),...(photoMel?{image:photoMel}:{})});photoMel=null;
+  question=question.trim();if((!question&&!photosMel.length)||melAttente)return;
+  D.discussion=D.discussion||[];D.discussion.push({role:"user",content:question,date:new Date().toISOString(),...(photosMel.length?{images:photosMel}:{})});photosMel=[];
   melAttente=true;melTexte="";melErreur="";sauver();majMel();finFil();
   try{
     const r=await fetch("api/mel",{method:"POST",headers:{"content-type":"application/json","x-code-mel":codeMel()},
       // Seule la dernière photo repart vers Mel ; les plus anciennes sont rappelées par une mention
-      body:JSON.stringify({messages:D.discussion.slice(-20).map(({role,content,image},i,l)=>({role,content:image&&i<l.length-1?"[Photo envoyée plus tôt] "+content:content,...(image&&i===l.length-1?{image}:{})})),contexte:(pageCourante()?`EN CE MOMENT : ${pageCourante()}\n\n`:"")+contexteCarnet()})});
+      body:JSON.stringify({messages:D.discussion.slice(-20).map((m,i,l)=>{const im=imagesDe(m);return{role:m.role,content:im.length&&i<l.length-1?`[${im.length>1?im.length+" photos envoyées":"Photo envoyée"} plus tôt] `+m.content:m.content,...(im.length&&i===l.length-1?{images:im}:{})}}),contexte:(pageCourante()?`EN CE MOMENT : ${pageCourante()}\n\n`:"")+contexteCarnet()})});
     if(!r.ok){const e=await r.json().catch(()=>({}));if(e.code){try{localStorage.removeItem("carnet.codeMel")}catch(x){}}throw new Error(e.erreur||"Mel ne répond pas pour le moment.")}
     // Relais par l'IA de Cloudflare (crédits Claude épuisés) ou retour de Claude : l'indication suit
     const relaisNow=r.headers.get("x-mel-relais")==="1",moteurRep=r.headers.get("x-mel-moteur")||"";
@@ -1242,8 +1262,9 @@ async function demanderMel(question){
       if(!prevu){prevu=true;requestAnimationFrame(()=>{prevu=false;const z=document.getElementById("enCours");if(z){z.innerHTML=bulleMel(melTexte,true);finFil()}})}}
     melTexte+=dec.decode();
     if(melTexte.trim()){D.discussion.push({role:"assistant",content:melTexte,date:new Date().toISOString(),...(moteurRep?{moteur:moteurRep}:{})});parler(melTexte);
+      memoriser(D.discussion.length-1);
       const desc=descriptionImage(melTexte);if(desc)setTimeout(()=>dessinerMel(D.discussion.length-1),50)}
-  }catch(e){melErreur=e.message||"Mel ne répond pas pour le moment.";const p=D.discussion.pop();if(p&&p.image)photoMel=p.image}
+  }catch(e){melErreur=e.message||"Mel ne répond pas pour le moment.";const p=D.discussion.pop();if(p)photosMel=imagesDe(p)}
   finally{
     if(D.discussion.length>80)D.discussion=D.discussion.slice(-80);
     melAttente=false;melTexte="";sauver();
@@ -1488,7 +1509,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1505,6 +1526,8 @@ document.addEventListener("click",e=>{
   if(d.questionMel){demanderMel(d.questionMel);return}
   if(d.corriger){const i=+d.corriger,q=(D.discussion||[]).slice(0,i).reverse().find(m=>m.role==="user");calque={correction:{idx:i,question:q?q.content:""}};history.pushState({vue,id:courant,calque:1},"");rendreCalque();return}
   if(d.oublier){demander("Oublier cette correction ?","Mel ne s’en servira plus pour te répondre.",{oui:"Oublier",danger:true}).then(v=>{if(v){D.notes=(D.notes||[]).filter(n=>n.id!==d.oublier);sauver();rendre()}});return}
+  if(d.annulerMemo){const m=D.discussion[+d.annulerMemo];if(m&&m.retenu){const ids=new Set(m.retenu);D.notes=(D.notes||[]).filter(n=>!ids.has(n.id));delete m.retenu;m.memoAnnule=true;sauver();majMel();toast("D’accord, je ne retiens pas")}return}
+  if(d.retirerPhoto){photosMel.splice(+d.retirerPhoto,1);majMel();return}
   if(d.ongletInv){ongletInv=d.ongletInv;try{localStorage.setItem("carnet.ongletInv",ongletInv)}catch(e){}rendre();return}
   if(d.selPdf){const l=calque&&calque.choixPdf;if(l){const i=l.indexOf(d.selPdf);if(i>=0)l.splice(i,1);else l.push(d.selPdf);rendreCalque()}return}
   if(d.imageMel){const[i,q]=d.imageMel.split(":");actionImageMel(+i,q);return}
@@ -1568,7 +1591,7 @@ document.addEventListener("click",e=>{
   else if(act==="essaiNotif"){(async()=>{if(pushActif()){try{const ab=await regSW.pushManager.getSubscription();await appelCarnet("notifs/essai",{endpoint:ab.endpoint});toast("Notification envoyée par le serveur");return}catch(e){toast(e.message)}}notifier("Mel : coucou !","C’est comme ça que je te préviendrai quand il commencera à manquer quelque chose.",{tag:"essai"})})()}
   else if(act==="dicter")dicter();
   else if(act==="reessayerMel"){melEtat=null;majMel();verifierMel()}
-  else if(act==="retirerPhotoMel"){photoMel=null;majMel()}
+  else if(act==="retirerPhotoMel"){photosMel=[];majMel()}
   else if(act==="ouvrirVolet")ouvrirVolet();
   else if(act==="fermerVolet")fermerVolet();
   else if(act==="agrandirMel"){voletMel=false;if(history.state&&history.state.volet)history.replaceState({vue,id:courant},"");aller("mel")}
@@ -1591,7 +1614,10 @@ document.addEventListener("change",async e=>{
     if(t.value==="__nouveau"){t.value=brouillon.couches[i].ingredients[j].produit||"";ouvrirProduit({},{i,j});return}
     brouillon.couches[i].ingredients[j].produit=t.value;const y=scrollY;rendre();scrollTo(0,y);return}
   if(t.dataset.b&&brouillon&&t.tagName==="SELECT"){fixer(brouillon,t.dataset.b,t.value);majApercu()}
-  if(t.id==="photoMelFichier"&&t.files[0]){try{photoMel=await reduirePhoto(t.files[0],1200);majMel();document.getElementById("questionMel")?.focus()}catch(x){toast("Cette photo n’a pas pu être lue")}return}
+  if(t.id==="photoMelFichier"&&t.files.length){
+    // Articles et fiches : assez grand pour que le texte reste lisible
+    for(const f of [...t.files].slice(0,4-photosMel.length)){try{photosMel.push(await reduirePhoto(f,1600))}catch(x){toast("Une photo n’a pas pu être lue")}}
+    if(t.files.length>4)toast("4 photos au plus par message");t.value="";majMel();return}
   if(t.id==="photo"&&t.files[0]){try{brouillon.photo=await reduirePhoto(t.files[0]);const y=scrollY;rendre();scrollTo(0,y)}catch(x){toast("Cette photo n’a pas pu être lue")}}
   if(t.id==="importer"&&t.files[0])importer(t.files[0]);
 });
@@ -1638,7 +1664,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.4";
+const VERSION="3.5";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

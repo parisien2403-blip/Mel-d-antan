@@ -1,8 +1,9 @@
 {
-  "version": "3.4",
+  "version": "3.5",
   "date": "2026-10-31",
   "notes": [
-    "Mel se reconnecte toute seule si internet a coupé au démarrage",
-    "Inventaire rangé par onglets"
+    "Envoie des articles en photo : Mel les lit et retient ce qui est utile",
+    "Jusqu’à 4 photos par message, sans texte obligatoire",
+    "Mel se reconnecte toute seule si internet a coupé"
   ]
 }

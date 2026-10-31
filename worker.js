@@ -58,7 +58,17 @@ Créer une recette : quand Mel te demande de créer, d'inventer ou de préparer 
 - "type" : un de cire, colorant, parfum, meche, deco, additif, autre. "unite" : un de g, ml, gouttes, pieces, cuilleres, pincees, pourcent.
 L'appli transforme ce bloc en bouton « Ouvrir dans l'éditeur » : ne parle pas du bloc lui-même dans ton texte.
 
-Photos : Mel peut t'envoyer une photo de sa bougie ou de son atelier. Regarde-la attentivement et décris ce que tu vois avant de conseiller (surface, couleurs, couches, chantilly, mèche, défauts comme les trous, le givre, les bulles ou le retrait, présentation pour la vente).
+Photos : Mel peut t'envoyer une ou plusieurs images, avec ou sans texte. Regarde d'abord ce que c'est :
+- Un article, une fiche technique, une recette, une capture d'écran ou tout document avec des informations : elle te l'envoie pour que tu l'apprennes. Lis-le attentivement, résume en quelques mots ce qu'il apporte, et enregistre les informations utiles avec le bloc « retenir » (voir plus bas). Ne commente pas l'image comme une photo de bougie.
+- Une photo de bougie ou de son atelier : décris ce que tu vois puis conseille (surface, couleurs, couches, chantilly, mèche, défauts comme les trous, le givre, les bulles ou le retrait, présentation pour la vente).
+- Si tu ne sais pas ce qu'elle attend, dis brièvement ce que tu vois et demande-lui.
+
+Retenir : quand Mel t'apprend quelque chose (un document envoyé, « retiens que… », une correction, une info sur son matériel, ses fournisseurs ou sa façon de faire), ajoute tout à la fin de ta réponse un bloc exactement de cette forme, une information par ligne, courte, précise et qui se comprend seule (avec les chiffres, la marque ou le produit concernés) :
+\`\`\`retenir
+- …
+- …
+\`\`\`
+L'appli l'enregistre dans ta mémoire (« Ce que Mel a appris ») : ne parle pas du bloc lui-même, dis simplement ce que tu retiens. Maximum 8 lignes ; ne répète pas ce qui est déjà dans les corrections de Mel ; si une information contredit une ancienne correction, retiens la nouvelle en le précisant (« remplace : … »). N'ajoute pas ce bloc pour une simple question.
 
 Dessiner : quand Mel te demande de dessiner, d'imaginer en image ou de montrer à quoi ressemblerait une bougie, réponds en une ou deux phrases chaleureuses, puis ajoute tout à la fin un bloc exactement de cette forme :
 \`\`\`image
@@ -87,8 +97,11 @@ function photo(p) {
 function nettoyer(corps) {
   if (!corps || !Array.isArray(corps.messages)) return null;
   const messages = corps.messages.slice(-MAX_MESSAGES)
-    .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && (m.content.trim() || m.image))
-    .map(m => ({ role: m.role, content: m.content.slice(0, MAX_TEXTE) || "Regarde ma photo.", photo: m.role === "user" ? photo(m.image) : null }));
+    .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && (m.content.trim() || m.image || (Array.isArray(m.images) && m.images.length)))
+    .map(m => {
+      const photos = m.role === "user" ? (Array.isArray(m.images) ? m.images : m.image ? [m.image] : []).slice(0, 4).map(photo).filter(Boolean) : [];
+      return { role: m.role, content: m.content.slice(0, MAX_TEXTE) || (photos.length ? "(Photo envoyée sans texte.)" : ""), photos };
+    });
   // La conversation commence par Mel (la créatrice) et finit par sa question
   while (messages.length && messages[0].role !== "user") messages.shift();
   if (!messages.length || messages[messages.length - 1].role !== "user") return null;
@@ -120,8 +133,8 @@ async function repondreClaude(env, { messages, contexte }) {
       { type: "text", text: PERSONNAGE },
       { type: "text", text: "Le carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)"), cache_control: { type: "ephemeral" } },
     ],
-    messages: messages.map(m => m.photo
-      ? { role: "user", content: [{ type: "image", source: { type: "base64", media_type: m.photo.type, data: m.photo.data } }, { type: "text", text: m.content }] }
+    messages: messages.map(m => m.photos.length
+      ? { role: "user", content: [...m.photos.map(p => ({ type: "image", source: { type: "base64", media_type: p.type, data: p.data } })), { type: "text", text: m.content }] }
       : { role: m.role, content: m.content }),
   });
   // Première lecture avant d'ouvrir le flux : une clé refusée devient un message clair
@@ -177,7 +190,7 @@ function erreurClaude(e) {
 }
 
 async function repondreCloudflare(env, { messages, contexte }) {
-  if (messages.length && messages[messages.length - 1].photo) throw Object.assign(new Error(env.ANTHROPIC_API_KEY ? "Les crédits Claude du mois sont épuisés : Mel ne peut pas regarder les photos avant leur renouvellement. Pose-moi ta question par écrit !" : "Pour regarder tes photos, Mel a besoin de Claude (clé ANTHROPIC_API_KEY dans Cloudflare)."), { statut: 400 });
+  if (messages.length && messages[messages.length - 1].photos.length) throw Object.assign(new Error(env.ANTHROPIC_API_KEY ? "Les crédits Claude du mois sont épuisés : Mel ne peut pas regarder les photos avant leur renouvellement. Pose-moi ta question par écrit !" : "Pour regarder tes photos, Mel a besoin de Claude (clé ANTHROPIC_API_KEY dans Cloudflare)."), { statut: 400 });
   messages = messages.map(({ role, content }) => ({ role, content }));
   const sortie = await env.AI.run(MODELE_CLOUDFLARE, {
     messages: [{ role: "system", content: PERSONNAGE + "\n\nLe carnet de Mel, tel qu'il est en ce moment :\n\n" + (contexte || "(carnet vide)") }, ...messages],

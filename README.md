@@ -22,7 +22,8 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
 - **Mel** (onglet avec sa mascotte) : l’assistante d’atelier, qui tutoie Mel. Elle connaît tout le carnet (recettes, notes,
   inventaire, stock) et répond sur la fabrication : quantités, calculs, températures, mèches, défauts, idées de bougies.
   Elle peut proposer une fiche de recette (bouton « Ouvrir dans l’éditeur »). Dictée au micro, lecture à voix haute.
-  Bouton 📷 : Mel regarde une photo de bougie et conseille (avec Claude). « Dessine-moi… » : Mel dessine une idée de bougie
+  Bouton 📷 (jusqu’à 4 photos, texte facultatif) : un article ou une fiche est lu et ce qui est utile est retenu tout seul
+  dans « Ce que Mel a appris » (annulable) ; une photo de bougie est commentée (avec Claude). « Retiens que… » marche aussi. « Dessine-moi… » : Mel dessine une idée de bougie
   (IA d’images gratuite de Cloudflare, Workers AI), à télécharger ou à mettre en photo d’une recette.
   Pastille de Mel en bas de chaque page : la conversation s’ouvre par-dessus la page en cours (volet à droite en version
   site, panneau du bas en version appli) ; Mel sait quelle page est ouverte et propose des questions à propos.
