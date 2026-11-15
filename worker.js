@@ -242,7 +242,7 @@ const SCHEMA = [
 ];
 let basePrete = null;
 const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
-const GENRES = ["produit", "recette", "note", "contenant"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
+const GENRES = ["produit", "recette", "note", "contenant", "coulee"], MAX_ELEMENT = 200000, MAX_PHOTO_CARNET = 1900000;
 async function empreinteHex(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");

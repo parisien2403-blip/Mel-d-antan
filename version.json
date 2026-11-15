@@ -1,9 +1,9 @@
 {
-  "version": "3.5",
-  "date": "2026-10-31",
+  "version": "3.6",
+  "date": "2026-11-15",
   "notes": [
-    "Envoie des articles en photo : Mel les lit et retient ce qui est utile",
-    "Jusqu’à 4 photos par message, sans texte obligatoire",
-    "Mel se reconnecte toute seule si internet a coupé"
+    "Historique des coulées : chaque « J’ai coulé » est noté, et peut être annulé",
+    "Mel te prévient si tu as déjà coulé la recette, pour ne pas déduire deux fois",
+    "Articles en photo lus et retenus par Mel"
   ]
 }

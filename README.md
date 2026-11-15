@@ -36,6 +36,9 @@ Le carnet de recettes de bougies de Mélanie : une appli pour noter les recettes
   et envoie une notification si elle est activée (Réglages › Notifications de Mel). Les notifications partent du serveur
   (Web Push, clés créées toutes seules) : elles arrivent même appli fermée. Les nouvelles versions sont annoncées par la
   tâche planifiée (toutes les 15 min, `triggers` dans `wrangler.jsonc`).
+- **Historique des coulées** : chaque « J’ai coulé » est noté avec ce qu’il a retiré du stock (onglet « Coulées » de
+  l’inventaire, et sur la fiche de la recette). Un deuxième appui le même jour demande confirmation ; une coulée peut
+  être annulée, le stock revient. Partagé entre les appareils, connu de Mel.
 - **Inventaire** : cires, colorants (avec leur couleur), parfums, mèches, décors, additifs ; stock et seuil d'alerte facultatifs.
 - **Affichage** : l’appli reconnaît l’appareil (Android, iPhone / iPad, ordinateur). Version appli (onglets en bas) sur téléphone
   et sur tablette à la verticale ; version site (menu en haut, page large) sur ordinateur et sur tablette à l’horizontale.

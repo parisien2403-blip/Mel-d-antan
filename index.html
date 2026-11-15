@@ -371,6 +371,11 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .vignette-jointe{position:relative;flex:none}.vignette-jointe img{width:54px;height:54px;object-fit:cover;border-radius:10px;display:block}
 .vignette-jointe button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--alerte);color:#fff;font-size:.8rem;line-height:1;cursor:pointer}
 .photo-jointe{flex-wrap:wrap}
+.coulee{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--carte);border:1px solid var(--ligne);border-radius:12px;margin-bottom:6px}
+.coulee .nom{flex:1;min-width:0}.coulee small{display:block;color:var(--doux);font-size:.8rem}
+.coulees-recette{margin-top:14px}.coulees-recette>b{display:block;margin-bottom:8px}
+.mois{font-family:var(--f-titre);font-size:1.05rem;margin:14px 0 8px;text-transform:capitalize}.mois small{color:var(--doux);font-weight:400;text-transform:none}
+.onglet-inv.hist{border-style:dashed}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -758,7 +763,7 @@ function demander(titre,texte,{oui="Oui",non="Annuler",danger=false}={}){
   });
 }
 const quitterEditeur=()=>!(vue==="editer"&&brouillon&&modifie())?Promise.resolve(true):demander("Quitter sans enregistrer ?","Tes changements sur cette recette seront perdus.",{oui:"Quitter",non:"Rester",danger:true});
-function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
+function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 
 /* ---------- Accueil : bonjour et chiffres de l'atelier, logo, astuce de Mel ---------- */
 const ASTUCES=["Mélange ton parfum doucement pendant 2 minutes : il se répartit mieux dans la cire.",
@@ -822,7 +827,8 @@ function vVoir(){
     ${total?`<div class="total">Poids total (cires, liquides) : <b>${nb(total)} g</b>${(()=>{const cap=contenance(r),pr=poidsRecette(r),pc=Math.round(pr/cap*100);return cap?` · contenance ${nb(cap*mult)} g${mult!==1?` (${nb(mult)} × ${nb(cap)} g)`:""} · <b class="${pc>100?"deborde":""}">${pc} %</b>${pc>100?" : ça déborde !":""}`:""})()}</div>`:""}
     ${r.notes?`<div class="couche-titre">Notes</div><p class="notes">${esc(r.notes)}</p>`:""}
    </div>
-   <div class="ligne" style="margin-top:14px">${r.approuve?`<button class="btn leger" data-act="approuver">Retirer « Approuvé »</button>`:`<button class="btn" data-act="approuver">✓ Approuver la recette</button>`}<button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="pdfRecette">Partager en PDF</button><button class="btn leger" data-act="couler">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
+   <div class="ligne" style="margin-top:14px">${r.approuve?`<button class="btn leger" data-act="approuver">Retirer « Approuvé »</button>`:`<button class="btn" data-act="approuver">✓ Approuver la recette</button>`}<button class="btn" data-act="modifier">Modifier</button><button class="btn leger" data-act="pdfRecette">Partager en PDF</button><button class="btn leger" data-act="couler" title="${derniereCoulee(r.id)?"Dernière coulée "+quand(derniereCoulee(r.id).date):""}">J’ai coulé ${mult===1?"cette bougie":`ces ${mult===.5?"½":mult}`}</button><button class="btn leger" data-act="dupliquer">Dupliquer</button><button class="btn leger" data-act="supprimer" style="margin-left:auto">Supprimer</button></div>
+   ${couleesDe(r.id).length?`<div class="carte coulees-recette"><b>🕯️ Coulée ${couleesDe(r.id).length} fois</b>${couleesDe(r.id).slice(0,3).map(c=>ligneCoulee(c,false)).join("")}${couleesDe(r.id).length>3?`<button class="lien" data-act="voirHistorique">Tout l’historique ›</button>`:""}</div>`:""}
    <p class="aide">Une recette approuvée reçoit le tampon Mel d’antan dans « Mon livre ». « J’ai coulé » retire les quantités utilisées de l’inventaire (pour les produits dont vous suivez le stock).</p>
   </div></div>`;
 }
@@ -1103,7 +1109,8 @@ function contexteCarnet(){
     r.couches.map((c,i)=>`Couche ${i+1} (du bas) « ${c.nom||"sans nom"} », aspect ${(TEXTURES.find(t=>t[0]===c.texture)||[,"lisse"])[1].toLowerCase()} : ${c.ingredients.filter(x=>x.produit).map(x=>phrase(+x.q||0,P(x.produit))).join(" ; ")||"aucun produit"}.`).join("\n")+
     (r.notes?`\nNotes : ${r.notes}`:"")).join("\n\n");
   const cor=(D.notes||[]).map(n=>`- ${n.texte}`).join("\n");
-  return `${cor?`CORRECTIONS DE MEL (ce qu'elle t'a appris : à respecter en priorité)\n${cor}\n\n`:""}Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
+  const cou=(D.coulees||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20).map(c=>`- ${c.date.slice(0,10)} : ${c.nom}, ${nbBougies(c.mult)}`).join("\n");
+  return `${cor?`CORRECTIONS DE MEL (ce qu'elle t'a appris : à respecter en priorité)\n${cor}\n\n`:""}${cou?`DERNIÈRES COULÉES (les plus récentes d'abord)\n${cou}\n\n`:""}Date du jour : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.\n\nINVENTAIRE (${D.produits.length} produits)\n${inv||"(vide)"}\n\nRECETTES (${D.recettes.length})\n${recs||"(aucune)"}`;
 }
 // Mise en forme simple des réponses : gras, listes, paragraphes ; la fiche de recette proposée devient une carte
 const imagesDe=m=>m&&Array.isArray(m.images)?m.images:m&&m.image?[m.image]:[];
@@ -1328,7 +1335,7 @@ async function synchroniser(choix){
   if(!syncPossible())return;
   if(syncEtat.enCours){syncRelancer=true;return}
   if(melEtat.code&&!codeMel()){syncEtat.codeRequis=true;rendreSyncBandeau();return}
-  syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];D.contenants=D.contenants||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes,D.contenants]);
+  syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];D.contenants=D.contenants||[];D.coulees=D.coulees||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes,D.contenants,D.coulees]);
   try{
     const base=await lire("sync");
     const serveur=(await appelCarnet("sync",{})).elements;
@@ -1337,6 +1344,7 @@ async function synchroniser(choix){
     for(const x of D.recettes)local[x.id]={genre:"recette",data:await enLigne(x)};
     for(const x of D.notes)local[x.id]={genre:"note",data:{...x}};
     for(const x of D.contenants)local[x.id]={genre:"contenant",data:{...x}};
+    for(const x of D.coulees)local[x.id]={genre:"coulee",data:{...x}};
     const srv={};for(const e of serveur)srv[e.id]=e;
     let changes=[],suppressions=[];
     if(!base){
@@ -1375,16 +1383,16 @@ async function synchroniser(choix){
     let fin=serveur;
     if(changes.length||suppressions.length){await envoyerPhotos(changes);fin=(await appelCarnet("sync",{changes,suppressions})).elements}
     // Le carnet de l'appareil devient celui en ligne
-    const produits=[],recettes=[],notes=[],contenants=[];
-    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else if(e.genre==="note")notes.push(d);else if(e.genre==="contenant")contenants.push(d);else produits.push(d)}
+    const produits=[],recettes=[],notes=[],contenants=[],coulees=[];
+    for(const e of fin){const d={...e.data};if(e.genre==="recette"){if(typeof d.photo==="string"&&d.photo.startsWith("photo:"))d.photo=await photoDe(d.photo);recettes.push(d)}else if(e.genre==="note")notes.push(d);else if(e.genre==="contenant")contenants.push(d);else if(e.genre==="coulee")coulees.push(d);else produits.push(d)}
     notes.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
     const el={};for(const e of fin)el[e.id]={j:JSON.stringify(e.data)};
     await ecrire("sync",{el});
-    if(JSON.stringify([produits,recettes,notes,contenants])!==avant&&JSON.stringify([D.produits,D.recettes,D.notes,D.contenants])===avant){
-      D.produits=produits;D.recettes=recettes;D.notes=notes;D.contenants=contenants;delete D.vierge;await ecrire("donnees",D);verifierStocks();
+    if(JSON.stringify([produits,recettes,notes,contenants,coulees])!==avant&&JSON.stringify([D.produits,D.recettes,D.notes,D.contenants,D.coulees])===avant){
+      D.produits=produits;D.recettes=recettes;D.notes=notes;D.contenants=contenants;D.coulees=coulees;delete D.vierge;await ecrire("donnees",D);verifierStocks();
       if(vue==="voir"&&!R(courant)){vue="recettes"}
       if(vue==="editer")nav();else{const y=scrollY;rendre();scrollTo(0,y)}
-    }else if(JSON.stringify([D.produits,D.recettes,D.notes,D.contenants])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
+    }else if(JSON.stringify([D.produits,D.recettes,D.notes,D.contenants,D.coulees])!==avant)syncRelancer=true; // modifié pendant la synchro : on recommence
     syncEtat.derniere=new Date();syncEtat.codeRequis=false;
   }catch(e){
     syncEtat.erreur=e.message;if(e.code){syncEtat.codeRequis=true;try{localStorage.removeItem("carnet.codeMel")}catch(x){}}
@@ -1415,6 +1423,39 @@ function rendreSyncBandeau(){
 setInterval(()=>{if(!document.hidden)synchroniser()},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
 
+/* ---------- Historique des coulées : chaque « J’ai coulé » est noté, avec ce qu’il a retiré du stock ---------- */
+const nbBougies=k=>k===.5?"½ bougie":`${nb(k)} bougie${k>1?"s":""}`;
+function quand(iso){
+  const d=new Date(iso),m=(Date.now()-d)/60000,h=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  if(m<1)return"à l’instant";if(m<60)return`il y a ${Math.round(m)} min`;
+  const auj=new Date();auj.setHours(0,0,0,0);const hier=new Date(auj-864e5);
+  if(d>=auj)return`aujourd’hui à ${h}`;if(d>=hier)return`hier à ${h}`;
+  return`le ${d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})} à ${h}`;
+}
+const couleesDe=id=>(D.coulees||[]).filter(c=>c.recette===id).sort((a,b)=>b.date.localeCompare(a.date));
+const derniereCoulee=id=>couleesDe(id)[0]||null;
+function couler(r){
+  const b=besoins(r,mult),retire=[];
+  for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){const avant=+p.stock;p.stock=Math.max(0,Math.round((avant-q)*100)/100);retire.push({produit:id,nom:p.nom,unite:p.unite,q:Math.round((avant-p.stock)*100)/100})}}
+  D.coulees=D.coulees||[];D.coulees.push({id:nouvelId(),recette:r.id,nom:r.nom,mult,date:new Date().toISOString(),retire});
+  sauver();rendre();toast(retire.length?`Coulée notée · inventaire mis à jour (${retire.length} produit${retire.length>1?"s":""})`:"Coulée notée (aucun produit suivi en stock)");
+  verifierStocks();
+}
+function annulerCoulee(c){
+  for(const x of c.retire||[]){const p=P(x.produit);if(p&&p.stock!=null&&p.stock!=="")p.stock=Math.round((+p.stock+x.q)*100)/100}
+  D.coulees=D.coulees.filter(y=>y.id!==c.id);sauver();rendre();toast("Coulée annulée : le stock est revenu");
+}
+function ligneCoulee(c,avecNom=true){
+  return `<div class="coulee"><div class="nom">${avecNom?`<b>${esc(c.nom)}</b> · `:""}${nbBougies(c.mult)}<small>${quand(c.date)}${(c.retire||[]).length?` · ${c.retire.map(x=>`−${nb(x.q)} ${esc((UNITES.find(u=>u[0]===x.unite)||[,""])[1])} ${esc(x.nom)}`).join(", ")}`:""}</small></div>
+    <button class="lien" data-act="annulerCoulee" data-coulee="${c.id}">Annuler</button></div>`;
+}
+function vHistorique(){
+  const l=(D.coulees||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(!l.length)return`<div class="vide"><p>Aucune coulée notée pour l’instant.</p><p class="aide">Chaque fois que tu touches « J’ai coulé » sur une recette, elle s’ajoute ici.</p></div>`;
+  const parMois={};for(const c of l){const k=new Date(c.date).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});(parMois[k]=parMois[k]||[]).push(c)}
+  return Object.entries(parMois).map(([m,cs])=>`<h3 class="mois">${m} <small>· ${cs.reduce((a,c)=>a+(+c.mult||0),0)} bougie${cs.reduce((a,c)=>a+(+c.mult||0),0)>1?"s":""}</small></h3>${cs.map(c=>ligneCoulee(c)).join("")}`).join("");
+}
+
 /* ---------- Écran : inventaire ---------- */
 // Inventaire rangé par onglets (cires, colorants, parfums…) : un seul à la fois
 let ongletInv=(()=>{try{return localStorage.getItem("carnet.ongletInv")||""}catch(e){return""}})();
@@ -1427,12 +1468,12 @@ function ligneProduit(p){
 function vInventaire(){
   const parType=k=>D.produits.filter(p=>p.type===k).sort((a,b)=>a.nom.localeCompare(b.nom));
   const bas=p=>p.stock!=null&&p.stock!==""&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte;
-  if(!TYPES.some(([k])=>k===ongletInv))ongletInv=(TYPES.find(([k])=>parType(k).length)||TYPES[0])[0];
-  const l=TYPES.find(([k])=>k===ongletInv)[1],ps=parType(ongletInv);
+  if(ongletInv!=="historique"&&!TYPES.some(([k])=>k===ongletInv))ongletInv=(TYPES.find(([k])=>parType(k).length)||TYPES[0])[0];
+  const hist=ongletInv==="historique",l=hist?"":TYPES.find(([k])=>k===ongletInv)[1],ps=hist?[]:parType(ongletInv);
   return `<div class="ligne" style="justify-content:space-between;margin-bottom:12px"><p class="aide" style="margin:0;flex:1;min-width:200px">Tes cires, colorants, parfums, mèches et décors. Le stock est facultatif : s’il est rempli, il diminue quand tu coules une recette.</p><button class="btn" data-act="nouveauProduit">＋ Produit</button></div>
   <div class="onglets-inv" role="tablist">${TYPES.map(([k,lib])=>{const n=parType(k).length,nbBas=parType(k).filter(bas).length;
-    return `<button role="tab" class="onglet-inv ${k===ongletInv?"on":""}" data-onglet-inv="${k}" aria-selected="${k===ongletInv}">${lib}<span class="compte">${n}</span>${nbBas?`<span class="alerte-inv" title="${nbBas} sous le seuil">!</span>`:""}</button>`}).join("")}</div>
-  <div class="groupe">${ps.length?ps.map(ligneProduit).join(""):`<div class="vide"><p>Aucun produit dans « ${l} » pour l’instant.</p><button class="btn leger" data-act="nouveauProduit">＋ Ajouter dans ${l.toLowerCase()}</button></div>`}</div>`;
+    return `<button role="tab" class="onglet-inv ${k===ongletInv?"on":""}" data-onglet-inv="${k}" aria-selected="${k===ongletInv}">${lib}<span class="compte">${n}</span>${nbBas?`<span class="alerte-inv" title="${nbBas} sous le seuil">!</span>`:""}</button>`}).join("")}<button role="tab" class="onglet-inv hist ${hist?"on":""}" data-onglet-inv="historique" aria-selected="${hist}">🕯️ Coulées<span class="compte">${(D.coulees||[]).length}</span></button></div>
+  <div class="groupe">${hist?vHistorique():ps.length?ps.map(ligneProduit).join(""):`<div class="vide"><p>Aucun produit dans « ${l} » pour l’instant.</p><button class="btn leger" data-act="nouveauProduit">＋ Ajouter dans ${l.toLowerCase()}</button></div>`}</div>`;
 }
 const utilisations=id=>D.recettes.filter(r=>r.couches.some(c=>c.ingredients.some(x=>x.produit===id))).length;
 
@@ -1509,7 +1550,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1547,9 +1588,11 @@ document.addEventListener("click",e=>{
   else if(act==="approuver"){const r=R(courant);r.approuve=r.approuve?null:new Date().toISOString();frappe=!!r.approuve;sauver();rendre();toast(r.approuve?"Recette approuvée : le tampon est dans votre livre":"Tampon retiré")}
   else if(act==="dupliquer"){const r=copie(R(courant));r.id=nouvelId();r.neuve=true;delete r.approuve;r.nom=r.nom+" (copie)";brouillon=r;instantane="";aller("editer")}
   else if(act==="supprimer"){const r=R(courant);demander(`Supprimer « ${r.nom} » ?`,"La recette disparaîtra de ton carnet et de ton livre, sur tous tes appareils.",{oui:"Supprimer",danger:true}).then(v=>{if(!v)return;D.recettes=D.recettes.filter(x=>x.id!==r.id);sauver();brouillon=null;vue="recettes";history.replaceState({vue},"");rendre();toast("Recette supprimée")})}
-  else if(act==="couler"){const r=R(courant),b=besoins(r,mult);let n=0;for(const[id,q]of Object.entries(b)){const p=P(id);if(p&&p.stock!=null&&p.stock!==""){p.stock=Math.max(0,Math.round((+p.stock-q)*100)/100);n++}}
-    sauver();rendre();toast(n?`Inventaire mis à jour (${n} produit${n>1?"s":""})`:"Aucun produit suivi en stock dans cette recette");
-    verifierStocks()}
+  else if(act==="couler"){const r=R(courant),der=derniereCoulee(r.id);
+    if(der&&Date.now()-new Date(der.date)<12*3600e3)demander("Tu l’as déjà coulée !",`« ${r.nom} » a été coulée ${quand(der.date)} (${nbBougies(der.mult)}). Si tu en coules une nouvelle fois, le stock sera de nouveau déduit.`,{oui:"Oui, j’en ai recoulé",non:"Non, c’est la même"}).then(v=>{if(v)couler(r)});
+    else couler(r)}
+  else if(act==="voirHistorique"){ongletInv="historique";aller("inventaire")}
+  else if(act==="annulerCoulee"){const c=(D.coulees||[]).find(x=>x.id===d.coulee);if(c)demander("Annuler cette coulée ?",`${c.nom}, ${quand(c.date)} (${nbBougies(c.mult)}) : les produits retirés reviendront dans ton stock.`,{oui:"Annuler la coulée",non:"Garder",danger:true}).then(v=>{if(v)annulerCoulee(c)})}
   else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
   else if(act==="retirerCouche"){const c=brouillon.couches[+i];demander("Retirer cette couche ?",c&&c.nom?`La couche « ${c.nom} » et ses produits seront retirés de la recette.`:"",{oui:"Retirer",danger:true}).then(v=>{if(v)garder(()=>brouillon.couches.splice(+i,1))})}
   else if(act==="versBas")garder(()=>{const c=brouillon.couches;[c[+i-1],c[+i]]=[c[+i],c[+i-1]]});
@@ -1654,7 +1697,7 @@ function exporter(){
 async function importer(file){
   try{const o=JSON.parse(await file.text());if(!o||o.app!=="carnet-bougies"||!Array.isArray(o.recettes)||!Array.isArray(o.produits))throw 0;
     if(!await demander("Restaurer cette sauvegarde ?",`Ton carnet actuel sera remplacé par celui de la sauvegarde (${o.recettes.length} recette${o.recettes.length>1?"s":""}, ${o.produits.length} produit${o.produits.length>1?"s":""}), sur tous tes appareils.`,{oui:"Restaurer",danger:true}))return;
-    D={produits:o.produits,recettes:o.recettes,discussion:Array.isArray(o.discussion)?o.discussion:[]};sauver();rendre();toast("Sauvegarde restaurée")}
+    D={produits:o.produits,recettes:o.recettes,discussion:Array.isArray(o.discussion)?o.discussion:[],notes:Array.isArray(o.notes)?o.notes:[],contenants:Array.isArray(o.contenants)?o.contenants:[],coulees:Array.isArray(o.coulees)?o.coulees:[]};sauver();rendre();toast("Sauvegarde restaurée")}
   catch(x){toast("Ce fichier n’est pas une sauvegarde du carnet")}
 }
 
@@ -1664,7 +1707,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.5";
+const VERSION="3.6";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
