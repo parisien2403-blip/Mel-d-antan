@@ -452,7 +452,7 @@ async function catalogue(env, avecStock) {
     const choix = r.choixParfum && parfums.length ? parfums.map(p => ({ id: p.id, nom: nomClient(p.nom),
       dispo: !suivi(p) || (Number(p.stock) > 0 && Number(p.stock) >= besoin), ...(avecStock ? { stock: suivi(p) ? Number(p.stock) : null } : {}) })) : null;
     return {
-    id: r.id, nom: txt(r.nom, 80), prix: euros(r.prix), description: txt(r.descVente, 600), contenant: r.contenant, remplissage: r.remplissage ?? 88,
+    id: r.id, nom: txt(r.nom, 80), gamme: txt(r.gamme, 60), prix: euros(r.prix), description: txt(r.descVente, 600), contenant: r.contenant, remplissage: r.remplissage ?? 88,
     photo: typeof r.photo === "string" && r.photo.startsWith("photo:") ? r.photo.slice(6) : null,
     couches: (r.couches || []).map(c => ({ texture: c.texture || "lisse",
       couleur: c.couleur || ((c.ingredients || []).map(x => produits[x.produit]).find(p => p && p.type === "colorant" && p.couleur) || {}).couleur || "" })),

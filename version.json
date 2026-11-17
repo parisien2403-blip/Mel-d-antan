@@ -2,7 +2,9 @@
   "version": "4.7",
   "date": "2026-11-17",
   "notes": [
+    "Gammes : range tes créations dans des gammes que tu nommes (Recette › Modifier › Gamme) ; tes clients choisissent une gamme puis une bougie",
     "Boutique : tes clients choisissent le parfum de leur bougie, avec les disponibilités en direct selon ton stock",
-    "Recette › Modifier › « Le client choisit son parfum » ; dans l’inventaire, un parfum peut ne pas être proposé"
+    "Recette › Modifier › « Le client choisit son parfum » ; dans l’inventaire, un parfum peut ne pas être proposé",
+    "Affiche : un bouton par gamme pour la cocher d’un coup"
   ]
 }

@@ -390,6 +390,14 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .ligne-panier .mini{width:56px;height:56px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--fond);flex:none}
 .ligne-panier .mini img{width:100%;height:100%;object-fit:cover}.ligne-panier .mini svg{height:50px}
 .ligne-panier .nom{flex:1;min-width:0}
+.titre-gamme{font-family:var(--f-main);font-size:1.5rem;margin:6px 0 12px}
+.gamme-b{cursor:pointer;border:0;padding:0;text-align:left;font:inherit;color:inherit}
+.gamme-b .mosaique{display:grid;gap:2px;aspect-ratio:1;background:var(--fond);overflow:hidden}.gamme-b .mosaique.n1{grid-template-columns:1fr;grid-template-rows:1fr}.gamme-b .mosaique.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr}.gamme-b .mosaique.n3,.gamme-b .mosaique.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.gamme-b .mosaique.n3>div:first-child{grid-row:span 2}
+.gamme-b .mosaique>div{display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#faf3e4,#ecdcc0);min-height:0}.gamme-b .mosaique img{width:100%;height:100%;object-fit:cover}.gamme-b .mosaique svg{max-height:90%;max-width:90%}
+.gamme-b .txt b{font-size:1.1rem}
+.grille.gammes{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
+@media (max-width:520px){.grille.gammes{grid-template-columns:1fr 1fr!important;gap:10px}.gamme-b .txt b{font-size:1rem}}
 .choix-parfum{margin-top:12px;padding:12px;border-radius:14px;background:var(--fond)}.choix-parfum .puces{margin-top:8px}
 .puce.epuise{opacity:.5;text-decoration:line-through;cursor:not-allowed}.puce.epuise small{text-decoration:none}
 .manque-parfum{color:var(--alerte)!important}
@@ -803,6 +811,23 @@ function ajouterPanier(id,q=1){
     if(!pf.dispo){toast(`Le parfum ${pf.nom} est épuisé : choisis-en un autre`);return}}
   const l=panier.find(x=>x.id===id&&(x.parfum||null)===(parfum||null));if(l)l.q=Math.min(50,l.q+q);else panier.push(parfum?{id,q,parfum}:{id,q});
   savePanier();rendre();toast(`« ${p?.nom||"Bougie"} »${parfum?` (${parfumDe(p,parfum).nom})`:""} ajoutée au panier`)}
+// Gammes nommées par Mel ; les bougies sans gamme vont dans « Autres créations »
+const AUTRES="__autres";
+// (« noël » et « Noël » sont la même gamme : le nom avec une majuscule est gardé)
+function gammesCat(){const ps=CAT&&CAT.produits||[],m=new Map();
+  for(const p of ps){const g=(p.gamme||"").trim().replace(/\s+/g," ")||AUTRES,k=g.toLowerCase();if(!m.has(k))m.set(k,{nom:g,produits:[]});const e=m.get(k);if(e.nom===e.nom.toLowerCase()&&g!==g.toLowerCase())e.nom=g;e.produits.push(p)}
+  return [...m.values()].sort((a,b)=>a.nom===AUTRES?1:b.nom===AUTRES?-1:a.nom.localeCompare(b.nom,"fr"))}
+const nomGamme=g=>g===AUTRES?"Autres créations":g;
+function tuileProduit(p){return `<div class="vignette produit-b"><button class="image" data-produit-b="${p.id}" aria-label="Voir ${esc(p.nom)}">${imageProduit(p,true)}</button>
+     <div class="txt"><b>${esc(p.nom)}</b><small>${esc(CONTENANTS[p.contenant]?.nom||"")}</small><div class="ligne" style="justify-content:space-between;margin-top:6px"><span class="prix">${eur(p.prix)}</span>${p.parfums?`<button class="btn petit" data-produit-b="${p.id}">Choisir le parfum</button>`:`<button class="btn petit" data-ajout-b="${p.id}">＋ Panier</button>`}</div></div></div>`}
+function tuileGamme(g){const ps=g.produits,im=ps.slice(0,4),min=Math.min(...ps.map(p=>p.prix));
+  return `<button class="vignette gamme-b" data-gamme-b="${esc(g.nom)}" aria-label="Voir la gamme ${esc(nomGamme(g.nom))}"><div class="image mosaique n${im.length}">${im.map(p=>`<div>${imageProduit(p,true)}</div>`).join("")}</div>
+    <div class="txt"><b>${esc(nomGamme(g.nom))}</b><small>${ps.length} bougie${ps.length>1?"s":""} · dès ${eur(min)}</small></div></button>`}
+function vGammeB(){
+  const g=gammesCat().find(x=>x.nom.toLowerCase()===String(courant||"").toLowerCase());
+  if(!g)return CAT?`<div class="vide"><p>Cette gamme n’est plus dans la boutique.</p><button class="btn" data-aller="b-catalogue">Voir les gammes</button></div>`:`<p class="aide">Chargement…</p>`;
+  return `<h2 class="titre-gamme">${esc(nomGamme(g.nom))}</h2><div class="grille">${g.produits.map(tuileProduit).join("")}</div>${pieds()}`;
+}
 function vCatalogue(){
   const b=CAT&&CAT.boutique,ps=CAT&&CAT.produits||[];
   return `${apercu?`<div class="apercu-bandeau">👁 Aperçu de ta boutique, comme la voient tes clients. <button class="btn petit" data-act="finApercu">Revenir à l’atelier</button></div>`:""}
@@ -811,8 +836,7 @@ function vCatalogue(){
   ${!dejaInstallee()&&!apercu?`<div class="installer-b"><img src="icon-192.png" alt=""><div><b>Installe l’appli Mel d’antan</b><small>Retrouve les bougies et suis tes commandes en un geste.</small></div><button class="btn petit" data-act="installerB">📲 Installer</button></div>`:""}
   ${catErreur?`<p class="aide" style="color:var(--alerte)">${esc(catErreur)}</p>`:""}
   ${!CAT?`<p class="aide">Chargement de la boutique…</p>`:b&&!b.ouverte?`<div class="carte"><b>La boutique est fermée pour le moment.</b><p class="aide">Reviens bientôt : Mel prépare de nouvelles bougies !</p></div>`
-   :ps.length?`<div class="grille">${ps.map(p=>`<div class="vignette produit-b"><button class="image" data-produit-b="${p.id}" aria-label="Voir ${esc(p.nom)}">${imageProduit(p,true)}</button>
-     <div class="txt"><b>${esc(p.nom)}</b><small>${esc(CONTENANTS[p.contenant]?.nom||"")}</small><div class="ligne" style="justify-content:space-between;margin-top:6px"><span class="prix">${eur(p.prix)}</span>${p.parfums?`<button class="btn petit" data-produit-b="${p.id}">Choisir le parfum</button>`:`<button class="btn petit" data-ajout-b="${p.id}">＋ Panier</button>`}</div></div></div>`).join("")}</div>`
+   :ps.length?(ps.some(p=>(p.gamme||"").trim())?`<h2 class="titre-gamme">Nos gammes</h2><div class="grille gammes">${gammesCat().map(tuileGamme).join("")}</div>`:`<div class="grille">${ps.map(tuileProduit).join("")}</div>`)
    :`<div class="vide"><p>Les bougies arrivent bientôt dans la boutique.</p></div>`}
   ${pieds()}`;
 }
@@ -945,7 +969,7 @@ const NOM_APPAREIL={telephone:"téléphone",tablette:"tablette",ordinateur:"ordi
 const ICO_MODE={appli:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',site:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'};
 
 function nav(){
-  const onglet=vue==="voir"||vue==="editer"?"recettes":vue==="b-produit"?"b-catalogue":vue;
+  const onglet=vue==="voir"||vue==="editer"?"recettes":vue==="b-produit"||vue==="b-gamme"?"b-catalogue":vue;
   document.documentElement.classList.toggle("en-boutique",enBoutique());
   const nc=enBoutique()?0:nbCmdNouvelles();
   const onglets=enBoutique()?[["b-catalogue","Boutique"],["b-panier",`Panier${nbPanier()?` (${nbPanier()})`:""}`],["b-commandes","Mes commandes"]]
@@ -958,9 +982,9 @@ function nav(){
   document.getElementById("numVersion").textContent="v"+VERSION;
   document.getElementById("nouvTete").hidden=vue!=="recettes"||enBoutique();
   const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
-  const titres={"b-catalogue":"Mel d’antan","b-produit":produitCat(produitOuvert)?.nom||"Bougie","b-panier":"Mon panier","b-commandes":"Mes commandes",commandes:"Commandes",recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  const titres={"b-catalogue":"Mel d’antan","b-produit":produitCat(produitOuvert)?.nom||"Bougie","b-gamme":vue==="b-gamme"?nomGamme(courant):"","b-panier":"Mon panier","b-commandes":"Mes commandes",commandes:"Commandes",recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
-  document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer"||vue==="b-produit");
+  document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer"||vue==="b-produit"||vue==="b-gamme");
 }
 // Champ en cours de saisie : gardé (texte, curseur, clavier ouvert) quand l'écran se redessine
 function saisieEnCours(){const e=document.activeElement;return e&&e.id&&(e.tagName==="TEXTAREA"||e.tagName==="INPUT"&&!["checkbox","radio","file","range","color"].includes(e.type))?{id:e.id,v:e.value,d:e.selectionStart,f:e.selectionEnd}:null}
@@ -971,7 +995,7 @@ function rendre(){
   const a=document.getElementById("app");
   if(enBoutique()&&!vue.startsWith("b-"))vue="b-catalogue";
   if(!enBoutique()&&vue.startsWith("b-"))vue="recettes";
-  a.innerHTML=(vue==="b-catalogue"?vCatalogue():vue==="b-produit"?vProduitB():vue==="b-panier"?vPanier():vue==="b-commandes"?vMesCommandes():vue==="commandes"?vCommandes():vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes());iconiser(a);
+  a.innerHTML=(vue==="b-catalogue"?vCatalogue():vue==="b-gamme"?vGammeB():vue==="b-produit"?vProduitB():vue==="b-panier"?vPanier():vue==="b-commandes"?vMesCommandes():vue==="commandes"?vCommandes():vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes());iconiser(a);
   rendreCalque();rendreVolet();remettreSaisie(s);
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
@@ -1061,15 +1085,20 @@ function accueil(){
 }
 
 /* ---------- Écran : liste des recettes ---------- */
+// Les gammes de Mel (noms écrits dans ses recettes), sans doublon de majuscules ou d'espaces
+function gammesAtelier(){const m=new Map();for(const r of D.recettes){const g=(r.gamme||"").trim();if(g&&!m.has(g.toLowerCase()))m.set(g.toLowerCase(),g)}return [...m.values()].sort((a,b)=>a.localeCompare(b,"fr"))}
+const memeGamme=(r,g)=>(r.gamme||"").trim().toLowerCase()===g.toLowerCase();
+let filtreGamme="";
 function vRecettes(){
-  const q=recherche.trim().toLowerCase();
-  const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
+  const q=recherche.trim().toLowerCase(),gs=gammesAtelier();if(filtreGamme&&filtreGamme!==AUTRES&&!gs.some(g=>g.toLowerCase()===filtreGamme.toLowerCase()))filtreGamme="";
+  const liste=D.recettes.filter(r=>(!filtreContenant||r.contenant===filtreContenant)&&(!filtreGamme||(filtreGamme===AUTRES?!(r.gamme||"").trim():memeGamme(r,filtreGamme)))&&(!q||(r.nom+" "+(r.notes||"")+" "+r.couches.map(c=>c.nom+" "+c.ingredients.map(x=>P(x.produit)?.nom||"").join(" ")).join(" ")).toLowerCase().includes(q)))
     .sort((a,b)=>(b.maj||"").localeCompare(a.maj||""));
   const utilises=[...new Set(D.recettes.map(r=>r.contenant))];
   return `${q||filtreContenant?"":accueil()}${D.recettes.length?`<div class="ligne" style="margin-bottom:12px"><input type="search" id="recherche" placeholder="Chercher une recette, un parfum, un produit…" value="${esc(recherche)}" style="flex:1;min-width:0"></div>
+   ${gs.length?`<div class="puces" style="margin-bottom:8px"><button class="puce ${filtreGamme?"":"on"}" data-filtre-gamme="">Toutes les gammes</button>${gs.map(g=>`<button class="puce ${filtreGamme===g?"on":""}" data-filtre-gamme="${esc(g)}">${esc(g)}</button>`).join("")}${D.recettes.some(r=>!(r.gamme||"").trim())?`<button class="puce ${filtreGamme===AUTRES?"on":""}" data-filtre-gamme="${AUTRES}">Sans gamme</button>`:""}</div>`:""}
    ${utilises.length>1?`<div class="puces" style="margin-bottom:14px"><button class="puce ${filtreContenant?"":"on"}" data-filtre="">Tous</button>${utilises.map(k=>`<button class="puce ${filtreContenant===k?"on":""}" data-filtre="${k}">${esc(CONTENANTS[k]?.nom||k)}</button>`).join("")}</div>`:""}`:""}
   ${liste.length?`<div class="grille">${liste.map(r=>`<button class="vignette" data-voir="${r.id}"><div class="image">${r.photo?`<img src="${r.photo}" alt="">`:dessin(r,{mini:true})}${r.approuve?`<div class="badge-ok">${tamponHTML("mini")}</div>`:""}</div>
-    <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
+    <div class="txt"><b>${esc(r.nom||"Sans nom")}</b><small>${(r.gamme||"").trim()?`${esc(r.gamme.trim())} · `:""}${esc(CONTENANTS[r.contenant]?.nom||"")} · ${r.couches.length} couche${r.couches.length>1?"s":""}</small></div></button>`).join("")}</div>`
    :`<div class="vide">${D.recettes.length?"Aucune recette ne correspond.":`<p style="font-family:var(--f-main);font-size:1.6rem">Le carnet est encore vide.</p><p>Touchez « Nouvelle recette » pour noter votre première création.</p>`}</div>`}
   <button class="btn flottant" data-act="nouvelle">＋ Nouvelle recette</button>`;
 }
@@ -1111,6 +1140,9 @@ function vEditer(){
   return `<div class="editeur"><div class="scene" id="apercu">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant].nom)}</div></div>
   <div>
    <div class="carte"><label class="champ">Nom de la recette<input type="text" data-b="nom" value="${esc(r.nom)}" placeholder="Café liégeois, Fraisier, Coupe vanille…" maxlength="80"></label>
+    <label class="champ" style="margin-top:10px">Gamme (facultatif)<input type="text" data-b="gamme" list="listeGammes" value="${esc(r.gamme||"")}" placeholder="Noël, Gourmandises, Les mini…" maxlength="60" autocomplete="off"></label>
+    <datalist id="listeGammes">${gammesAtelier().map(g=>`<option value="${esc(g)}">`).join("")}</datalist>
+    <p class="aide" style="margin:2px 0 0">Choisis une gamme déjà créée ou écris un nouveau nom. Dans la boutique, tes clients verront tes bougies rangées par gamme.</p>
     <div class="photo-zone" style="margin-top:12px">${r.photo?`<img src="${r.photo}" alt="">`:""}<label class="btn leger petit">${r.photo?"Changer la photo":"📷 Ajouter une photo"}<input type="file" accept="image/*" id="photo" hidden></label>${r.photo?`<button class="btn leger petit" data-act="sansPhoto">Retirer</button>`:""}</div></div>
    <div class="carte"><b>La forme de la bougie</b>${FAMILLES.map(([f,l])=>`<p class="aide" style="margin:12px 0 6px">${l}</p><div class="choix-contenants">${Object.entries(CONTENANTS).filter(([,c])=>(c.moule?"moule":"verre")===f).map(([k,c])=>`<button data-contenant="${k}" class="${r.contenant===k?"on":""}">${dessin({...r,contenant:k,couches:r.couches},{mini:true})}<span>${esc(c.nom)}</span>${capDe(k)?`<small class="cap">${nb(capDe(k))} g</small>`:""}</button>`).join("")}</div>`).join("")}
     <div class="ligne" style="margin-top:14px;align-items:flex-end"><label class="champ" style="flex:none;width:200px">Contenance (g de cire)<input type="number" inputmode="decimal" min="1" step="any" data-cap="${r.contenant}" value="${contenance(r)||""}" placeholder="À mesurer"></label>
@@ -1767,7 +1799,7 @@ function rendreSyncBandeau(){
   annoncer("sync",!syncEtat.codeRequis||syncEtat.bandeauFerme||!syncPossible()?null:`<form id="fCodeSync"><b>Tape ton code pour retrouver ton carnet</b><p>Tes recettes, tes photos et ton stock seront les mêmes sur tous tes appareils.</p>
     <div class="ligne"><input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:100px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></div></form>`);
 }
-setInterval(()=>{if(document.hidden)return;if(boutique){suivreCommandes();if(vue==="b-catalogue")chargerCatalogue()}else{synchroniser();chargerCommandesAtelier()}},60000);
+setInterval(()=>{if(document.hidden)return;if(boutique){suivreCommandes();if(vue==="b-catalogue"||vue==="b-gamme")chargerCatalogue()}else{synchroniser();chargerCommandesAtelier()}},60000);
 // Disponibilité des parfums en direct sur la fiche d'une bougie et dans le panier
 setInterval(()=>{if(!document.hidden&&enBoutique()&&(vue==="b-produit"||vue==="b-panier"))chargerCatalogue()},20000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
@@ -1864,7 +1896,7 @@ function rendreCalque(){
   if(!calque){z.innerHTML="";return}
   if(calque.affiche){const o=calque.affiche,recs=D.recettes.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr"));z.innerHTML=`<div class="voile" data-fermer><div class="fenetre affiche-fenetre"><h2 style="font-size:1.3rem">Affiche de mes créations</h2>
     <p class="aide" style="margin:0">Touche une création pour l’enlever ou la remettre : toutes celles cochées tiennent sur la même feuille A4. <b>${o.ids.length}</b> sur ${recs.length} choisie${o.ids.length>1?"s":""}.</p>
-    <div class="ligne"><button class="btn leger petit" data-act="afficheTout:1">Tout cocher</button><button class="btn leger petit" data-act="afficheTout:0">Tout décocher</button></div>
+    <div class="ligne"><button class="btn leger petit" data-act="afficheTout:1">Tout cocher</button><button class="btn leger petit" data-act="afficheTout:0">Tout décocher</button>${gammesAtelier().map((g,k)=>`<button class="btn leger petit" data-act="afficheGamme:${k}">Gamme ${esc(g)}</button>`).join("")}</div>
     <div class="choix-recettes">${recs.map(r=>`<button class="puce ${o.ids.includes(r.id)?"on":""}" data-sel-affiche="${r.id}">${o.ids.includes(r.id)?"✓ ":""}${esc(r.nom)}${r.photo?"":" (dessin)"}</button>`).join("")}</div>
     <label class="champ">Titre<input type="text" id="afTitre" maxlength="50" value="${esc(o.titre)}"></label>
     <div class="puces"><button class="puce ${o.prix?"on":""}" data-opt-affiche="prix">${o.prix?"✓ ":""}Prix</button><button class="puce ${o.desc?"on":""}" data-opt-affiche="desc">${o.desc?"✓ ":""}Descriptions</button><button class="puce ${o.qr?"on":""}" data-opt-affiche="qr">${o.qr?"✓ ":""}QR code de la boutique</button></div>
@@ -1934,7 +1966,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-retirer-ligne-b],[data-parfum-b],[data-produit-b],[data-ajout-b],[data-sel-affiche],[data-opt-affiche],[data-qte-b],[data-mode-b],[data-statut-cmd],[data-filtre-cmd],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-filtre-gamme],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-retirer-ligne-b],[data-parfum-b],[data-produit-b],[data-gamme-b],[data-ajout-b],[data-sel-affiche],[data-opt-affiche],[data-qte-b],[data-mode-b],[data-statut-cmd],[data-filtre-cmd],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1958,6 +1990,7 @@ document.addEventListener("click",e=>{
     rendreCalque();return}
   if(d.retirerLigneB!=null){panier.splice(+d.retirerLigneB,1);savePanier();produitOuvert=d.produitB;aller("b-produit");return}
   if(d.produitB){produitOuvert=d.produitB;aller("b-produit");return}
+  if(d.gammeB){aller("b-gamme",{id:d.gammeB});return}
   if(d.ajoutB){ajouterPanier(d.ajoutB);return}
   if(d.parfumB){const[pid,fid]=d.parfumB.split("|");parfumChoisi[pid]=fid;rendre();return}
   if(d.qteB){const[i,k]=d.qteB.split(":");const l=panier[+i];if(l){l.q+=+k;if(l.q<=0)panier=panier.filter(x=>x!==l);if(l.q>50)l.q=50;savePanier();rendre()}return}
@@ -1974,6 +2007,7 @@ document.addEventListener("click",e=>{
   if(d.livreAller){allerPage(+d.livreAller);return}
   if(d.livreFiltre){livreFiltre=d.livreFiltre;lp=0;rendre();return}
   if(d.filtre!==undefined){filtreContenant=d.filtre;rendre();return}
+  if(d.filtreGamme!==undefined){filtreGamme=d.filtreGamme;rendre();return}
   if(d.themeChoix){localStorage.setItem("carnet.theme",d.themeChoix);fondThemes(d.themeChoix);rendre();return}
   if(d.contenant){brouillon.contenant=d.contenant;const y=scrollY;rendre();scrollTo(0,y);return}
   if(d.produit){ouvrirProduit(copie(P(d.produit)));return}
@@ -2000,6 +2034,7 @@ document.addEventListener("click",e=>{
   else if(act==="quitterAtelier"){demander("Quitter l’espace créatrice sur cet appareil ?","Cet appareil affichera la boutique, comme pour un client. Ton carnet reste en ligne : tu le retrouveras avec ton code.",{oui:"Quitter",danger:true}).then(v=>{if(v){try{localStorage.removeItem("carnet.codeMel")}catch(e){}desabonnerPush();boutique=true;CMD=null;vue="b-catalogue";history.replaceState({vue},"");chargerCatalogue();rendre()}})}
   else if(act==="qrBoutique")ouvrirQR();
   else if(act==="affiche"){const vente=D.recettes.filter(r=>r.enVente&&+r.prix>0).map(r=>r.id);calque={affiche:{ids:D.recettes.map(r=>r.id),titre:"Les créations de Mel d’antan",prix:vente.length>0,desc:false,qr:true}};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
+  else if(act==="afficheGamme"){const o=calque&&calque.affiche,g=gammesAtelier()[+i];if(o&&g){o.titre=document.getElementById("afTitre")?.value??o.titre;o.ids=D.recettes.filter(r=>memeGamme(r,g)).map(r=>r.id);if(o.titre==="Les créations de Mel d’antan"||o.gammeTitre===o.titre){o.titre=g+" · Mel d’antan";o.gammeTitre=o.titre}rendreCalque()}}
   else if(act.startsWith("afficheTout")){const o=calque&&calque.affiche;if(o){o.titre=document.getElementById("afTitre")?.value??o.titre;o.ids=a.endsWith(":1")?D.recettes.map(r=>r.id):[];rendreCalque()}}
   else if(act.startsWith("afficheExport")){const o=calque&&calque.affiche;if(o)o.titre=document.getElementById("afTitre")?.value??o.titre;exporterAffiche(a.split(":")[1])}
   else if(act==="telechargerAffichette")telechargerAffichette();
