@@ -239,6 +239,9 @@ const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS reglages (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
   // Appareils qui reçoivent les notifications de Mel, même appli fermée
   "CREATE TABLE IF NOT EXISTS abonnements (endpoint TEXT PRIMARY KEY, cles TEXT NOT NULL, cree TEXT)",
+  // Boutique : commandes des clients (paiement à la livraison) et limites anti-abus
+  "CREATE TABLE IF NOT EXISTS commandes (numero INTEGER PRIMARY KEY AUTOINCREMENT, cle TEXT NOT NULL, data TEXT NOT NULL, statut TEXT NOT NULL, cree TEXT NOT NULL, maj TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS limites (cle TEXT PRIMARY KEY, n INTEGER NOT NULL, fin INTEGER NOT NULL)",
 ];
 let basePrete = null;
 const preparer = env => basePrete || (basePrete = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { basePrete = null; throw e; }));
@@ -394,20 +397,162 @@ async function notifs(env, request, chemin) {
   return json({ erreur: "Adresse inconnue." }, 404);
 }
 
+// Compteur par adresse IP sur une période : false une fois la limite atteinte
+async function limite(env, cle, max, secondes) {
+  if (!env.DB) return true;
+  await preparer(env);
+  const t = Math.floor(Date.now() / 1000);
+  const r = await env.DB.prepare(`INSERT INTO limites (cle, n, fin) VALUES (?1, 1, ?2)
+      ON CONFLICT(cle) DO UPDATE SET n = CASE WHEN fin < ?3 THEN 1 ELSE n + 1 END, fin = CASE WHEN fin < ?3 THEN ?2 ELSE fin END
+      RETURNING n`).bind(cle, t + secondes, t).first();
+  return r.n <= max;
+}
+const ipDe = request => request.headers.get("cf-connecting-ip") || "local";
+// Code de Mel (CODE_MEL) : 20 erreurs par heure et par adresse au plus, l'appli étant ouverte au public
+async function codeOk(env, request) {
+  if (!env.CODE_MEL) return true;
+  const ip = ipDe(request);
+  if (env.DB) { await preparer(env); const l = await env.DB.prepare("SELECT n, fin FROM limites WHERE cle = ?").bind("code:" + ip).first(); if (l && l.n >= 20 && l.fin > Date.now() / 1000) return false; }
+  if (await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return true;
+  await limite(env, "code:" + ip, 20, 3600);
+  return false;
+}
+const refusCode = () => json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+
+// ---------- Boutique : catalogue public, commandes des clients ----------
+const STATUTS = ["nouvelle", "confirmee", "prete", "livree", "annulee"];
+const BOUTIQUE_DEFAUT = { ouverte: true, accueil: "Des bougies gourmandes coulées et décorées à la main, comme des desserts d’autrefois.",
+  retrait: true, retraitInfos: "", livraison: true, livraisonFrais: 0, livraisonInfos: "", paiement: "Paiement en espèces à la livraison ou au retrait.", mentions: "" };
+const txt = (v, max) => String(v ?? "").trim().slice(0, max);
+const euros = v => Math.round(Math.max(0, Number(v) || 0) * 100) / 100;
+async function reglagesBoutique(env) {
+  const l = await env.DB.prepare("SELECT v FROM reglages WHERE k = 'boutique'").first();
+  return { ...BOUTIQUE_DEFAUT, ...(l ? JSON.parse(l.v) : {}) };
+}
+function nettoyerBoutique(b) {
+  return { ouverte: b.ouverte !== false, accueil: txt(b.accueil, 400), retrait: !!b.retrait, retraitInfos: txt(b.retraitInfos, 300),
+    livraison: !!b.livraison, livraisonFrais: euros(b.livraisonFrais), livraisonInfos: txt(b.livraisonInfos, 300),
+    paiement: txt(b.paiement, 200) || BOUTIQUE_DEFAUT.paiement, mentions: txt(b.mentions, 3000) };
+}
+// Recettes en vente, sans jamais les ingrédients ni les notes : nom, prix, description, photo, aperçu des couches
+async function catalogue(env) {
+  const el = await lireCarnet(env);
+  const produits = {}; for (const e of el) if (e.genre === "produit") produits[e.id] = e.data;
+  return el.filter(e => e.genre === "recette" && e.data.enVente && Number(e.data.prix) > 0).map(({ data: r }) => ({
+    id: r.id, nom: txt(r.nom, 80), prix: euros(r.prix), description: txt(r.descVente, 600), contenant: r.contenant, remplissage: r.remplissage ?? 88,
+    photo: typeof r.photo === "string" && r.photo.startsWith("photo:") ? r.photo.slice(6) : null,
+    couches: (r.couches || []).map(c => ({ texture: c.texture || "lisse",
+      couleur: c.couleur || ((c.ingredients || []).map(x => produits[x.produit]).find(p => p && p.type === "colorant" && p.couleur) || {}).couleur || "" })),
+  })).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+}
+const refCommande = n => "C-" + String(n).padStart(4, "0");
+const commandePublique = c => ({ numero: c.numero, ref: refCommande(c.numero), statut: c.statut, cree: c.cree, maj: c.maj, ...JSON.parse(c.data) });
+async function boutique(env, request, chemin) {
+  await preparer(env);
+  if (chemin === "boutique") {
+    const b = await reglagesBoutique(env);
+    return json({ boutique: { ouverte: b.ouverte, accueil: b.accueil, retrait: b.retrait, retraitInfos: b.retraitInfos, livraison: b.livraison,
+      livraisonFrais: b.livraisonFrais, livraisonInfos: b.livraisonInfos, paiement: b.paiement, mentions: b.mentions }, produits: b.ouverte ? await catalogue(env) : [] });
+  }
+  const ph = chemin.match(/^boutique\/photo\/([0-9a-f]{64})$/);
+  if (ph) {
+    // Seules les photos des bougies en vente sont visibles par les clients
+    if (!(await catalogue(env)).some(p => p.photo === ph[1])) return json({ erreur: "Photo introuvable." }, 404);
+    // Envoyée comme une vraie image (gardée en cache : son adresse change si la photo change)
+    const r = await env.DB.prepare("SELECT data FROM photos WHERE hash = ?").bind(ph[1]).first();
+    const m = r && r.data.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+    if (!m) return json({ erreur: "Photo introuvable." }, 404);
+    return new Response(Uint8Array.from(atob(m[2]), c => c.charCodeAt(0)), { headers: { "content-type": m[1], "cache-control": "public, max-age=31536000, immutable" } });
+  }
+  if (request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
+  let corps = {};
+  try { corps = JSON.parse(await request.text()) || {}; } catch { return json({ erreur: "Requête illisible." }, 400); }
+  if (chemin === "commande") {
+    if (!await limite(env, "commande:" + ipDe(request), 10, 3600)) return json({ erreur: "Trop de commandes d’un coup. Réessaie dans une heure." }, 429);
+    const b = await reglagesBoutique(env);
+    if (!b.ouverte) return json({ erreur: "La boutique est fermée pour le moment." }, 409);
+    const cat = {}; for (const p of await catalogue(env)) cat[p.id] = p;
+    const lignes = [];
+    for (const l of (Array.isArray(corps.lignes) ? corps.lignes : []).slice(0, 30)) {
+      const p = cat[l && l.id], q = Math.floor(Number(l && l.q));
+      if (!p) return json({ erreur: "Une bougie de ton panier n’est plus en vente : vérifie ton panier." }, 409);
+      if (!(q >= 1 && q <= 50)) return json({ erreur: "Quantité impossible." }, 400);
+      lignes.push({ id: p.id, nom: p.nom, prix: p.prix, q });
+    }
+    if (!lignes.length) return json({ erreur: "Ton panier est vide." }, 400);
+    const c = corps.client || {};
+    const client = { nom: txt(c.nom, 80), tel: txt(c.tel, 30), email: txt(c.email, 120), adresse: txt(c.adresse, 300), message: txt(c.message, 1000) };
+    const mode = c.mode === "livraison" ? "livraison" : "retrait";
+    if (!client.nom || client.tel.replace(/\D/g, "").length < 8) return json({ erreur: "Indique ton nom et un numéro de téléphone." }, 400);
+    if (mode === "livraison" && !b.livraison || mode === "retrait" && !b.retrait) return json({ erreur: "Ce mode de réception n’est pas proposé." }, 400);
+    if (mode === "livraison" && !client.adresse) return json({ erreur: "Indique ton adresse de livraison." }, 400);
+    const sousTotal = euros(lignes.reduce((a, l) => a + l.prix * l.q, 0)), frais = mode === "livraison" ? b.livraisonFrais : 0;
+    const data = { client, mode, lignes, sousTotal, frais, total: euros(sousTotal + frais), paiement: b.paiement };
+    const cle = crypto.randomUUID().replace(/-/g, ""), maintenant = new Date().toISOString();
+    const r = await env.DB.prepare("INSERT INTO commandes (cle, data, statut, cree, maj) VALUES (?, ?, 'nouvelle', ?, ?) RETURNING numero").bind(cle, JSON.stringify(data), maintenant, maintenant).first();
+    const resume = lignes.map(l => `${l.q} × ${l.nom}`).join(", ");
+    attendre(pousser(env, { titre: `Mel : nouvelle commande de ${client.nom} !`, texte: `${refCommande(r.numero)} · ${resume} · ${data.total.toFixed(2).replace(".", ",")} € (${mode === "livraison" ? "livraison" : "retrait"}).`, vue: "commandes", tag: "commande-" + r.numero }).catch(e => console.error(e)));
+    return json({ commande: { numero: r.numero, ref: refCommande(r.numero), cle, statut: "nouvelle", cree: maintenant, ...data } });
+  }
+  if (chemin === "commande/suivi") {
+    const demandes = (Array.isArray(corps.commandes) ? corps.commandes : []).slice(0, 50);
+    const res = [];
+    for (const d of demandes) {
+      const c = await env.DB.prepare("SELECT * FROM commandes WHERE numero = ? AND cle = ?").bind(Math.floor(Number(d.numero)) || 0, txt(d.cle, 64)).first();
+      if (c) res.push({ numero: c.numero, statut: c.statut, maj: c.maj });
+    }
+    return json({ commandes: res });
+  }
+  return json({ erreur: "Adresse inconnue." }, 404);
+}
+// Partie atelier de la boutique (code de Mel)
+async function atelierBoutique(env, request, chemin) {
+  await preparer(env);
+  let corps = {};
+  if (request.method === "POST") try { corps = JSON.parse(await request.text()) || {}; } catch { return json({ erreur: "Requête illisible." }, 400); }
+  if (chemin === "atelier/entrer") return json({ ok: true });
+  if (chemin === "atelier/commandes") {
+    const { results } = await env.DB.prepare("SELECT * FROM commandes ORDER BY numero DESC LIMIT 500").all();
+    return json({ commandes: results.map(commandePublique), boutique: await reglagesBoutique(env) });
+  }
+  if (chemin === "atelier/commande") {
+    if (!STATUTS.includes(corps.statut)) return json({ erreur: "Statut inconnu." }, 400);
+    await env.DB.prepare("UPDATE commandes SET statut = ?, maj = ? WHERE numero = ?").bind(corps.statut, new Date().toISOString(), Math.floor(Number(corps.numero)) || 0).run();
+    return json({ ok: true });
+  }
+  if (chemin === "atelier/boutique") {
+    const b = nettoyerBoutique(corps.boutique || {});
+    await env.DB.prepare("INSERT INTO reglages (k, v) VALUES ('boutique', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(JSON.stringify(b)).run();
+    return json({ boutique: b });
+  }
+  return json({ erreur: "Adresse inconnue." }, 404);
+}
+
 async function api(request, env, chemin) {
   const m = moteur(env);
+  if (chemin === "boutique" || chemin.startsWith("boutique/") || chemin === "commande" || chemin === "commande/suivi") {
+    if (!env.DB) return json({ erreur: "La boutique n'est pas encore branchée." }, 503);
+    try { return await boutique(env, request, chemin); }
+    catch (e) { console.error(e); return json({ erreur: "La boutique ne répond pas pour le moment. Réessaie dans un instant." }, 500); }
+  }
+  if (chemin.startsWith("atelier/")) {
+    if (!env.DB) return json({ erreur: "La base n'est pas encore branchée." }, 503);
+    if (!await codeOk(env, request)) return refusCode();
+    try { return await atelierBoutique(env, request, chemin); }
+    catch (e) { console.error(e); return json({ erreur: "Les commandes ne répondent pas pour le moment." }, 500); }
+  }
   if (chemin === "mel/etat") { const ma = await moteurActuel(env); return json({ actif: !!m, moteur: ma, relais: m === "claude" && ma === "cloudflare", code: !!env.CODE_MEL, sync: !!env.DB }); }
   // Carnet partagé : même code que Mel
   const photo = chemin.match(/^photo\/([0-9a-f]{64})$/);
   if (chemin.startsWith("notifs/")) {
     if (!env.DB) return json({ erreur: "La base n'est pas encore branchée." }, 503);
-    if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+    if (!await codeOk(env, request)) return refusCode();
     try { await preparer(env); return await notifs(env, request, chemin); }
     catch (e) { console.error(e); return json({ erreur: "Les notifications ne répondent pas pour le moment." }, 500); }
   }
   if (chemin === "sync" || chemin === "photo" || photo) {
     if (!env.DB) return json({ erreur: "La base du carnet n'est pas encore branchée." }, 503);
-    if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+    if (!await codeOk(env, request)) return refusCode();
     try {
       await preparer(env);
       if (photo && request.method === "GET") return await lirePhoto(env, photo[1]);
@@ -417,7 +562,7 @@ async function api(request, env, chemin) {
   }
   if ((chemin !== "mel" && chemin !== "mel/image") || request.method !== "POST") return json({ erreur: "Adresse inconnue." }, 404);
   if (!m) return json({ erreur: "Mel n'est pas encore branchée : ajoute Workers AI ou la clé ANTHROPIC_API_KEY dans Cloudflare." }, 503);
-  if (env.CODE_MEL && !await memeCode(request.headers.get("x-code-mel") || "", env.CODE_MEL)) return json({ erreur: "Code de Mel incorrect.", code: true }, 401);
+  if (!await codeOk(env, request)) return refusCode();
   if (chemin === "mel/image") return dessiner(env, request);
   let corps;
   try { corps = nettoyer(JSON.parse(await request.text())); } catch { corps = null; }

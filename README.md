@@ -55,6 +55,14 @@ La conversation avec Mel reste propre à chaque appareil.
 Tout est aussi enregistré sur l’appareil (IndexedDB) et l'appli marche sans internet une fois installée.
 Penser à faire une sauvegarde de temps en temps.
 
+## Boutique (clients)
+Sans le code de Mel, l’appli s’ouvre sur la boutique : catalogue des recettes mises en vente (prix, description, photo ;
+jamais les ingrédients ni les notes), panier, commande avec retrait ou livraison, paiement à la livraison, suivi.
+Mel reçoit les commandes dans l’onglet « Commandes » (notification, statuts : reçue, confirmée, prête, livrée et payée,
+annulée) et règle la boutique (ouverte, retrait, livraison et frais, paiement, mentions). « Espace créatrice » en bas de la
+boutique : le code ouvre l’atelier sur l’appareil. 20 erreurs de code par heure et par adresse au plus.
+Le code `CODE_MEL` est indispensable : sans lui, tout le monde arriverait dans l’atelier.
+
 ## Mel sur Cloudflare (une seule fois)
 Mel a besoin d’un petit serveur (`worker.js`) : l’appli est donc publiée sur Cloudflare, qui la redéploie toute seule
 à chaque envoi sur GitHub.

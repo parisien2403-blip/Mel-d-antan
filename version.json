@@ -1,9 +1,9 @@
 {
-  "version": "3.6",
-  "date": "2026-11-15",
+  "version": "4.0",
+  "date": "2026-11-17",
   "notes": [
-    "Historique des coulées : chaque « J’ai coulé » est noté, et peut être annulé",
-    "Mel te prévient si tu as déjà coulé la recette, pour ne pas déduire deux fois",
-    "Articles en photo lus et retenus par Mel"
+    "Ta boutique : tes clients voient tes bougies en vente et passent commande",
+    "Onglet Commandes : tu reçois les commandes et suis leur préparation",
+    "Historique des coulées"
   ]
 }

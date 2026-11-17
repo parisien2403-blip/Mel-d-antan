@@ -376,6 +376,40 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .coulees-recette{margin-top:14px}.coulees-recette>b{display:block;margin-bottom:8px}
 .mois{font-family:var(--f-titre);font-size:1.05rem;margin:14px 0 8px;text-transform:capitalize}.mois small{color:var(--doux);font-weight:400;text-transform:none}
 .onglet-inv.hist{border-style:dashed}
+/* Boutique */
+.b-accueil{display:flex;gap:20px;align-items:center;background:var(--carte);border:1px solid var(--ligne);border-radius:20px;padding:16px 20px;margin-bottom:16px;box-shadow:var(--ombre)}
+.b-accueil img{width:110px;height:110px;border-radius:50%;flex:none}
+.b-accueil h2{font-family:var(--f-main);font-weight:500;font-size:2rem;color:var(--cafe);line-height:1.1}
+.b-accueil p{margin:6px 0 0}
+@media (max-width:620px){.b-accueil{flex-direction:column;text-align:center}}
+.produit-b .image{border:0;padding:0;cursor:pointer;width:100%;display:flex}
+.produit-b{cursor:default}
+.prix{font-weight:700;color:var(--cafe)}.prix.grand{font-size:1.5rem;margin:4px 0}
+.b-grande{display:flex;justify-content:center}.b-grande img{width:100%;border-radius:16px;max-height:70vh;object-fit:contain}.b-grande svg{max-width:280px}
+.ligne-panier{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--ligne)}.ligne-panier:last-child{border:0}
+.ligne-panier .mini{width:56px;height:56px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--fond);flex:none}
+.ligne-panier .mini img{width:100%;height:100%;object-fit:cover}.ligne-panier .mini svg{height:50px}
+.ligne-panier .nom{flex:1;min-width:0}
+@media (max-width:620px){.ligne-panier{flex-wrap:wrap}.ligne-panier .nom{flex:1 1 calc(100% - 70px)}.ligne-panier .stock{margin-left:68px}.ligne-panier .prix{margin-left:auto}}
+.produit-b .image{aspect-ratio:1;align-items:center;justify-content:center;background:linear-gradient(180deg,#faf3e4,#ecdcc0)}.produit-b .image img{width:100%;height:100%;object-fit:cover}.ligne-panier small{display:block;color:var(--doux)}
+.total-cmd{background:var(--fond);border-radius:12px;padding:10px 14px;margin:10px 0}
+.frise{display:flex;gap:4px;margin:8px 0;flex-wrap:wrap}.frise span{flex:1;min-width:70px;text-align:center;font-size:.75rem;padding:4px 6px;border-radius:999px;background:var(--fond);color:var(--doux);border:1px solid var(--ligne)}
+.frise span.fait{background:var(--cafe);color:var(--carte);border-color:var(--cafe)}
+.pill-statut.annulee{display:inline-block;margin:8px 0;padding:3px 10px;border-radius:999px;background:var(--alerte);color:#fff;font-size:.8rem}
+.merci{display:flex;gap:12px;align-items:center;border-color:var(--cafe)}.merci img{width:56px;height:56px;border-radius:50%}
+.b-pied{text-align:center;margin:24px 0 10px;color:var(--doux);font-size:.85rem}
+.apercu-bandeau{background:var(--cafe);color:var(--carte);border-radius:14px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.apercu-bandeau .btn{background:var(--carte);color:var(--cafe)}
+:root.en-boutique #numVersion{display:none}
+.badge-cmd{font-style:normal;background:var(--alerte);color:#fff;border-radius:999px;font-size:.7rem;padding:0 6px;margin-left:2px}
+nav.bas .badge-cmd{position:absolute;margin:-4px 0 0 18px}nav.bas button{position:relative}
+.commande.nouvelle{border-color:var(--cafe);border-width:2px}.commande.annulee,.commande.livree{opacity:.75}
+.lignes-cmd{margin:6px 0;padding-left:18px}.contact{margin-top:6px}.contact a{color:var(--cafe);font-weight:600}
+.message-cmd{font-style:italic;background:var(--fond);border-radius:10px;padding:6px 10px;margin:6px 0}
+.b-outils{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.pill-vente{display:inline-block;background:var(--fond);border:1px solid var(--cafe);color:var(--cafe);border-radius:999px;padding:2px 10px;font-size:.85rem;margin:4px 0 0}.pill-vente.attente{border-color:var(--alerte);color:var(--alerte)}
+.carte.vente{border-color:var(--cafe)}
+@media (max-width:620px){nav.bas button{font-size:.66rem;padding:8px 1px 10px}}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -682,10 +716,140 @@ function dessin(rec,{mini=false}={}){
 /* ---------- État de l'écran ---------- */
 let vue="recettes",courant=null,brouillon=null,mult=1,recherche="",calque=null,filtreContenant="";
 const ICO={
+  "b-catalogue":'<path d="M4 9h16l-1.5 11h-13z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/>',
+  "b-panier":'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.4 11.5h11.6L21 7H6.2"/>',
+  "b-commandes":'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  commandes:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
   recettes:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6M9 11h4"/>',
   livre:'<path d="M2 5c3-1 6-1 10 1 4-2 7-2 10-1v14c-3-1-6-1-10 1-4-2-7-2-10-1z"/><path d="M12 6v14"/>',
   inventaire:'<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/>',
   sauvegarde:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'};
+/* ---------- Boutique (clients) ou atelier (Mel) : sans le code de Mel, l'appli s'ouvre sur la boutique ---------- */
+let boutique=(()=>{try{return !localStorage.getItem("carnet.codeMel")}catch(e){return true}})(),apercu=false;
+const enBoutique=()=>boutique||apercu;
+const eur=v=>(Math.round((+v||0)*100)/100).toFixed(2).replace(".",",")+" €";
+const LSJ={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let CAT=LSJ.get("boutique.catalogue",null),catErreur="",panier=LSJ.get("boutique.panier",[]),mesCommandes=LSJ.get("boutique.commandes",[]),envoiCmd=false,produitOuvert=null,derniereCmd=null;
+const STATUTS_CMD={nouvelle:["Reçue","Mel a bien reçu ta commande."],confirmee:["Confirmée","Mel a confirmé ta commande et la prépare."],prete:["Prête","Ta commande est prête !"],livree:["Livrée","Livrée et réglée. Merci !"],annulee:["Annulée","Cette commande a été annulée."]};
+const ETAPES_CMD=["nouvelle","confirmee","prete","livree"];
+const photoProduit=p=>p.photo?`api/boutique/photo/${p.photo}`:null;
+const imageProduit=(p,mini)=>photoProduit(p)?`<img src="${photoProduit(p)}" alt="${esc(p.nom)}" loading="lazy">`:dessin({contenant:CONTENANTS[p.contenant]?p.contenant:"verrine",remplissage:p.remplissage,couches:(p.couches||[]).map(c=>({...c,ingredients:[]}))},{mini});
+const produitCat=id=>(CAT&&CAT.produits||[]).find(p=>p.id===id);
+const lignesPanier=()=>panier.map(l=>({...l,p:produitCat(l.id)})).filter(l=>l.p);
+const nbPanier=()=>lignesPanier().reduce((a,l)=>a+l.q,0);
+function savePanier(){LSJ.set("boutique.panier",panier)}
+async function chargerCatalogue(){
+  try{const r=await fetch("api/boutique",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.erreur||"La boutique ne répond pas.");CAT=d;catErreur="";LSJ.set("boutique.catalogue",d)}
+  catch(e){catErreur=navigator.onLine?e.message:"Pas d’internet : voici le dernier catalogue vu."}
+  if(enBoutique())rendre();
+}
+async function suivreCommandes(){
+  if(!mesCommandes.length)return;
+  try{const r=await fetch("api/commande/suivi",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({commandes:mesCommandes.map(c=>({numero:c.numero,cle:c.cle}))})});const d=await r.json();
+    let change=false;for(const s of d.commandes||[]){const c=mesCommandes.find(x=>x.numero===s.numero);if(c&&c.statut!==s.statut){c.statut=s.statut;c.maj=s.maj;change=true}}
+    if(change){LSJ.set("boutique.commandes",mesCommandes);if(enBoutique())rendre()}}catch(e){}
+}
+function ajouterPanier(id,q=1){const l=panier.find(x=>x.id===id);if(l)l.q=Math.min(50,l.q+q);else panier.push({id,q});savePanier();rendre();toast(`« ${produitCat(id)?.nom||"Bougie"} » ajoutée au panier`)}
+function vCatalogue(){
+  const b=CAT&&CAT.boutique,ps=CAT&&CAT.produits||[];
+  return `${apercu?`<div class="apercu-bandeau">👁 Aperçu de ta boutique, comme la voient tes clients. <button class="btn petit" data-act="finApercu">Revenir à l’atelier</button></div>`:""}
+  <section class="b-accueil"><img src="logo.jpg" alt="Mel d’antan"><div><h2>Les bougies de Mel d’antan</h2><p>${esc(b?b.accueil:"Des bougies gourmandes coulées et décorées à la main.")}</p>
+    ${b?`<p class="aide">${b.retrait?"🏠 Retrait possible":""}${b.retrait&&b.livraison?" · ":""}${b.livraison?`🚚 Livraison${b.livraisonFrais?` (${eur(b.livraisonFrais)})`:" offerte"}`:""} · 💶 ${esc(b.paiement)}</p>`:""}</div></section>
+  ${catErreur?`<p class="aide" style="color:var(--alerte)">${esc(catErreur)}</p>`:""}
+  ${!CAT?`<p class="aide">Chargement de la boutique…</p>`:b&&!b.ouverte?`<div class="carte"><b>La boutique est fermée pour le moment.</b><p class="aide">Reviens bientôt : Mel prépare de nouvelles bougies !</p></div>`
+   :ps.length?`<div class="grille">${ps.map(p=>`<div class="vignette produit-b"><button class="image" data-produit-b="${p.id}" aria-label="Voir ${esc(p.nom)}">${imageProduit(p,true)}</button>
+     <div class="txt"><b>${esc(p.nom)}</b><small>${esc(CONTENANTS[p.contenant]?.nom||"")}</small><div class="ligne" style="justify-content:space-between;margin-top:6px"><span class="prix">${eur(p.prix)}</span><button class="btn petit" data-ajout-b="${p.id}">＋ Panier</button></div></div></div>`).join("")}</div>`
+   :`<div class="vide"><p>Les bougies arrivent bientôt dans la boutique.</p></div>`}
+  ${pieds()}`;
+}
+const pieds=()=>`<footer class="b-pied">${CAT&&CAT.boutique&&CAT.boutique.mentions?`<button class="lien" data-act="mentions">Mentions et conditions</button> · `:""}${apercu?"":`<button class="lien" data-act="espaceCreatrice">Espace créatrice</button>`}</footer>`;
+function vProduitB(){
+  const p=produitCat(produitOuvert);if(!p)return`<p class="vide">Cette bougie n’est plus en vente.</p>`;
+  return `<div class="fiche"><div class="${p.photo?"":"scene"} b-grande">${imageProduit(p,false)}</div><div class="carte"><h2>${esc(p.nom)}</h2><p class="prix grand">${eur(p.prix)}</p>
+    ${p.description?`<p style="white-space:pre-wrap">${esc(p.description)}</p>`:""}<p class="aide">${esc(CONTENANTS[p.contenant]?.nom||"")} · Fait main par Mel</p>
+    <div class="ligne" style="margin-top:12px"><button class="btn" data-ajout-b="${p.id}">＋ Ajouter au panier</button><button class="btn leger" data-aller="b-panier">Voir mon panier (${nbPanier()})</button></div></div></div>`;
+}
+function vPanier(){
+  const ls=lignesPanier(),b=CAT&&CAT.boutique||{},cl=LSJ.get("boutique.client",{});
+  if(!ls.length)return`<div class="vide"><p>Ton panier est vide.</p><button class="btn" data-aller="b-catalogue">Voir les bougies</button></div>`;
+  const mode=cl.mode==="livraison"&&b.livraison||!b.retrait?"livraison":"retrait",st=ls.reduce((a,l)=>a+l.p.prix*l.q,0),frais=mode==="livraison"?+b.livraisonFrais||0:0;
+  return `<div class="carte">${ls.map(l=>`<div class="ligne-panier"><div class="mini">${imageProduit(l.p,true)}</div><div class="nom"><b>${esc(l.p.nom)}</b><small>${eur(l.p.prix)}</small></div>
+    <div class="stock"><button class="btn leger rond" data-qte-b="${l.id}:-1" aria-label="Moins">−</button><b>${l.q}</b><button class="btn leger rond" data-qte-b="${l.id}:1" aria-label="Plus">+</button></div><b class="prix">${eur(l.p.prix*l.q)}</b></div>`).join("")}</div>
+  <form class="carte" id="fCommande"><b>Pour recevoir ta commande</b>
+    <div class="ligne"><label class="champ">Prénom et nom<input type="text" id="cNom" required maxlength="80" autocomplete="name" value="${esc(cl.nom||"")}"></label>
+     <label class="champ">Téléphone<input type="tel" id="cTel" required maxlength="30" autocomplete="tel" value="${esc(cl.tel||"")}"></label></div>
+    <label class="champ">E-mail (facultatif)<input type="email" id="cEmail" maxlength="120" autocomplete="email" value="${esc(cl.email||"")}"></label>
+    <div class="puces" style="margin:10px 0">${b.retrait?`<button type="button" class="puce ${mode==="retrait"?"on":""}" data-mode-b="retrait">🏠 Je viens la chercher</button>`:""}${b.livraison?`<button type="button" class="puce ${mode==="livraison"?"on":""}" data-mode-b="livraison">🚚 Livraison${b.livraisonFrais?` (${eur(b.livraisonFrais)})`:""}</button>`:""}</div>
+    ${mode==="retrait"&&b.retraitInfos?`<p class="aide">${esc(b.retraitInfos)}</p>`:""}${mode==="livraison"&&b.livraisonInfos?`<p class="aide">${esc(b.livraisonInfos)}</p>`:""}
+    ${mode==="livraison"?`<label class="champ">Adresse de livraison<textarea id="cAdresse" rows="2" maxlength="300" required autocomplete="street-address">${esc(cl.adresse||"")}</textarea></label>`:""}
+    <label class="champ">Un message pour Mel (facultatif)<textarea id="cMessage" rows="2" maxlength="1000" placeholder="Un parfum préféré, une date, un cadeau…"></textarea></label>
+    <div class="total-cmd">${frais?`<div>Bougies : ${eur(st)}</div><div>Livraison : ${eur(frais)}</div>`:""}<div><b>Total : ${eur(st+frais)}</b></div><div class="aide">💶 ${esc(b.paiement||"Paiement à la livraison.")} Rien n’est à payer en ligne.</div></div>
+    <p class="aide">Tes coordonnées servent uniquement à Mel pour préparer et te remettre ta commande.</p>
+    <button class="btn" ${envoiCmd?"disabled":""}>${envoiCmd?"Envoi…":"Envoyer ma commande"}</button></form>${pieds()}`;
+}
+function frise(st){if(st==="annulee")return`<span class="pill-statut annulee">Annulée</span>`;const i=ETAPES_CMD.indexOf(st);return`<div class="frise">${ETAPES_CMD.map((e,k)=>`<span class="${k<=i?"fait":""}">${STATUTS_CMD[e][0]}</span>`).join("")}</div>`}
+function vMesCommandes(){
+  const l=mesCommandes.slice().reverse();
+  return `${derniereCmd?`<div class="carte merci"><img src="mel-avatar.png" alt=""><div><b>Merci ! Ta commande ${esc(derniereCmd)} est envoyée.</b><p class="aide">Mel va la confirmer. Tu peux suivre son avancement ici.</p></div></div>`:""}
+  ${l.length?l.map(c=>`<div class="carte"><div class="ligne" style="justify-content:space-between"><b>Commande ${esc(c.ref)}</b><small class="aide">${new Date(c.cree).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</small></div>
+    ${frise(c.statut)}<p class="aide" style="margin:6px 0">${STATUTS_CMD[c.statut]?.[1]||""}</p>
+    <div>${(c.lignes||[]).map(x=>`${x.q} × ${esc(x.nom)}`).join(" · ")}</div><div class="aide">${c.mode==="livraison"?"🚚 Livraison":"🏠 Retrait"} · <b>${eur(c.total)}</b> à régler ${c.mode==="livraison"?"à la livraison":"au retrait"}</div></div>`).join("")
+   :`<div class="vide"><p>Tu n’as pas encore passé de commande.</p><button class="btn" data-aller="b-catalogue">Voir les bougies</button></div>`}${pieds()}`;
+}
+async function envoyerCommande(){
+  if(envoiCmd)return;if(apercu){toast("C’est un aperçu : tes clients pourront commander ici");return}
+  const g=id=>(document.getElementById(id)?.value||"").trim(),cl=LSJ.get("boutique.client",{});
+  const client={nom:g("cNom"),tel:g("cTel"),email:g("cEmail"),adresse:g("cAdresse"),message:g("cMessage"),mode:cl.mode==="livraison"&&CAT.boutique.livraison||!CAT.boutique.retrait?"livraison":"retrait"};
+  LSJ.set("boutique.client",{nom:client.nom,tel:client.tel,email:client.email,adresse:client.adresse||cl.adresse||"",mode:client.mode});
+  envoiCmd=true;rendre();
+  try{
+    const r=await fetch("api/commande",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({client,lignes:panier})});const d=await r.json();
+    if(!r.ok)throw new Error(d.erreur||"La commande n’a pas pu partir.");
+    mesCommandes.push(d.commande);LSJ.set("boutique.commandes",mesCommandes);panier=[];savePanier();derniereCmd=d.commande.ref;envoiCmd=false;aller("b-commandes");
+  }catch(e){envoiCmd=false;rendre();toast(e.message);if(/plus en vente/.test(e.message))chargerCatalogue()}
+}
+async function entrerAtelier(code){
+  try{const r=await fetch("api/atelier/entrer",{method:"POST",headers:{"content-type":"application/json","x-code-mel":code},body:"{}"});
+    if(!r.ok)throw new Error(r.status===401?"Ce n’est pas le bon code.":"Le serveur ne répond pas, réessaie.");
+    try{localStorage.setItem("carnet.codeMel",code)}catch(e){}boutique=false;apercu=false;calque=null;rendreCalque();vue="recettes";history.replaceState({vue},"");rendre();scrollTo(0,0);
+    toast("Bienvenue dans ton atelier, Mel !");verifierMel().then(()=>{planifierSync(300);if(notifMaj())setTimeout(abonnerPush,2500)});chargerCommandesAtelier();
+  }catch(e){const er=document.getElementById("erreurCode");if(er)er.textContent=e.message;else toast(e.message)}
+}
+
+/* ---------- Atelier : les commandes reçues ---------- */
+let CMD=null,cmdErreur="",filtreCmd="atraiter";
+const BOUTIQUE_VIDE={ouverte:true,accueil:"",retrait:true,retraitInfos:"",livraison:true,livraisonFrais:0,livraisonInfos:"",paiement:"Paiement en espèces à la livraison ou au retrait.",mentions:""};
+const nbCmdNouvelles=()=>(CMD&&CMD.commandes||[]).filter(c=>c.statut==="nouvelle").length;
+async function chargerCommandesAtelier(){
+  if(enBoutique()||!syncPossible())return;
+  try{const d=await appelCarnet("atelier/commandes",{});
+    const vues=new Set(LSJ.get("atelier.cmdVues",[])),nouvelles=d.commandes.filter(c=>c.statut==="nouvelle"&&!vues.has(c.numero));
+    CMD=d;cmdErreur="";
+    if(nouvelles.length&&vue!=="commandes"){const c=nouvelles[0];annoncer("cmd",`<b>${nouvelles.length>1?`${nouvelles.length} nouvelles commandes !`:`Nouvelle commande de ${esc(c.client.nom)} !`}</b><p>${nouvelles.length>1?"Tes clients t’attendent.":`${esc(c.ref)} · ${c.lignes.map(l=>`${l.q} × ${esc(l.nom)}`).join(", ")} · ${eur(c.total)}`}</p><div class="ligne"><button class="btn petit" data-act="voirCommandes">Voir les commandes</button><button class="btn leger petit" data-act="okCmd">Plus tard</button></div>`)}
+    if(vue==="commandes")LSJ.set("atelier.cmdVues",d.commandes.map(c=>c.numero));
+    nav();if(vue==="commandes")rendre();
+  }catch(e){cmdErreur=e.message}
+}
+function vCommandes(){
+  if(!CMD){chargerCommandesAtelier();return`<p class="aide">${cmdErreur?esc(cmdErreur):"Chargement des commandes…"}</p>`}
+  LSJ.set("atelier.cmdVues",CMD.commandes.map(c=>c.numero));annoncer("cmd",null);
+  const l=CMD.commandes.filter(c=>filtreCmd==="toutes"||!["livree","annulee"].includes(c.statut)),b=CMD.boutique||{};
+  const lien=location.origin+location.pathname;
+  return `<div class="carte b-outils"><div><b>Ta boutique ${b.ouverte?"est ouverte":"est fermée"}</b><p class="aide" style="margin:2px 0 0">Le lien à donner à tes clients : <b>${esc(lien.replace(/^https?:\/\//,""))}</b></p></div>
+    <div class="ligne"><button class="btn leger petit" data-act="partagerBoutique">Partager le lien</button><button class="btn leger petit" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn petit" data-act="reglagesBoutique">Réglages de la boutique</button></div></div>
+  <p class="aide">Pour mettre une bougie en vente : ouvre la recette › Modifier › « Vente en boutique ». Les clients ne voient jamais tes ingrédients.</p>
+  <div class="puces" style="margin:12px 0"><button class="puce ${filtreCmd==="atraiter"?"on":""}" data-filtre-cmd="atraiter">À traiter (${CMD.commandes.filter(c=>!["livree","annulee"].includes(c.statut)).length})</button><button class="puce ${filtreCmd==="toutes"?"on":""}" data-filtre-cmd="toutes">Toutes (${CMD.commandes.length})</button><button class="btn leger petit" data-act="rafraichirCmd" style="margin-left:auto">↻</button></div>
+  ${l.length?l.map(c=>`<div class="carte commande ${c.statut}"><div class="ligne" style="justify-content:space-between"><b>${esc(c.ref)} · ${esc(c.client.nom)}</b><small class="aide">${quand(c.cree)}</small></div>
+    ${frise(c.statut)}
+    <ul class="lignes-cmd">${c.lignes.map(x=>`<li>${x.q} × ${esc(x.nom)} <small>(${eur(x.prix)})</small></li>`).join("")}</ul>
+    <div><b>${eur(c.total)}</b>${c.frais?` <small class="aide">dont livraison ${eur(c.frais)}</small>`:""} · à encaisser ${c.mode==="livraison"?"à la livraison":"au retrait"}</div>
+    <div class="contact"><a href="tel:${esc(c.client.tel.replace(/[^+\d]/g,""))}">📞 ${esc(c.client.tel)}</a>${c.client.email?` · <a href="mailto:${esc(c.client.email)}">✉️ ${esc(c.client.email)}</a>`:""}</div>
+    <div class="aide">${c.mode==="livraison"?`🚚 Livraison : ${esc(c.client.adresse)}`:"🏠 Retrait"}</div>
+    ${c.client.message?`<p class="message-cmd">« ${esc(c.client.message)} »</p>`:""}
+    <div class="ligne" style="margin-top:8px">${c.statut==="nouvelle"?`<button class="btn petit" data-statut-cmd="${c.numero}:confirmee">Confirmer</button>`:""}${c.statut==="confirmee"?`<button class="btn petit" data-statut-cmd="${c.numero}:prete">Elle est prête</button>`:""}${c.statut==="prete"||c.statut==="confirmee"?`<button class="btn petit" data-statut-cmd="${c.numero}:livree">Livrée et payée</button>`:""}${!["livree","annulee"].includes(c.statut)?`<button class="btn leger petit" data-statut-cmd="${c.numero}:annulee">Annuler</button>`:`<button class="btn leger petit" data-statut-cmd="${c.numero}:nouvelle">Rouvrir</button>`}</div></div>`).join("")
+   :`<div class="vide"><p>${filtreCmd==="atraiter"?"Aucune commande à traiter.":"Aucune commande pour l’instant."}</p></div>`}`;
+}
+
 /* ---------- Appareil (Android, iPhone / iPad, ordinateur) et mode d'affichage ---------- */
 // Automatique : téléphone → appli ; ordinateur → site ; tablette → site à l'horizontale, appli à la verticale
 const UA=navigator.userAgent;
@@ -717,18 +881,22 @@ const NOM_APPAREIL={telephone:"téléphone",tablette:"tablette",ordinateur:"ordi
 const ICO_MODE={appli:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',site:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'};
 
 function nav(){
-  const onglet=vue==="voir"||vue==="editer"?"recettes":vue;
-  const onglets=[["recettes","Recettes"],["livre","Mon livre"],["mel","Mel"],["inventaire","Inventaire"],["sauvegarde","Réglages"]];
+  const onglet=vue==="voir"||vue==="editer"?"recettes":vue==="b-produit"?"b-catalogue":vue;
+  document.documentElement.classList.toggle("en-boutique",enBoutique());
+  const nc=enBoutique()?0:nbCmdNouvelles();
+  const onglets=enBoutique()?[["b-catalogue","Boutique"],["b-panier",`Panier${nbPanier()?` (${nbPanier()})`:""}`],["b-commandes","Mes commandes"]]
+    :[["recettes","Recettes"],["livre","Mon livre"],["mel","Mel"],["commandes","Commandes"],["inventaire","Inventaire"],["sauvegarde","Réglages"]];
   const icone=k=>k==="mel"?`<img class="ico-mel" src="mel-avatar.png" alt="">`:`<svg viewBox="0 0 24 24">${ICO[k]}</svg>`;
-  document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}${l}</button>`).join("");
-  document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}<span>${l}</span></button>`).join("");
+  const pastille=k=>k==="commandes"&&nc?`<i class="badge-cmd">${nc}</i>`:"";
+  document.getElementById("nav").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}${pastille(k)}${l}</button>`).join("");
+  document.getElementById("navHaut").innerHTML=onglets.map(([k,l])=>`<button data-aller="${k}" class="${onglet===k?"on":""}">${icone(k)}<span>${l}</span>${pastille(k)}</button>`).join("");
   const autre=modeActuel()==="site"?"appli":"site";
   document.getElementById("numVersion").textContent="v"+VERSION;
-  document.getElementById("nouvTete").hidden=vue!=="recettes";
+  document.getElementById("nouvTete").hidden=vue!=="recettes"||enBoutique();
   const b=document.getElementById("bascule");b.dataset.mode=autre;b.title=`Passer en version ${autre}`;b.innerHTML=`<svg viewBox="0 0 24 24">${ICO_MODE[autre]}</svg><span>Version ${autre}</span>`;
-  const titres={recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
+  const titres={"b-catalogue":"Mel d’antan","b-produit":produitCat(produitOuvert)?.nom||"Bougie","b-panier":"Mon panier","b-commandes":"Mes commandes",commandes:"Commandes",recettes:"Mel d’antan",livre:"Mon livre",mel:"Mel, ton assistante",inventaire:"Mon inventaire",sauvegarde:"Réglages",voir:courant&&R(courant)?R(courant).nom:"Recette",editer:brouillon&&brouillon.neuve?"Nouvelle recette":"Modifier la recette"};
   document.getElementById("titre").textContent=titres[vue]||"Mel d’antan";
-  document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer");
+  document.getElementById("retour").hidden=!(vue==="voir"||vue==="editer"||vue==="b-produit");
 }
 // Champ en cours de saisie : gardé (texte, curseur, clavier ouvert) quand l'écran se redessine
 function saisieEnCours(){const e=document.activeElement;return e&&e.id&&(e.tagName==="TEXTAREA"||e.tagName==="INPUT"&&!["checkbox","radio","file","range","color"].includes(e.type))?{id:e.id,v:e.value,d:e.selectionStart,f:e.selectionEnd}:null}
@@ -737,7 +905,9 @@ function rendre(){
   const s=saisieEnCours();
   nav();
   const a=document.getElementById("app");
-  a.innerHTML=vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
+  if(enBoutique()&&!vue.startsWith("b-"))vue="b-catalogue";
+  if(!enBoutique()&&vue.startsWith("b-"))vue="recettes";
+  a.innerHTML=vue==="b-catalogue"?vCatalogue():vue==="b-produit"?vProduitB():vue==="b-panier"?vPanier():vue==="b-commandes"?vMesCommandes():vue==="commandes"?vCommandes():vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
   rendreCalque();rendreVolet();remettreSaisie(s);
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
@@ -745,7 +915,7 @@ addEventListener("popstate",e=>{
   if(calque){calque=null;rendreCalque();return}
   if(pleinLivre&&!(e.state&&e.state.plein)){quitterPlein(false);return}
   if(voletMel&&!(e.state&&e.state.volet)){fermerVolet(false);return}
-  const s=e.state||{vue:"recettes"};
+  const s=e.state||{vue:enBoutique()?"b-catalogue":"recettes"};
   if(s.vue===vue&&s.id===courant)return;
   const partir=()=>{vue=s.vue;courant=s.id;if(vue!=="editer")brouillon=null;if(vue==="editer"&&!brouillon)vue="recettes";rendre();scrollTo(0,0)};
   if(vue==="editer"&&brouillon&&modifie()){history.pushState({vue,id:courant},"");quitterEditeur().then(v=>{if(v){brouillon=null;partir();history.replaceState({vue,id:courant},"")}});return}
@@ -820,7 +990,7 @@ function vVoir(){
     :`<div class="scene">${dessin(r)}<div class="nom-contenant">${esc(CONTENANTS[r.contenant]?.nom||"")}</div></div>`;
   return `<div class="fiche">${gauche}
   <div>
-   <div class="recette-papier">${r.approuve?tamponHTML("coin"+(frappe?" frappe":"")):""}<h2>${esc(r.nom||"Sans nom")}</h2>
+   <div class="recette-papier">${r.approuve?tamponHTML("coin"+(frappe?" frappe":"")):""}<h2>${esc(r.nom||"Sans nom")}</h2>${r.enVente&&+r.prix>0?`<p class="pill-vente">🛍️ En vente · ${eur(r.prix)}</p>`:r.enVente?`<p class="pill-vente attente">🛍️ En vente : indique un prix pour qu’elle apparaisse</p>`:""}
     <div class="ligne" style="margin:10px 0 2px"><span class="aide" style="margin:0">Quantités pour</span><div class="puces">${[.5,1,2,3,4].map(k=>`<button class="puce ${mult===k?"on":""}" data-mult="${k}">${k===.5?"½":k} bougie${k>1?"s":""}</button>`).join("")}</div></div>
     ${r.couches.map((c,i)=>`<div class="couche-titre"><span class="pastille" style="background:${couleurCouche(c)}"></span>${esc(c.nom||`Couche ${i+1}`)}${c.texture&&c.texture!=="lisse"?` <small class="aide" style="margin:0">· ${esc((TEXTURES.find(t=>t[0]===c.texture)||[,""])[1])}</small>`:""}</div>
      <ul class="manuscrit">${c.ingredients.filter(x=>x.produit).map(x=>{const p=P(x.produit);const manque=p&&p.stock!=null&&p.stock!==""&&b[x.produit]>+p.stock;return `<li class="${manque?"manque":""}">${esc(phrase((+x.q||0)*mult,p))}${manque?` <small>(stock : ${nb(+p.stock)})</small>`:""}</li>`}).join("")||`<li style="color:var(--doux)">—</li>`}</ul>`).join("")}
@@ -861,6 +1031,10 @@ function vEditer(){
       ${i>0?`<button class="btn leger rond" data-act="versBas:${i}" aria-label="Descendre la couche">↓</button>`:""}${i<r.couches.length-1?`<button class="btn leger rond" data-act="versHaut:${i}" aria-label="Monter la couche">↑</button>`:""}
       ${r.couches.length>1?`<button class="btn leger petit" data-act="retirerCouche:${i}">Retirer la couche</button>`:""}</div></div>`).reverse().join("")}</div>
     <button class="btn leger" data-act="ajoutCouche">＋ Ajouter une couche au-dessus</button></div>
+   <div class="carte vente"><label class="ligne" style="gap:8px;font-weight:600"><input type="checkbox" data-b="enVente" ${r.enVente?"checked":""}> 🛍️ Vente en boutique</label>
+    <p class="aide" style="margin:4px 0 8px">Tes clients voient le nom, la photo, le prix et la description. Jamais tes ingrédients ni tes notes.</p>
+    <div class="ligne"><label class="champ" style="flex:none;width:140px">Prix (€)<input type="number" inputmode="decimal" min="0" step="0.5" data-b="prix" value="${esc(r.prix??"")}" placeholder="18"></label>
+     <label class="champ">Description pour les clients<textarea data-b="descVente" rows="2" maxlength="600" placeholder="Parfum, taille, durée de combustion…">${esc(r.descVente||"")}</textarea></label></div></div>
    <div class="carte"><label class="champ">Notes (température, temps de prise, astuces…)<textarea data-b="notes" rows="4" maxlength="3000" placeholder="Couler à 65 °C, attendre 40 min entre les couches…">${esc(r.notes)}</textarea></label></div>
    <div class="barre-enreg"><button class="btn" data-act="enregistrer">Enregistrer la recette</button><button class="btn leger" data-act="annuler">Annuler</button></div>
   </div></div>`;
@@ -1217,7 +1391,7 @@ function suggestionsMel(volet){
 let voletMel=false;
 function rendreVolet(){
   const z=document.getElementById("voletMel");if(!z)return;
-  const visible=vue!=="mel"&&!pleinLivre;
+  const visible=vue!=="mel"&&!pleinLivre&&!enBoutique();
   if(!voletMel){z.innerHTML=visible?`<button class="pastille-mel" data-act="ouvrirVolet" aria-label="Parler à Mel"><img src="mel-avatar.png" alt=""><span>Mel</span></button>`:"";return}
   const avant=document.getElementById("questionMel"),texte=avant?avant.value:"",s=saisieEnCours();
   z.innerHTML=`<div class="voile-mel" data-act="fermerVolet"></div><section class="volet-mel" role="dialog" aria-label="Conversation avec Mel">
@@ -1332,7 +1506,7 @@ async function envoyerPhotos(changes){
 const norm=t=>sansAccent(t||"");
 const modifiee=d=>d&&d.maj&&d.cree&&d.maj!==d.cree;
 async function synchroniser(choix){
-  if(!syncPossible())return;
+  if(!syncPossible()||boutique)return;
   if(syncEtat.enCours){syncRelancer=true;return}
   if(melEtat.code&&!codeMel()){syncEtat.codeRequis=true;rendreSyncBandeau();return}
   syncEtat.enCours=true;syncEtat.erreur="";D.notes=D.notes||[];D.contenants=D.contenants||[];D.coulees=D.coulees||[];let avant=JSON.stringify([D.produits,D.recettes,D.notes,D.contenants,D.coulees]);
@@ -1406,7 +1580,7 @@ const annonces={};
 function annoncer(cle,html){if(html)annonces[cle]=html;else delete annonces[cle];rendreAnnonce()}
 function rendreAnnonce(){
   const z=document.getElementById("annonceMel");if(!z)return;
-  const cle=["sync","maj","stock"].find(k=>annonces[k]);
+  const cle=["sync","cmd","maj","stock"].find(k=>annonces[k]);
   document.body.classList.toggle("annonce-ouverte",!!cle);
   if(!cle){z.innerHTML="";delete z.dataset.cle;return}
   if(z.dataset.cle===cle&&z.dataset.html===annonces[cle])return;
@@ -1417,10 +1591,11 @@ function rendreAnnonce(){
   const c=document.getElementById("codeSync");if(c&&tape)c.value=tape;
 }
 function rendreSyncBandeau(){
+  if(boutique){annoncer("sync",null);return}
   annoncer("sync",!syncEtat.codeRequis||syncEtat.bandeauFerme||!syncPossible()?null:`<form id="fCodeSync"><b>Tape ton code pour retrouver ton carnet</b><p>Tes recettes, tes photos et ton stock seront les mêmes sur tous tes appareils.</p>
     <div class="ligne"><input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:100px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></div></form>`);
 }
-setInterval(()=>{if(!document.hidden)synchroniser()},60000);
+setInterval(()=>{if(document.hidden)return;if(boutique){suivreCommandes();if(vue==="b-catalogue")chargerCatalogue()}else{synchroniser();chargerCommandesAtelier()}},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
 
 /* ---------- Historique des coulées : chaque « J’ai coulé » est noté, avec ce qu’il a retiré du stock ---------- */
@@ -1489,6 +1664,7 @@ function vReglages(){
   ${pleinEcranDispo()||matchMedia("(display-mode: fullscreen)").matches?`<div class="carte"><b>Plein écran</b><p class="aide">L’appli prend tout l’écran, sans les barres du téléphone, de la tablette ou du navigateur. ${SYSTEME==="ordinateur"?"Touche Échap pour en sortir.":"Fais glisser depuis le bord de l’écran pour revoir les barres un instant."}</p>
    <div class="ligne" style="margin-top:10px"><button class="btn ${pleinEcranVoulu()?"leger":""}" data-act="pleinEcranAuto">${pleinEcranVoulu()?"✓ Toujours en plein écran":"Toujours en plein écran"}</button>${pleinEcranDispo()?(enPleinEcran()?`<button class="btn leger" data-act="sortirPleinEcran">Sortir du plein écran</button>`:`<button class="btn leger" data-act="pleinEcranMaintenant">Plein écran maintenant</button>`):""}</div></div>`
    :SYSTEME==="ios"?`<div class="carte"><b>Plein écran</b><p class="aide">Sur iPad et iPhone, installe l’appli sur l’écran d’accueil (Partager › « Sur l’écran d’accueil ») : elle s’ouvre alors sans les barres de Safari. Apple garde toujours l’heure et la batterie en haut.</p></div>`:""}
+  <div class="carte"><b>Espace créatrice</b><p class="aide">Sur cet appareil, tu es dans ton atelier. Tes clients, eux, arrivent sur la boutique.</p><div class="ligne" style="margin-top:8px"><button class="btn leger" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn leger" data-act="quitterAtelier">Quitter l’espace créatrice sur cet appareil</button></div></div>
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
   ${syncPossible()?`<div class="carte"><b>Carnet partagé entre tes appareils</b>
    <p class="aide">${syncEtat.codeRequis?"Tape ton code pour retrouver le même carnet sur cet appareil.":syncEtat.erreur?`⚠️ ${esc(syncEtat.erreur)}`:syncEtat.derniere?`✓ À jour · dernière synchronisation à ${syncEtat.derniere.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`:"Synchronisation en cours…"}</p>
@@ -1512,6 +1688,20 @@ const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("dat
 function rendreCalque(){
   const z=document.getElementById("calque");
   if(!calque){z.innerHTML="";return}
+  if(calque.entrer){z.innerHTML=`<div class="voile" data-fermer><form class="fenetre" id="fEntrer"><h2 style="font-size:1.3rem">Espace créatrice</h2><p class="aide" style="margin:0">Réservé à Mel : tape ton code pour ouvrir ton atelier sur cet appareil.</p>
+    <input type="password" id="codeEntrer" required autocomplete="current-password" placeholder="Code"><p class="aide" id="erreurCode" style="color:var(--alerte);margin:0"></p>
+    <div class="ligne" style="justify-content:flex-end"><button type="button" class="btn leger" data-fermer>Annuler</button><button class="btn">Entrer</button></div></form></div>`;setTimeout(()=>document.getElementById("codeEntrer")?.focus(),50);return}
+  if(calque.mentions){z.innerHTML=`<div class="voile" data-fermer><div class="fenetre"><h2 style="font-size:1.3rem">Mentions et conditions</h2><p style="white-space:pre-wrap">${esc(CAT&&CAT.boutique&&CAT.boutique.mentions||"")}</p><div class="ligne" style="justify-content:flex-end"><button class="btn" data-fermer>Fermer</button></div></div></div>`;return}
+  if(calque.boutique){const b=calque.boutique;z.innerHTML=`<div class="voile" data-fermer><form class="fenetre" id="fBoutique"><h2 style="font-size:1.3rem">Réglages de la boutique</h2>
+    <label class="ligne" style="gap:8px"><input type="checkbox" id="bOuverte" ${b.ouverte?"checked":""}> Boutique ouverte (les clients peuvent commander)</label>
+    <label class="champ">Message d’accueil<textarea id="bAccueil" rows="2" maxlength="400">${esc(b.accueil)}</textarea></label>
+    <label class="ligne" style="gap:8px"><input type="checkbox" id="bRetrait" ${b.retrait?"checked":""}> Retrait chez moi</label>
+    <label class="champ">Infos pour le retrait (ville, jours, horaires…)<input type="text" id="bRetraitInfos" maxlength="300" value="${esc(b.retraitInfos)}"></label>
+    <label class="ligne" style="gap:8px"><input type="checkbox" id="bLivraison" ${b.livraison?"checked":""}> Livraison</label>
+    <div class="ligne"><label class="champ" style="flex:none;width:140px">Frais (€)<input type="number" id="bFrais" min="0" step="0.5" value="${b.livraisonFrais||0}"></label><label class="champ">Zone, délais…<input type="text" id="bLivraisonInfos" maxlength="300" value="${esc(b.livraisonInfos)}"></label></div>
+    <label class="champ">Moyens de paiement<input type="text" id="bPaiement" maxlength="200" value="${esc(b.paiement)}"></label>
+    <label class="champ">Mentions et conditions (affichées en bas de la boutique)<textarea id="bMentions" rows="4" maxlength="3000" placeholder="Nom, statut et SIRET, conditions de vente, précautions d’usage des bougies…">${esc(b.mentions)}</textarea></label>
+    <div class="ligne" style="justify-content:flex-end"><button type="button" class="btn leger" data-fermer>Annuler</button><button class="btn">Enregistrer</button></div></form></div>`;return}
   if(calque.correction){const c=calque.correction;z.innerHTML=`<div class="voile dialogue-mel" data-fermer><form class="scene-dialogue" id="fCorrection"><div class="bulle-annonce"><b>Qu’est-ce qui n’est pas juste ?</b>
     <p>Écris-moi la bonne information : je m’en souviendrai pour toutes tes prochaines questions, sur tous tes appareils.</p>
     ${c.question?`<p class="aide" style="margin:0 0 6px">Ta question : « ${esc(c.question.slice(0,160))} »</p>`:""}
@@ -1550,7 +1740,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-produit-b],[data-ajout-b],[data-qte-b],[data-mode-b],[data-statut-cmd],[data-filtre-cmd],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1569,6 +1759,14 @@ document.addEventListener("click",e=>{
   if(d.oublier){demander("Oublier cette correction ?","Mel ne s’en servira plus pour te répondre.",{oui:"Oublier",danger:true}).then(v=>{if(v){D.notes=(D.notes||[]).filter(n=>n.id!==d.oublier);sauver();rendre()}});return}
   if(d.annulerMemo){const m=D.discussion[+d.annulerMemo];if(m&&m.retenu){const ids=new Set(m.retenu);D.notes=(D.notes||[]).filter(n=>!ids.has(n.id));delete m.retenu;m.memoAnnule=true;sauver();majMel();toast("D’accord, je ne retiens pas")}return}
   if(d.retirerPhoto){photosMel.splice(+d.retirerPhoto,1);majMel();return}
+  if(d.produitB){produitOuvert=d.produitB;aller("b-produit");return}
+  if(d.ajoutB){ajouterPanier(d.ajoutB);return}
+  if(d.qteB){const[id,k]=d.qteB.split(":");const l=panier.find(x=>x.id===id);if(l){l.q+=+k;if(l.q<=0)panier=panier.filter(x=>x!==l);if(l.q>50)l.q=50;savePanier();rendre()}return}
+  if(d.modeB){const cl=LSJ.get("boutique.client",{});["cNom","cTel","cEmail","cAdresse"].forEach(id=>{const e=document.getElementById(id);if(e)cl[{cNom:"nom",cTel:"tel",cEmail:"email",cAdresse:"adresse"}[id]]=e.value});cl.mode=d.modeB;LSJ.set("boutique.client",cl);const msg=document.getElementById("cMessage")?.value||"";rendre();const m=document.getElementById("cMessage");if(m)m.value=msg;return}
+  if(d.statutCmd){const[n,st]=d.statutCmd.split(":");const c=CMD&&CMD.commandes.find(x=>x.numero===+n);
+    const faire=()=>appelCarnet("atelier/commande",{numero:+n,statut:st}).then(()=>{if(c){c.statut=st;c.maj=new Date().toISOString()}rendre();toast(`${c?c.ref:"Commande"} : ${STATUTS_CMD[st][0].toLowerCase()}`)}).catch(e=>toast(e.message));
+    if(st==="annulee")demander("Annuler cette commande ?",c?`${c.ref} de ${c.client.nom}. Pense à prévenir ton client.`:"",{oui:"Annuler la commande",non:"Garder",danger:true}).then(v=>{if(v)faire()});else faire();return}
+  if(d.filtreCmd){filtreCmd=d.filtreCmd;rendre();return}
   if(d.ongletInv){ongletInv=d.ongletInv;try{localStorage.setItem("carnet.ongletInv",ongletInv)}catch(e){}rendre();return}
   if(d.selPdf){const l=calque&&calque.choixPdf;if(l){const i=l.indexOf(d.selPdf);if(i>=0)l.splice(i,1);else l.push(d.selPdf);rendreCalque()}return}
   if(d.imageMel){const[i,q]=d.imageMel.split(":");actionImageMel(+i,q);return}
@@ -1591,6 +1789,16 @@ document.addEventListener("click",e=>{
   else if(act==="couler"){const r=R(courant),der=derniereCoulee(r.id);
     if(der&&Date.now()-new Date(der.date)<12*3600e3)demander("Tu l’as déjà coulée !",`« ${r.nom} » a été coulée ${quand(der.date)} (${nbBougies(der.mult)}). Si tu en coules une nouvelle fois, le stock sera de nouveau déduit.`,{oui:"Oui, j’en ai recoulé",non:"Non, c’est la même"}).then(v=>{if(v)couler(r)});
     else couler(r)}
+  else if(act==="espaceCreatrice"){calque={entrer:true};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
+  else if(act==="mentions"){calque={mentions:true};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
+  else if(act==="apercuBoutique"){apercu=true;if(!CAT)chargerCatalogue();else chargerCatalogue();aller("b-catalogue")}
+  else if(act==="finApercu"){apercu=false;aller("commandes")}
+  else if(act==="voirCommandes"){annoncer("cmd",null);quitterEditeur().then(v=>{if(v){brouillon=null;aller("commandes")}})}
+  else if(act==="okCmd"){LSJ.set("atelier.cmdVues",(CMD&&CMD.commandes||[]).map(c=>c.numero));annoncer("cmd",null)}
+  else if(act==="rafraichirCmd"){chargerCommandesAtelier().then(()=>toast("Commandes à jour"))}
+  else if(act==="reglagesBoutique"){calque={boutique:{...BOUTIQUE_VIDE,...(CMD&&CMD.boutique||{})}};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
+  else if(act==="partagerBoutique"){const lien=location.origin+location.pathname;if(navigator.share)navigator.share({title:"Mel d’antan",text:"Les bougies gourmandes de Mel d’antan",url:lien}).catch(()=>{});else navigator.clipboard?.writeText(lien).then(()=>toast("Lien copié"),()=>toast(lien))}
+  else if(act==="quitterAtelier"){demander("Quitter l’espace créatrice sur cet appareil ?","Cet appareil affichera la boutique, comme pour un client. Ton carnet reste en ligne : tu le retrouveras avec ton code.",{oui:"Quitter",danger:true}).then(v=>{if(v){try{localStorage.removeItem("carnet.codeMel")}catch(e){}desabonnerPush();boutique=true;CMD=null;vue="b-catalogue";history.replaceState({vue},"");chargerCatalogue();rendre()}})}
   else if(act==="voirHistorique"){ongletInv="historique";aller("inventaire")}
   else if(act==="annulerCoulee"){const c=(D.coulees||[]).find(x=>x.id===d.coulee);if(c)demander("Annuler cette coulée ?",`${c.nom}, ${quand(c.date)} (${nbBougies(c.mult)}) : les produits retirés reviendront dans ton stock.`,{oui:"Annuler la coulée",non:"Garder",danger:true}).then(v=>{if(v)annulerCoulee(c)})}
   else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
@@ -1649,7 +1857,7 @@ document.addEventListener("input",e=>{
   if(t.id==="questionMel"){t.style.height="auto";t.style.height=Math.min(160,t.scrollHeight)+"px";return}
   if(t.id==="recherche"){recherche=t.value;const pos=t.selectionStart;rendre();const n=document.getElementById("recherche");n.focus();n.setSelectionRange(pos,pos);return}
   if(t.dataset.cap&&brouillon){noterCap(t.dataset.cap,+t.value||0);majApercu();return}
-  if(t.dataset.b&&brouillon){let v=t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}fixer(brouillon,t.dataset.b,v);majApercu()}
+  if(t.dataset.b&&brouillon){let v=t.type==="checkbox"?t.checked:t.value;if(t.type==="range"){v=+v;document.getElementById("rempVal").textContent=v}fixer(brouillon,t.dataset.b,v);majApercu()}
 });
 document.addEventListener("change",async e=>{
   const t=e.target;
@@ -1666,6 +1874,11 @@ document.addEventListener("change",async e=>{
 });
 document.addEventListener("submit",e=>{
   e.preventDefault();
+  if(e.target.id==="fEntrer"){entrerAtelier(document.getElementById("codeEntrer").value.trim());return}
+  if(e.target.id==="fCommande"){envoyerCommande();return}
+  if(e.target.id==="fBoutique"){const g=id=>document.getElementById(id),b={ouverte:g("bOuverte").checked,accueil:g("bAccueil").value,retrait:g("bRetrait").checked,retraitInfos:g("bRetraitInfos").value,livraison:g("bLivraison").checked,livraisonFrais:+g("bFrais").value||0,livraisonInfos:g("bLivraisonInfos").value,paiement:g("bPaiement").value,mentions:g("bMentions").value};
+    if(!b.retrait&&!b.livraison){toast("Garde au moins le retrait ou la livraison");return}
+    appelCarnet("atelier/boutique",{boutique:b}).then(d=>{if(CMD)CMD.boutique=d.boutique;fermerCalque();rendre();toast("Boutique enregistrée")}).catch(e=>toast(e.message));return}
   if(e.target.id==="fCorrection"){const t=document.getElementById("texteCorrection").value.trim();if(!t)return;const c=calque.correction;
     D.notes=D.notes||[];D.notes.push({id:nouvelId(),nom:t.slice(0,60),texte:t,date:new Date().toISOString()});
     const m=D.discussion&&D.discussion[c.idx];if(m)m.corrige=true;sauver();fermerCalque();majMel();toast("Merci Mel, je m’en souviendrai !");return}
@@ -1707,7 +1920,7 @@ addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installab
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="3.6";
+const VERSION="4.0";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
@@ -1734,6 +1947,7 @@ const unite=p=>(UNITES.find(u=>u[0]===p.unite)||[,""])[1];
 const stockBas=()=>D.produits.filter(p=>p.stock!=null&&p.stock!==""&&p.alerte!=null&&p.alerte!==""&&+p.stock<=+p.alerte);
 let stockAffiche=[];
 function verifierStocks(){
+  if(boutique)return;
   let vus;try{vus=JSON.parse(localStorage.getItem("carnet.stocksPrevenus")||"{}")}catch(e){vus={}}
   const bas=stockBas(),ids=new Set(bas.map(p=>p.id));
   for(const id of Object.keys(vus))if(!ids.has(id))delete vus[id];
@@ -1756,7 +1970,7 @@ function rendreStockBandeau(){
     <p>Pense à en recommander.</p><div class="ligne"><button class="btn petit" data-act="voirStock">Voir l’inventaire</button><button class="btn leger petit" data-act="okStock">J’ai noté</button></div>`);
 }
 // Notification touchée : le service worker demande d'ouvrir la bonne page
-if("serviceWorker"in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.aller==="inventaire"){quitterEditeur().then(v=>{if(v){brouillon=null;aller("inventaire")}})}});
+if("serviceWorker"in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&["inventaire","commandes"].includes(e.data.aller)&&!boutique){const v0=e.data.aller;quitterEditeur().then(v=>{if(v){brouillon=null;if(v0==="commandes")CMD=null;aller(v0)}})}});
 // Image de notification : Mel dessinée, et sa bulle avec le message (affichée en grand sur Android et Windows)
 async function imageNotif(titre,texte){
   try{
@@ -1781,6 +1995,7 @@ async function notifier(titre,texte,options={}){
 }
 function rendreMaj(){
   if(!majInfo||majPlusTard){annoncer("maj",null);return}
+  if(boutique){annoncer("maj",`<b>Une nouvelle version de la boutique est prête.</b><div class="ligne"><button class="btn petit" data-act="installerMaj">Mettre à jour</button></div>`);return}
   const notes=(majInfo.notes||[]).slice(0,3);
   annoncer("maj",`<b>La version ${esc(majInfo.version||"nouvelle")} est prête !</b>${notes.length?`<ul>${notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}
     <div class="ligne"><button class="btn petit" data-act="installerMaj">Mettre à jour</button><button class="btn leger petit" data-act="majPlusTard">Plus tard</button></div>`);
@@ -1796,7 +2011,7 @@ async function chercherMaj(){
 const pushActif=()=>{try{return localStorage.getItem("carnet.push")==="1"}catch(e){return false}};
 function octets(b64){const s=atob(b64.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((b64.length+3)%4));return Uint8Array.from(s,c=>c.charCodeAt(0))}
 async function abonnerPush(){
-  if(!regSW||!("PushManager" in window)||!syncPossible())return false;
+  if(boutique)return false;if(!regSW||!("PushManager" in window)||!syncPossible())return false;
   try{
     let ab=await regSW.pushManager.getSubscription();
     if(!ab){const{cle}=await appelCarnet("notifs/cle",{});ab=await regSW.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:octets(cle)})}
@@ -1835,9 +2050,13 @@ function exemple(){
   fondThemes(localStorage.getItem("carnet.theme")||"auto");appliquerMode("debut");
   const lu=await lire("donnees");
   if(lu&&Array.isArray(lu.recettes))D=lu;else{exemple();D.vierge=true;sauverExemple=true;sauver()}
-  history.replaceState({vue:"recettes"},"");rendre();
-  verifierMel().then(()=>{planifierSync(300);if(notifMaj())setTimeout(abonnerPush,2500)});setTimeout(verifierStocks,1500);
-  if(new URLSearchParams(location.search).get("vue")==="inventaire"){history.replaceState({vue:"recettes"},"",location.pathname);aller("inventaire")}
+  vue=boutique?"b-catalogue":"recettes";history.replaceState({vue},"");rendre();
+  if(boutique){chargerCatalogue();suivreCommandes();
+    // Aucun code de Mel réglé sur le serveur : l'atelier reste ouvert comme avant
+    verifierMel().then(()=>{if(melEtat&&!melEtat.absent&&!melEtat.code){boutique=false;vue="recettes";history.replaceState({vue},"");rendre();planifierSync(300)}})}
+  else{verifierMel().then(()=>{planifierSync(300);if(notifMaj())setTimeout(abonnerPush,2500)});setTimeout(verifierStocks,1500);setTimeout(chargerCommandesAtelier,1200)}
+  const vueDemandee=new URLSearchParams(location.search).get("vue");
+  if(!boutique&&["inventaire","commandes"].includes(vueDemandee)){history.replaceState({vue},"",location.pathname);aller(vueDemandee)}
 })();
 </script>
 </body>
