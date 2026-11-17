@@ -399,8 +399,7 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .grille.gammes{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
 @media (max-width:520px){.grille.gammes{grid-template-columns:1fr 1fr!important;gap:10px}.gamme-b .txt b{font-size:1rem}}
 .choix-parfum{margin-top:12px;padding:12px;border-radius:14px;background:var(--fond)}.choix-parfum .puces{margin-top:8px}
-.puce.epuise{opacity:.5;text-decoration:line-through;cursor:not-allowed}.puce.epuise small{text-decoration:none}
-.manque-parfum{color:var(--alerte)!important}
+.manque-parfum{color:var(--alerte)!important}.a-racheter{display:inline-block;color:var(--alerte);font-size:.88rem;font-weight:600}
 @media (max-width:620px){.ligne-panier{flex-wrap:wrap}.ligne-panier .nom{flex:1 1 calc(100% - 70px)}.ligne-panier .stock{margin-left:68px}.ligne-panier .prix{margin-left:auto}}
 .produit-b .image{aspect-ratio:1;align-items:center;justify-content:center;background:linear-gradient(180deg,#faf3e4,#ecdcc0)}.produit-b .image img{width:100%;height:100%;object-fit:cover}.ligne-panier small{display:block;color:var(--doux)}
 .total-cmd{background:var(--fond);border-radius:12px;padding:10px 14px;margin:10px 0}
@@ -758,8 +757,8 @@ const lignesPanier=()=>panier.map((l,i)=>({...l,i,p:produitCat(l.id)})).filter(l
 // Parfum choisi par le client sur la fiche d'une bougie (avant l'ajout au panier)
 let parfumChoisi={};
 const parfumDe=(p,id)=>(p&&p.parfums||[]).find(x=>x.id===id);
-// Ligne du panier dont le parfum n'est pas (ou plus) disponible
-const parfumManquant=l=>l.p.parfums&&!(parfumDe(l.p,l.parfum)||{}).dispo;
+// Ligne du panier dont le parfum n'est plus proposé par Mel (retiré de la boutique)
+const parfumManquant=l=>l.p.parfums&&!parfumDe(l.p,l.parfum);
 const nbPanier=()=>lignesPanier().reduce((a,l)=>a+l.q,0);
 function savePanier(){LSJ.set("boutique.panier",panier)}
 /* ---------- QR code et affichette de la boutique ---------- */
@@ -807,8 +806,7 @@ function ajouterPanier(id,q=1){
   const p=produitCat(id);let parfum;
   if(p&&p.parfums){parfum=parfumChoisi[id];const pf=parfumDe(p,parfum);
     // Au catalogue, le parfum se choisit sur la fiche de la bougie
-    if(!pf){if(vue!=="b-produit"){produitOuvert=id;aller("b-produit")}else toast("Choisis d’abord ton parfum");return}
-    if(!pf.dispo){toast(`Le parfum ${pf.nom} est épuisé : choisis-en un autre`);return}}
+    if(!pf){if(vue!=="b-produit"){produitOuvert=id;aller("b-produit")}else toast("Choisis d’abord ton parfum");return}}
   const l=panier.find(x=>x.id===id&&(x.parfum||null)===(parfum||null));if(l)l.q=Math.min(50,l.q+q);else panier.push(parfum?{id,q,parfum}:{id,q});
   savePanier();rendre();toast(`« ${p?.nom||"Bougie"} »${parfum?` (${parfumDe(p,parfum).nom})`:""} ajoutée au panier`)}
 // Gammes nommées par Mel ; les bougies sans gamme vont dans « Autres créations »
@@ -846,21 +844,20 @@ function vProduitB(){
   return `<div class="fiche"><div class="${p.photo?"":"scene"} b-grande">${imageProduit(p,false)}</div><div class="carte"><h2>${esc(p.nom)}</h2><p class="prix grand">${eur(p.prix)}</p>
     ${p.description?`<p style="white-space:pre-wrap">${esc(p.description)}</p>`:""}<p class="aide">${esc(CONTENANTS[p.contenant]?.nom||"")} · Fait main par Mel</p>
     ${p.parfums?choixParfumsB(p):""}
-    <div class="ligne" style="margin-top:12px"><button class="btn" data-ajout-b="${p.id}" ${p.parfums&&!(parfumDe(p,parfumChoisi[p.id])||{}).dispo?"disabled":""}>＋ Ajouter au panier</button><button class="btn leger" data-aller="b-panier">Voir mon panier (${nbPanier()})</button></div></div></div>`;
+    <div class="ligne" style="margin-top:12px"><button class="btn" data-ajout-b="${p.id}" ${p.parfums&&!parfumDe(p,parfumChoisi[p.id])?"disabled":""}>＋ Ajouter au panier</button><button class="btn leger" data-aller="b-panier">Voir mon panier (${nbPanier()})</button></div></div></div>`;
 }
-// Les parfums de l'inventaire de Mel, mis à jour en direct : un parfum épuisé ne peut pas être choisi
+// Tous les parfums que Mel propose (sans stock ni « épuisé » : elle peut toujours en recommander)
 function choixParfumsB(p){
-  const ch=parfumChoisi[p.id],nbDispo=p.parfums.filter(x=>x.dispo).length;
-  return `<div class="choix-parfum"><b>Choisis ton parfum</b>${nbDispo?"":`<p class="aide" style="color:var(--alerte)">Tous les parfums sont épuisés pour le moment. Reviens bientôt !</p>`}
-    <div class="puces">${p.parfums.map(x=>x.dispo?`<button type="button" class="puce ${ch===x.id?"on":""}" data-parfum-b="${p.id}|${x.id}">${ch===x.id?"✓ ":""}${esc(x.nom)}${x.id===p.parfumRecette?" ★":""}</button>`
-      :`<button type="button" class="puce epuise" disabled title="Épuisé pour le moment">${esc(x.nom)} <small>épuisé</small></button>`).join("")}</div>
-    <p class="aide" style="margin:4px 0 0">${p.parfums.some(x=>x.id===p.parfumRecette)?"★ le parfum d’origine de cette bougie · ":""}Disponibilités en direct selon le stock de Mel.</p></div>`;
+  const ch=parfumChoisi[p.id];
+  return `<div class="choix-parfum"><b>Choisis ton parfum</b>
+    <div class="puces">${p.parfums.map(x=>`<button type="button" class="puce ${ch===x.id?"on":""}" data-parfum-b="${p.id}|${x.id}">${ch===x.id?"✓ ":""}${esc(x.nom)}${x.id===p.parfumRecette?" ★":""}</button>`).join("")}</div>
+    ${p.parfums.some(x=>x.id===p.parfumRecette)?`<p class="aide" style="margin:4px 0 0">★ le parfum d’origine de cette bougie</p>`:""}</div>`;
 }
 function vPanier(){
   const ls=lignesPanier(),b=CAT&&CAT.boutique||{},cl=LSJ.get("boutique.client",{});
   if(!ls.length)return`<div class="vide"><p>Ton panier est vide.</p><button class="btn" data-aller="b-catalogue">Voir les bougies</button></div>`;
   const mode=cl.mode==="livraison"&&b.livraison||!b.retrait?"livraison":"retrait",st=ls.reduce((a,l)=>a+l.p.prix*l.q,0),frais=mode==="livraison"?+b.livraisonFrais||0:0;
-  return `<div class="carte">${ls.map(l=>`<div class="ligne-panier"><div class="mini">${imageProduit(l.p,true)}</div><div class="nom"><b>${esc(l.p.nom)}</b>${l.p.parfums?(parfumManquant(l)?`<small class="manque-parfum">Parfum ${esc(parfumDe(l.p,l.parfum)?.nom||"")} ${parfumDe(l.p,l.parfum)?"épuisé":"à choisir"} : <button type="button" class="lien" data-retirer-ligne-b="${l.i}" data-produit-b="${l.id}">choisir un autre parfum</button></small>`:`<small>Parfum : ${esc(parfumDe(l.p,l.parfum).nom)}</small>`):""}<small>${eur(l.p.prix)}</small></div>
+  return `<div class="carte">${ls.map(l=>`<div class="ligne-panier"><div class="mini">${imageProduit(l.p,true)}</div><div class="nom"><b>${esc(l.p.nom)}</b>${l.p.parfums?(parfumManquant(l)?`<small class="manque-parfum">${l.parfum?"Ce parfum n’est plus proposé":"Parfum à choisir"} : <button type="button" class="lien" data-retirer-ligne-b="${l.i}" data-produit-b="${l.id}">choisir un autre parfum</button></small>`:`<small>Parfum : ${esc(parfumDe(l.p,l.parfum).nom)}</small>`):""}<small>${eur(l.p.prix)}</small></div>
     <div class="stock"><button class="btn leger rond" data-qte-b="${l.i}:-1" aria-label="Moins">−</button><b>${l.q}</b><button class="btn leger rond" data-qte-b="${l.i}:1" aria-label="Plus">+</button></div><b class="prix">${eur(l.p.prix*l.q)}</b></div>`).join("")}</div>
   <form class="carte" id="fCommande"><b>Pour recevoir ta commande</b>
     <div class="ligne"><label class="champ">Prénom et nom<input type="text" id="cNom" required maxlength="80" autocomplete="name" value="${esc(cl.nom||"")}"></label>
@@ -872,7 +869,7 @@ function vPanier(){
     <label class="champ">Un message pour Mel (facultatif)<textarea id="cMessage" rows="2" maxlength="1000" placeholder="Un parfum préféré, une date, un cadeau…"></textarea></label>
     <div class="total-cmd">${frais?`<div>Bougies : ${eur(st)}</div><div>Livraison : ${eur(frais)}</div>`:""}<div><b>Total : ${eur(st+frais)}</b></div><div class="aide">💶 ${esc(b.paiement||"Paiement à la livraison.")} Rien n’est à payer en ligne.</div></div>
     <p class="aide">Tes coordonnées servent uniquement à Mel pour préparer et te remettre ta commande.</p>
-    ${ls.some(parfumManquant)?`<p class="aide" style="color:var(--alerte)">Un parfum de ton panier n’est plus disponible : choisis-en un autre avant d’envoyer.</p>`:""}
+    ${ls.some(parfumManquant)?`<p class="aide" style="color:var(--alerte)">Un parfum de ton panier n’est plus proposé : choisis-en un autre avant d’envoyer.</p>`:""}
     <button class="btn" ${envoiCmd||ls.some(parfumManquant)?"disabled":""}>${envoiCmd?"Envoi…":"Envoyer ma commande"}</button></form>${pieds()}`;
 }
 function frise(st){if(st==="annulee")return`<span class="pill-statut annulee">Annulée</span>`;const i=ETAPES_CMD.indexOf(st);return`<div class="frise">${ETAPES_CMD.map((e,k)=>`<span class="${k<=i?"fait":""}">${STATUTS_CMD[e][0]}</span>`).join("")}</div>`}
@@ -918,6 +915,12 @@ async function chargerCommandesAtelier(){
     nav();if(vue==="commandes")rendre();
   }catch(e){cmdErreur=e.message}
 }
+// Parfum choisi par un client : pas assez en stock pour cette ligne de commande → « à racheter »
+function aRacheter(x){
+  const pf=x.parfumId&&P(x.parfumId),r=R(x.id);if(!pf||pf.stock==null||pf.stock===""||!r)return"";
+  const besoin=r.couches.flatMap(c=>c.ingredients).filter(i=>P(i.produit)?.type==="parfum").reduce((a,i)=>a+(+i.q||0),0)*x.q;
+  return +pf.stock<Math.max(besoin,.01)?` <span class="a-racheter">⚠ ${+pf.stock>0?`plus que ${nb(+pf.stock)} ${esc(unite(pf))} de ${esc(pf.nom)}`:`${esc(pf.nom)} épuisé`} : pense à en racheter</span>`:"";
+}
 function vCommandes(){
   if(!CMD){chargerCommandesAtelier();return`<p class="aide">${cmdErreur?esc(cmdErreur):"Chargement des commandes…"}</p>`}
   LSJ.set("atelier.cmdVues",CMD.commandes.map(c=>c.numero));annoncer("cmd",null);
@@ -929,7 +932,7 @@ function vCommandes(){
   <div class="puces" style="margin:12px 0"><button class="puce ${filtreCmd==="atraiter"?"on":""}" data-filtre-cmd="atraiter">À traiter (${CMD.commandes.filter(c=>!["livree","annulee"].includes(c.statut)).length})</button><button class="puce ${filtreCmd==="toutes"?"on":""}" data-filtre-cmd="toutes">Toutes (${CMD.commandes.length})</button><button class="btn leger petit" data-act="rafraichirCmd" style="margin-left:auto">↻</button></div>
   ${l.length?l.map(c=>`<div class="carte commande ${c.statut}"><div class="ligne" style="justify-content:space-between"><b>${esc(c.ref)} · ${esc(c.client.nom)}</b><small class="aide">${quand(c.cree)}</small></div>
     ${frise(c.statut)}
-    <ul class="lignes-cmd">${c.lignes.map(x=>`<li>${x.q} × ${esc(x.nom)}${x.parfum?` · <b>parfum ${esc(x.parfum)}</b>`:""} <small>(${eur(x.prix)})</small></li>`).join("")}</ul>
+    <ul class="lignes-cmd">${c.lignes.map(x=>`<li>${x.q} × ${esc(x.nom)}${x.parfum?` · <b>parfum ${esc(x.parfum)}</b>`:""} <small>(${eur(x.prix)})</small>${["livree","annulee","prete"].includes(c.statut)?"":aRacheter(x)}</li>`).join("")}</ul>
     <div><b>${eur(c.total)}</b>${c.frais?` <small class="aide">dont livraison ${eur(c.frais)}</small>`:""} · à encaisser ${c.mode==="livraison"?"à la livraison":"au retrait"}</div>
     <div class="contact"><a href="tel:${esc(c.client.tel.replace(/[^+\d]/g,""))}">📞 ${esc(c.client.tel)}</a>${c.client.email?` · <a href="mailto:${esc(c.client.email)}">✉️ ${esc(c.client.email)}</a>`:""}</div>
     <div class="aide">${c.mode==="livraison"?`🚚 Livraison : ${esc(c.client.adresse)}`:"🏠 Retrait"}</div>
@@ -1164,7 +1167,7 @@ function vEditer(){
     <div class="ligne"><label class="champ" style="flex:none;width:140px">Prix (€)<input type="number" inputmode="decimal" min="0" step="0.5" data-b="prix" value="${esc(r.prix??"")}" placeholder="18"></label>
      <label class="champ">Description pour les clients<textarea data-b="descVente" rows="2" maxlength="600" placeholder="Parfum, taille, durée de combustion…">${esc(r.descVente||"")}</textarea></label></div>
     <label class="ligne" style="gap:8px;margin-top:8px"><input type="checkbox" data-b="choixParfum" ${r.choixParfum?"checked":""}> Le client choisit son parfum</label>
-    <p class="aide" style="margin:2px 0 0">Il voit tous tes parfums de l’inventaire, en direct : ceux qui n’ont plus assez de stock pour cette bougie s’affichent « épuisé ».</p></div>
+    <p class="aide" style="margin:2px 0 0">Il voit tous les parfums de ton inventaire (jamais ton stock). Dans « Commandes », Mel te prévient s’il faut en racheter.</p></div>
    <div class="carte"><label class="champ">Notes (température, temps de prise, astuces…)<textarea data-b="notes" rows="4" maxlength="3000" placeholder="Couler à 65 °C, attendre 40 min entre les couches…">${esc(r.notes)}</textarea></label></div>
    <div class="barre-enreg"><button class="btn" data-act="enregistrer">Enregistrer la recette</button><button class="btn leger" data-act="annuler">Annuler</button></div>
   </div></div>`;
@@ -2164,7 +2167,7 @@ addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toas
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.7";
+const VERSION="4.8";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
