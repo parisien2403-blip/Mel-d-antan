@@ -1,8 +1,8 @@
 {
-  "version": "4.4",
+  "version": "4.5",
   "date": "2026-11-17",
   "notes": [
-    "Affiche : toutes les créations que tu coches tiennent sur la même feuille A4",
-    "Boutons « Tout cocher » et « Tout décocher » pour choisir vite"
+    "Affiche : les noms des créations s’écrivent en entier (sur deux lignes si besoin)",
+    "Affiche : l’aperçu ne passe plus sous les boutons"
   ]
 }
