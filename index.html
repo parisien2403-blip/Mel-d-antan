@@ -410,6 +410,10 @@ nav.bas .badge-cmd{position:absolute;margin:-4px 0 0 18px}nav.bas button{positio
 .pill-vente{display:inline-block;background:var(--fond);border:1px solid var(--cafe);color:var(--cafe);border-radius:999px;padding:2px 10px;font-size:.85rem;margin:4px 0 0}.pill-vente.attente{border-color:var(--alerte);color:var(--alerte)}
 .carte.vente{border-color:var(--cafe)}
 @media (max-width:620px){nav.bas button{font-size:.66rem;padding:8px 1px 10px}}
+.qr-fenetre{text-align:left}.qr-grand{background:#fff;border-radius:16px;padding:10px;width:min(300px,80vw);margin:6px auto 0;box-shadow:var(--ombre)}.qr-grand svg{width:100%;height:auto;display:block}
+.lien-boutique{text-align:center;font-weight:700;color:var(--cafe);word-break:break-all;margin:6px 0}
+.installer-b{display:flex;align-items:center;gap:12px;background:var(--carte);border:1.5px dashed var(--cafe);border-radius:16px;padding:10px 14px;margin-bottom:16px}
+.installer-b img{width:46px;height:46px;border-radius:12px}.installer-b div{flex:1;min-width:0}.installer-b small{display:block;color:var(--doux)}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -738,6 +742,34 @@ const produitCat=id=>(CAT&&CAT.produits||[]).find(p=>p.id===id);
 const lignesPanier=()=>panier.map(l=>({...l,p:produitCat(l.id)})).filter(l=>l.p);
 const nbPanier=()=>lignesPanier().reduce((a,l)=>a+l.q,0);
 function savePanier(){LSJ.set("boutique.panier",panier)}
+/* ---------- QR code et affichette de la boutique ---------- */
+const lienBoutique=()=>location.origin+location.pathname;
+let qrPret=null;
+const chargerQR=()=>qrPret||(qrPret=new Promise((ok,ko)=>{if(window.qrcode)return ok();const sc=document.createElement("script");sc.src="vendor/qrcode.js";sc.onload=ok;sc.onerror=()=>{qrPret=null;ko(new Error("Le QR code n’a pas pu se charger"))};document.head.appendChild(sc)}));
+function qrObjet(t){const q=qrcode(0,"M");q.addData(t);q.make();return q}
+const qrSVG=t=>qrObjet(t).createSvgTag({cellSize:6,margin:2,scalable:true});
+async function ouvrirQR(){try{await chargerQR();calque={qr:true};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}catch(e){toast(e.message)}}
+// Affichette à imprimer ou partager : logo, titre, QR code, lien
+async function affichette(){
+  await chargerQR();const W=1080,H=1440,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  x.fillStyle="#f3e9d6";x.fillRect(0,0,W,H);x.strokeStyle="#88502f";x.lineWidth=10;x.strokeRect(30,30,W-60,H-60);x.lineWidth=3;x.strokeRect(50,50,W-100,H-100);
+  const logo=await chargerImage("logo-rond.png");x.drawImage(logo,W/2-170,90,340,340);
+  x.textAlign="center";x.fillStyle="#88502f";x.font="italic bold 64px Georgia, serif";x.fillText("Les bougies de Mel d’antan",W/2,510);
+  x.fillStyle="#3b2f23";x.font="34px Georgia, serif";x.fillText("Bougies gourmandes faites main",W/2,565);
+  const q=qrObjet(lienBoutique()),n=q.getModuleCount(),t=620,cell=Math.floor(t/(n+4)),cote=cell*(n+4),x0=Math.round((W-cote)/2),y0=610;
+  x.fillStyle="#fff";x.fillRect(x0,y0,cote,cote);x.fillStyle="#3b2f23";
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(q.isDark(i,j))x.fillRect(x0+(j+2)*cell,y0+(i+2)*cell,cell+.5,cell+.5);
+  x.fillStyle="#88502f";x.font="bold 40px Georgia, serif";x.fillText("Scanne pour voir les bougies et commander",W/2,y0+cote+75);
+  x.fillStyle="#3b2f23";x.font="32px Georgia, serif";x.fillText(lienBoutique().replace(/^https?:\/\//,"").replace(/\/$/,""),W/2,y0+cote+130);
+  return c.toDataURL("image/png");
+}
+async function telechargerAffichette(){try{const d=await affichette();const a=document.createElement("a");a.href=d;a.download="mel-dantan-qr-boutique.png";document.body.appendChild(a);a.click();a.remove();toast("Affichette téléchargée")}catch(e){toast(e.message)}}
+async function partagerAffichette(){
+  try{const d=await affichette(),b=await (await fetch(d)).blob(),f=new File([b],"mel-dantan-boutique.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:"Mel d’antan",text:"Les bougies gourmandes de Mel d’antan : "+lienBoutique()});
+    else telechargerAffichette()}catch(e){if(e.name!=="AbortError")toast("Partage impossible : télécharge l’affichette")}
+}
+const dejaInstallee=()=>matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true;
 async function chargerCatalogue(){
   try{const r=await fetch("api/boutique",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.erreur||"La boutique ne répond pas.");CAT=d;catErreur="";LSJ.set("boutique.catalogue",d)}
   catch(e){catErreur=navigator.onLine?e.message:"Pas d’internet : voici le dernier catalogue vu."}
@@ -755,6 +787,7 @@ function vCatalogue(){
   return `${apercu?`<div class="apercu-bandeau">👁 Aperçu de ta boutique, comme la voient tes clients. <button class="btn petit" data-act="finApercu">Revenir à l’atelier</button></div>`:""}
   <section class="b-accueil"><img src="logo.jpg" alt="Mel d’antan"><div><h2>Les bougies de Mel d’antan</h2><p>${esc(b?b.accueil:"Des bougies gourmandes coulées et décorées à la main.")}</p>
     ${b?`<p class="aide">${b.retrait?"🏠 Retrait possible":""}${b.retrait&&b.livraison?" · ":""}${b.livraison?`🚚 Livraison${b.livraisonFrais?` (${eur(b.livraisonFrais)})`:" offerte"}`:""} · 💶 ${esc(b.paiement)}</p>`:""}</div></section>
+  ${!dejaInstallee()&&!apercu?`<div class="installer-b"><img src="icon-192.png" alt=""><div><b>Installe l’appli Mel d’antan</b><small>Retrouve les bougies et suis tes commandes en un geste.</small></div><button class="btn petit" data-act="installerB">📲 Installer</button></div>`:""}
   ${catErreur?`<p class="aide" style="color:var(--alerte)">${esc(catErreur)}</p>`:""}
   ${!CAT?`<p class="aide">Chargement de la boutique…</p>`:b&&!b.ouverte?`<div class="carte"><b>La boutique est fermée pour le moment.</b><p class="aide">Reviens bientôt : Mel prépare de nouvelles bougies !</p></div>`
    :ps.length?`<div class="grille">${ps.map(p=>`<div class="vignette produit-b"><button class="image" data-produit-b="${p.id}" aria-label="Voir ${esc(p.nom)}">${imageProduit(p,true)}</button>
@@ -836,7 +869,7 @@ function vCommandes(){
   const l=CMD.commandes.filter(c=>filtreCmd==="toutes"||!["livree","annulee"].includes(c.statut)),b=CMD.boutique||{};
   const lien=location.origin+location.pathname;
   return `<div class="carte b-outils"><div><b>Ta boutique ${b.ouverte?"est ouverte":"est fermée"}</b><p class="aide" style="margin:2px 0 0">Le lien à donner à tes clients : <b>${esc(lien.replace(/^https?:\/\//,""))}</b></p></div>
-    <div class="ligne"><button class="btn leger petit" data-act="partagerBoutique">Partager le lien</button><button class="btn leger petit" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn petit" data-act="reglagesBoutique">Réglages de la boutique</button></div></div>
+    <div class="ligne"><button class="btn leger petit" data-act="qrBoutique">▦ QR code</button><button class="btn leger petit" data-act="partagerBoutique">Partager le lien</button><button class="btn leger petit" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn petit" data-act="reglagesBoutique">Réglages de la boutique</button></div></div>
   <p class="aide">Pour mettre une bougie en vente : ouvre la recette › Modifier › « Vente en boutique ». Les clients ne voient jamais tes ingrédients.</p>
   <div class="puces" style="margin:12px 0"><button class="puce ${filtreCmd==="atraiter"?"on":""}" data-filtre-cmd="atraiter">À traiter (${CMD.commandes.filter(c=>!["livree","annulee"].includes(c.statut)).length})</button><button class="puce ${filtreCmd==="toutes"?"on":""}" data-filtre-cmd="toutes">Toutes (${CMD.commandes.length})</button><button class="btn leger petit" data-act="rafraichirCmd" style="margin-left:auto">↻</button></div>
   ${l.length?l.map(c=>`<div class="carte commande ${c.statut}"><div class="ligne" style="justify-content:space-between"><b>${esc(c.ref)} · ${esc(c.client.nom)}</b><small class="aide">${quand(c.cree)}</small></div>
@@ -1664,7 +1697,7 @@ function vReglages(){
   ${pleinEcranDispo()||matchMedia("(display-mode: fullscreen)").matches?`<div class="carte"><b>Plein écran</b><p class="aide">L’appli prend tout l’écran, sans les barres du téléphone, de la tablette ou du navigateur. ${SYSTEME==="ordinateur"?"Touche Échap pour en sortir.":"Fais glisser depuis le bord de l’écran pour revoir les barres un instant."}</p>
    <div class="ligne" style="margin-top:10px"><button class="btn ${pleinEcranVoulu()?"leger":""}" data-act="pleinEcranAuto">${pleinEcranVoulu()?"✓ Toujours en plein écran":"Toujours en plein écran"}</button>${pleinEcranDispo()?(enPleinEcran()?`<button class="btn leger" data-act="sortirPleinEcran">Sortir du plein écran</button>`:`<button class="btn leger" data-act="pleinEcranMaintenant">Plein écran maintenant</button>`):""}</div></div>`
    :SYSTEME==="ios"?`<div class="carte"><b>Plein écran</b><p class="aide">Sur iPad et iPhone, installe l’appli sur l’écran d’accueil (Partager › « Sur l’écran d’accueil ») : elle s’ouvre alors sans les barres de Safari. Apple garde toujours l’heure et la batterie en haut.</p></div>`:""}
-  <div class="carte"><b>Espace créatrice</b><p class="aide">Sur cet appareil, tu es dans ton atelier. Tes clients, eux, arrivent sur la boutique.</p><div class="ligne" style="margin-top:8px"><button class="btn leger" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn leger" data-act="quitterAtelier">Quitter l’espace créatrice sur cet appareil</button></div></div>
+  <div class="carte"><b>Espace créatrice</b><p class="aide">Sur cet appareil, tu es dans ton atelier. Tes clients, eux, arrivent sur la boutique.</p><div class="ligne" style="margin-top:8px"><button class="btn leger" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn leger" data-act="qrBoutique">▦ QR code de la boutique</button><button class="btn leger" data-act="quitterAtelier">Quitter l’espace créatrice sur cet appareil</button></div></div>
   <div class="carte"><b>Apparence</b><div class="puces" style="margin-top:10px">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="puce ${theme===k?"on":""}" data-theme-choix="${k}">${l}</button>`).join("")}</div></div>
   ${syncPossible()?`<div class="carte"><b>Carnet partagé entre tes appareils</b>
    <p class="aide">${syncEtat.codeRequis?"Tape ton code pour retrouver le même carnet sur cet appareil.":syncEtat.erreur?`⚠️ ${esc(syncEtat.erreur)}`:syncEtat.derniere?`✓ À jour · dernière synchronisation à ${syncEtat.derniere.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`:"Synchronisation en cours…"}</p>
@@ -1688,6 +1721,16 @@ const fondThemes=t=>{if(t==="auto")document.documentElement.removeAttribute("dat
 function rendreCalque(){
   const z=document.getElementById("calque");
   if(!calque){z.innerHTML="";return}
+  if(calque.qr){z.innerHTML=`<div class="voile" data-fermer><div class="fenetre qr-fenetre"><h2 style="font-size:1.3rem">Le QR code de ta boutique</h2>
+    <p class="aide" style="margin:0">Tes clients le scannent avec l’appareil photo de leur téléphone : la boutique s’ouvre, et ils peuvent installer l’appli.</p>
+    <div class="qr-grand">${qrSVG(lienBoutique())}</div><p class="lien-boutique">${esc(lienBoutique().replace(/^https?:\/\//,"").replace(/\/$/,""))}</p>
+    <div class="ligne" style="justify-content:center"><button class="btn" data-act="partagerAffichette">Partager l’affichette</button><button class="btn leger" data-act="telechargerAffichette">Télécharger l’affichette</button><button class="btn leger" data-act="copierLien">Copier le lien</button></div>
+    <p class="aide" style="margin:0;text-align:center">L’affichette (logo, QR code et lien) s’imprime pour tes marchés, tes étiquettes ou tes cartes, ou se partage sur les réseaux.</p>
+    <div class="ligne" style="justify-content:flex-end"><button class="btn leger" data-fermer>Fermer</button></div></div></div>`;return}
+  if(calque.installB){z.innerHTML=`<div class="voile" data-fermer><div class="fenetre"><h2 style="font-size:1.3rem">Installer l’appli Mel d’antan</h2>
+    ${SYSTEME==="ios"?`<p>Sur iPhone ou iPad, dans <b>Safari</b> :</p><ol><li>touche le bouton <b>Partager</b> (le carré avec une flèche) ;</li><li>choisis <b>« Sur l’écran d’accueil »</b> ;</li><li>touche <b>Ajouter</b>.</li></ol>`
+     :`<p>Dans le menu de ton navigateur (les <b>⋮</b> en haut à droite), choisis <b>« Installer l’application »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.</p>`}
+    <p class="aide">L’icône Mel d’antan apparaît alors avec tes autres applis. Rien à payer, aucune inscription.</p><div class="ligne" style="justify-content:flex-end"><button class="btn" data-fermer>J’ai compris</button></div></div></div>`;return}
   if(calque.entrer){z.innerHTML=`<div class="voile" data-fermer><form class="fenetre" id="fEntrer"><h2 style="font-size:1.3rem">Espace créatrice</h2><p class="aide" style="margin:0">Réservé à Mel : tape ton code pour ouvrir ton atelier sur cet appareil.</p>
     <input type="password" id="codeEntrer" required autocomplete="current-password" placeholder="Code"><p class="aide" id="erreurCode" style="color:var(--alerte);margin:0"></p>
     <div class="ligne" style="justify-content:flex-end"><button type="button" class="btn leger" data-fermer>Annuler</button><button class="btn">Entrer</button></div></form></div>`;setTimeout(()=>document.getElementById("codeEntrer")?.focus(),50);return}
@@ -1799,6 +1842,11 @@ document.addEventListener("click",e=>{
   else if(act==="reglagesBoutique"){calque={boutique:{...BOUTIQUE_VIDE,...(CMD&&CMD.boutique||{})}};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}
   else if(act==="partagerBoutique"){const lien=location.origin+location.pathname;if(navigator.share)navigator.share({title:"Mel d’antan",text:"Les bougies gourmandes de Mel d’antan",url:lien}).catch(()=>{});else navigator.clipboard?.writeText(lien).then(()=>toast("Lien copié"),()=>toast(lien))}
   else if(act==="quitterAtelier"){demander("Quitter l’espace créatrice sur cet appareil ?","Cet appareil affichera la boutique, comme pour un client. Ton carnet reste en ligne : tu le retrouveras avec ton code.",{oui:"Quitter",danger:true}).then(v=>{if(v){try{localStorage.removeItem("carnet.codeMel")}catch(e){}desabonnerPush();boutique=true;CMD=null;vue="b-catalogue";history.replaceState({vue},"");chargerCatalogue();rendre()}})}
+  else if(act==="qrBoutique")ouvrirQR();
+  else if(act==="telechargerAffichette")telechargerAffichette();
+  else if(act==="partagerAffichette")partagerAffichette();
+  else if(act==="copierLien")navigator.clipboard?.writeText(lienBoutique()).then(()=>toast("Lien copié"),()=>toast(lienBoutique()));
+  else if(act==="installerB"){if(invite)installer();else{calque={installB:true};history.pushState({vue,id:courant,calque:1},"");rendreCalque()}}
   else if(act==="voirHistorique"){ongletInv="historique";aller("inventaire")}
   else if(act==="annulerCoulee"){const c=(D.coulees||[]).find(x=>x.id===d.coulee);if(c)demander("Annuler cette coulée ?",`${c.nom}, ${quand(c.date)} (${nbBougies(c.mult)}) : les produits retirés reviendront dans ton stock.`,{oui:"Annuler la coulée",non:"Garder",danger:true}).then(v=>{if(v)annulerCoulee(c)})}
   else if(act==="ajoutCouche")garder(()=>brouillon.couches.push({nom:"",couleur:"",texture:"lisse",ingredients:[{produit:"",q:""}]}));
@@ -1916,11 +1964,12 @@ async function importer(file){
 
 /* ---------- Installation (PWA) ---------- */
 let invite=null,installable=false;
-addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installable=true;if(vue==="sauvegarde")rendre()});
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();invite=e;installable=true;if(vue==="sauvegarde"||enBoutique())rendre()});
+addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toast("L’appli Mel d’antan est installée !")});
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.0";
+const VERSION="4.1";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){

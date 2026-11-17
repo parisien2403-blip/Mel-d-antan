@@ -1,9 +1,9 @@
 {
-  "version": "4.0",
+  "version": "4.1",
   "date": "2026-11-17",
   "notes": [
-    "Ta boutique : tes clients voient tes bougies en vente et passent commande",
-    "Onglet Commandes : tu reçois les commandes et suis leur préparation",
-    "Historique des coulées"
+    "QR code et affichette à imprimer pour faire connaître ta boutique",
+    "Tes clients peuvent installer l’appli depuis la boutique",
+    "Ta boutique : tes clients commandent, tu reçois les commandes"
   ]
 }
