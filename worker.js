@@ -434,16 +434,30 @@ function nettoyerBoutique(b) {
     livraison: !!b.livraison, livraisonFrais: euros(b.livraisonFrais), livraisonInfos: txt(b.livraisonInfos, 300),
     paiement: txt(b.paiement, 200) || BOUTIQUE_DEFAUT.paiement, mentions: txt(b.mentions, 3000) };
 }
-// Recettes en vente, sans jamais les ingrédients ni les notes : nom, prix, description, photo, aperçu des couches
-async function catalogue(env) {
+// Nom d'un parfum montré aux clients : sans les notes entre parenthèses (fournisseur, contenance…)
+const nomClient = n => String(n || "").replace(/\s*\([^)]*\)/g, "").trim().slice(0, 60) || String(n || "").slice(0, 60);
+// Recettes en vente, sans jamais les ingrédients ni les notes : nom, prix, description, photo, aperçu des couches.
+// Bougie « au choix du parfum » : la liste des parfums de l'inventaire, disponible ou épuisé selon le stock du moment
+// (assez pour une bougie : la quantité de parfum de la recette). Les quantités ne sont jamais envoyées aux clients :
+// avecStock les garde pour vérifier une commande côté serveur.
+async function catalogue(env, avecStock) {
   const el = await lireCarnet(env);
   const produits = {}; for (const e of el) if (e.genre === "produit") produits[e.id] = e.data;
-  return el.filter(e => e.genre === "recette" && e.data.enVente && Number(e.data.prix) > 0).map(({ data: r }) => ({
+  const parfums = Object.values(produits).filter(p => p.type === "parfum" && !p.horsBoutique && p.nom)
+    .sort((a, b) => nomClient(a.nom).localeCompare(nomClient(b.nom), "fr"));
+  const suivi = p => p.stock != null && p.stock !== "";
+  return el.filter(e => e.genre === "recette" && e.data.enVente && Number(e.data.prix) > 0).map(({ data: r }) => {
+    const ing = (r.couches || []).flatMap(c => c.ingredients || []).filter(x => produits[x.produit] && produits[x.produit].type === "parfum");
+    const besoin = ing.reduce((a, x) => a + (Number(x.q) || 0), 0);
+    const choix = r.choixParfum && parfums.length ? parfums.map(p => ({ id: p.id, nom: nomClient(p.nom),
+      dispo: !suivi(p) || (Number(p.stock) > 0 && Number(p.stock) >= besoin), ...(avecStock ? { stock: suivi(p) ? Number(p.stock) : null } : {}) })) : null;
+    return {
     id: r.id, nom: txt(r.nom, 80), prix: euros(r.prix), description: txt(r.descVente, 600), contenant: r.contenant, remplissage: r.remplissage ?? 88,
     photo: typeof r.photo === "string" && r.photo.startsWith("photo:") ? r.photo.slice(6) : null,
     couches: (r.couches || []).map(c => ({ texture: c.texture || "lisse",
       couleur: c.couleur || ((c.ingredients || []).map(x => produits[x.produit]).find(p => p && p.type === "colorant" && p.couleur) || {}).couleur || "" })),
-  })).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+    ...(choix ? { parfums: choix, parfumRecette: ing.length ? ing[0].produit : null } : {}), ...(avecStock ? { besoin } : {}),
+  };}).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 }
 const refCommande = n => "C-" + String(n).padStart(4, "0");
 const commandePublique = c => ({ numero: c.numero, ref: refCommande(c.numero), statut: c.statut, cree: c.cree, maj: c.maj, ...JSON.parse(c.data) });
@@ -471,13 +485,23 @@ async function boutique(env, request, chemin) {
     if (!await limite(env, "commande:" + ipDe(request), 10, 3600)) return json({ erreur: "Trop de commandes d’un coup. Réessaie dans une heure." }, 429);
     const b = await reglagesBoutique(env);
     if (!b.ouverte) return json({ erreur: "La boutique est fermée pour le moment." }, 409);
-    const cat = {}; for (const p of await catalogue(env)) cat[p.id] = p;
-    const lignes = [];
+    const cat = {}; for (const p of await catalogue(env, true)) cat[p.id] = p;
+    const lignes = [], parfumUtilise = {};
     for (const l of (Array.isArray(corps.lignes) ? corps.lignes : []).slice(0, 30)) {
       const p = cat[l && l.id], q = Math.floor(Number(l && l.q));
       if (!p) return json({ erreur: "Une bougie de ton panier n’est plus en vente : vérifie ton panier." }, 409);
       if (!(q >= 1 && q <= 50)) return json({ erreur: "Quantité impossible." }, 400);
-      lignes.push({ id: p.id, nom: p.nom, prix: p.prix, q });
+      const ligne = { id: p.id, nom: p.nom, prix: p.prix, q };
+      if (p.parfums) {
+        const pf = p.parfums.find(x => x.id === l.parfum);
+        if (!pf) return json({ erreur: `Choisis un parfum pour « ${p.nom} ».`, parfum: true }, 409);
+        if (!pf.dispo) return json({ erreur: `Le parfum ${pf.nom} vient d’être épuisé : choisis-en un autre pour « ${p.nom} ».`, parfum: true }, 409);
+        // Assez de stock pour toutes les bougies du panier avec ce parfum
+        if (pf.stock != null) { parfumUtilise[pf.id] = (parfumUtilise[pf.id] || 0) + p.besoin * q;
+          if (parfumUtilise[pf.id] > pf.stock) return json({ erreur: `Il ne reste pas assez de parfum ${pf.nom} pour autant de bougies : baisse la quantité ou choisis un autre parfum.`, parfum: true }, 409); }
+        ligne.parfum = pf.nom;
+      }
+      lignes.push(ligne);
     }
     if (!lignes.length) return json({ erreur: "Ton panier est vide." }, 400);
     const c = corps.client || {};
@@ -490,7 +514,7 @@ async function boutique(env, request, chemin) {
     const data = { client, mode, lignes, sousTotal, frais, total: euros(sousTotal + frais), paiement: b.paiement };
     const cle = crypto.randomUUID().replace(/-/g, ""), maintenant = new Date().toISOString();
     const r = await env.DB.prepare("INSERT INTO commandes (cle, data, statut, cree, maj) VALUES (?, ?, 'nouvelle', ?, ?) RETURNING numero").bind(cle, JSON.stringify(data), maintenant, maintenant).first();
-    const resume = lignes.map(l => `${l.q} × ${l.nom}`).join(", ");
+    const resume = lignes.map(l => `${l.q} × ${l.nom}${l.parfum ? ` (${l.parfum})` : ""}`).join(", ");
     attendre(pousser(env, { titre: `Mel : nouvelle commande de ${client.nom} !`, texte: `${refCommande(r.numero)} · ${resume} · ${data.total.toFixed(2).replace(".", ",")} € (${mode === "livraison" ? "livraison" : "retrait"}).`, vue: "commandes", tag: "commande-" + r.numero }).catch(e => console.error(e)));
     return json({ commande: { numero: r.numero, ref: refCommande(r.numero), cle, statut: "nouvelle", cree: maintenant, ...data } });
   }

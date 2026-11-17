@@ -390,6 +390,9 @@ body.annonce-ouverte .flottant,body.annonce-ouverte .pastille-mel{display:none}
 .ligne-panier .mini{width:56px;height:56px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--fond);flex:none}
 .ligne-panier .mini img{width:100%;height:100%;object-fit:cover}.ligne-panier .mini svg{height:50px}
 .ligne-panier .nom{flex:1;min-width:0}
+.choix-parfum{margin-top:12px;padding:12px;border-radius:14px;background:var(--fond)}.choix-parfum .puces{margin-top:8px}
+.puce.epuise{opacity:.5;text-decoration:line-through;cursor:not-allowed}.puce.epuise small{text-decoration:none}
+.manque-parfum{color:var(--alerte)!important}
 @media (max-width:620px){.ligne-panier{flex-wrap:wrap}.ligne-panier .nom{flex:1 1 calc(100% - 70px)}.ligne-panier .stock{margin-left:68px}.ligne-panier .prix{margin-left:auto}}
 .produit-b .image{aspect-ratio:1;align-items:center;justify-content:center;background:linear-gradient(180deg,#faf3e4,#ecdcc0)}.produit-b .image img{width:100%;height:100%;object-fit:cover}.ligne-panier small{display:block;color:var(--doux)}
 .total-cmd{background:var(--fond);border-radius:12px;padding:10px 14px;margin:10px 0}
@@ -743,7 +746,12 @@ const ETAPES_CMD=["nouvelle","confirmee","prete","livree"];
 const photoProduit=p=>p.photo?`api/boutique/photo/${p.photo}`:null;
 const imageProduit=(p,mini)=>photoProduit(p)?`<img src="${photoProduit(p)}" alt="${esc(p.nom)}" loading="lazy">`:dessin({contenant:CONTENANTS[p.contenant]?p.contenant:"verrine",remplissage:p.remplissage,couches:(p.couches||[]).map(c=>({...c,ingredients:[]}))},{mini});
 const produitCat=id=>(CAT&&CAT.produits||[]).find(p=>p.id===id);
-const lignesPanier=()=>panier.map(l=>({...l,p:produitCat(l.id)})).filter(l=>l.p);
+const lignesPanier=()=>panier.map((l,i)=>({...l,i,p:produitCat(l.id)})).filter(l=>l.p);
+// Parfum choisi par le client sur la fiche d'une bougie (avant l'ajout au panier)
+let parfumChoisi={};
+const parfumDe=(p,id)=>(p&&p.parfums||[]).find(x=>x.id===id);
+// Ligne du panier dont le parfum n'est pas (ou plus) disponible
+const parfumManquant=l=>l.p.parfums&&!(parfumDe(l.p,l.parfum)||{}).dispo;
 const nbPanier=()=>lignesPanier().reduce((a,l)=>a+l.q,0);
 function savePanier(){LSJ.set("boutique.panier",panier)}
 /* ---------- QR code et affichette de la boutique ---------- */
@@ -775,9 +783,11 @@ async function partagerAffichette(){
 }
 const dejaInstallee=()=>matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true;
 async function chargerCatalogue(){
+  const avant=JSON.stringify(CAT)+catErreur;
   try{const r=await fetch("api/boutique",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.erreur||"La boutique ne répond pas.");CAT=d;catErreur="";LSJ.set("boutique.catalogue",d)}
   catch(e){catErreur=navigator.onLine?e.message:"Pas d’internet : voici le dernier catalogue vu."}
-  if(enBoutique())rendre();
+  // Rien de changé : on ne redessine pas (le formulaire du panier garde ce qui est tapé)
+  if(enBoutique()&&JSON.stringify(CAT)+catErreur!==avant&&!(vue==="b-panier"&&saisieEnCours()))rendre();
 }
 async function suivreCommandes(){
   if(!mesCommandes.length)return;
@@ -785,7 +795,14 @@ async function suivreCommandes(){
     let change=false;for(const s of d.commandes||[]){const c=mesCommandes.find(x=>x.numero===s.numero);if(c&&c.statut!==s.statut){c.statut=s.statut;c.maj=s.maj;change=true}}
     if(change){LSJ.set("boutique.commandes",mesCommandes);if(enBoutique())rendre()}}catch(e){}
 }
-function ajouterPanier(id,q=1){const l=panier.find(x=>x.id===id);if(l)l.q=Math.min(50,l.q+q);else panier.push({id,q});savePanier();rendre();toast(`« ${produitCat(id)?.nom||"Bougie"} » ajoutée au panier`)}
+function ajouterPanier(id,q=1){
+  const p=produitCat(id);let parfum;
+  if(p&&p.parfums){parfum=parfumChoisi[id];const pf=parfumDe(p,parfum);
+    // Au catalogue, le parfum se choisit sur la fiche de la bougie
+    if(!pf){if(vue!=="b-produit"){produitOuvert=id;aller("b-produit")}else toast("Choisis d’abord ton parfum");return}
+    if(!pf.dispo){toast(`Le parfum ${pf.nom} est épuisé : choisis-en un autre`);return}}
+  const l=panier.find(x=>x.id===id&&(x.parfum||null)===(parfum||null));if(l)l.q=Math.min(50,l.q+q);else panier.push(parfum?{id,q,parfum}:{id,q});
+  savePanier();rendre();toast(`« ${p?.nom||"Bougie"} »${parfum?` (${parfumDe(p,parfum).nom})`:""} ajoutée au panier`)}
 function vCatalogue(){
   const b=CAT&&CAT.boutique,ps=CAT&&CAT.produits||[];
   return `${apercu?`<div class="apercu-bandeau">👁 Aperçu de ta boutique, comme la voient tes clients. <button class="btn petit" data-act="finApercu">Revenir à l’atelier</button></div>`:""}
@@ -795,7 +812,7 @@ function vCatalogue(){
   ${catErreur?`<p class="aide" style="color:var(--alerte)">${esc(catErreur)}</p>`:""}
   ${!CAT?`<p class="aide">Chargement de la boutique…</p>`:b&&!b.ouverte?`<div class="carte"><b>La boutique est fermée pour le moment.</b><p class="aide">Reviens bientôt : Mel prépare de nouvelles bougies !</p></div>`
    :ps.length?`<div class="grille">${ps.map(p=>`<div class="vignette produit-b"><button class="image" data-produit-b="${p.id}" aria-label="Voir ${esc(p.nom)}">${imageProduit(p,true)}</button>
-     <div class="txt"><b>${esc(p.nom)}</b><small>${esc(CONTENANTS[p.contenant]?.nom||"")}</small><div class="ligne" style="justify-content:space-between;margin-top:6px"><span class="prix">${eur(p.prix)}</span><button class="btn petit" data-ajout-b="${p.id}">＋ Panier</button></div></div></div>`).join("")}</div>`
+     <div class="txt"><b>${esc(p.nom)}</b><small>${esc(CONTENANTS[p.contenant]?.nom||"")}</small><div class="ligne" style="justify-content:space-between;margin-top:6px"><span class="prix">${eur(p.prix)}</span>${p.parfums?`<button class="btn petit" data-produit-b="${p.id}">Choisir le parfum</button>`:`<button class="btn petit" data-ajout-b="${p.id}">＋ Panier</button>`}</div></div></div>`).join("")}</div>`
    :`<div class="vide"><p>Les bougies arrivent bientôt dans la boutique.</p></div>`}
   ${pieds()}`;
 }
@@ -804,14 +821,23 @@ function vProduitB(){
   const p=produitCat(produitOuvert);if(!p)return`<p class="vide">Cette bougie n’est plus en vente.</p>`;
   return `<div class="fiche"><div class="${p.photo?"":"scene"} b-grande">${imageProduit(p,false)}</div><div class="carte"><h2>${esc(p.nom)}</h2><p class="prix grand">${eur(p.prix)}</p>
     ${p.description?`<p style="white-space:pre-wrap">${esc(p.description)}</p>`:""}<p class="aide">${esc(CONTENANTS[p.contenant]?.nom||"")} · Fait main par Mel</p>
-    <div class="ligne" style="margin-top:12px"><button class="btn" data-ajout-b="${p.id}">＋ Ajouter au panier</button><button class="btn leger" data-aller="b-panier">Voir mon panier (${nbPanier()})</button></div></div></div>`;
+    ${p.parfums?choixParfumsB(p):""}
+    <div class="ligne" style="margin-top:12px"><button class="btn" data-ajout-b="${p.id}" ${p.parfums&&!(parfumDe(p,parfumChoisi[p.id])||{}).dispo?"disabled":""}>＋ Ajouter au panier</button><button class="btn leger" data-aller="b-panier">Voir mon panier (${nbPanier()})</button></div></div></div>`;
+}
+// Les parfums de l'inventaire de Mel, mis à jour en direct : un parfum épuisé ne peut pas être choisi
+function choixParfumsB(p){
+  const ch=parfumChoisi[p.id],nbDispo=p.parfums.filter(x=>x.dispo).length;
+  return `<div class="choix-parfum"><b>Choisis ton parfum</b>${nbDispo?"":`<p class="aide" style="color:var(--alerte)">Tous les parfums sont épuisés pour le moment. Reviens bientôt !</p>`}
+    <div class="puces">${p.parfums.map(x=>x.dispo?`<button type="button" class="puce ${ch===x.id?"on":""}" data-parfum-b="${p.id}|${x.id}">${ch===x.id?"✓ ":""}${esc(x.nom)}${x.id===p.parfumRecette?" ★":""}</button>`
+      :`<button type="button" class="puce epuise" disabled title="Épuisé pour le moment">${esc(x.nom)} <small>épuisé</small></button>`).join("")}</div>
+    <p class="aide" style="margin:4px 0 0">${p.parfums.some(x=>x.id===p.parfumRecette)?"★ le parfum d’origine de cette bougie · ":""}Disponibilités en direct selon le stock de Mel.</p></div>`;
 }
 function vPanier(){
   const ls=lignesPanier(),b=CAT&&CAT.boutique||{},cl=LSJ.get("boutique.client",{});
   if(!ls.length)return`<div class="vide"><p>Ton panier est vide.</p><button class="btn" data-aller="b-catalogue">Voir les bougies</button></div>`;
   const mode=cl.mode==="livraison"&&b.livraison||!b.retrait?"livraison":"retrait",st=ls.reduce((a,l)=>a+l.p.prix*l.q,0),frais=mode==="livraison"?+b.livraisonFrais||0:0;
-  return `<div class="carte">${ls.map(l=>`<div class="ligne-panier"><div class="mini">${imageProduit(l.p,true)}</div><div class="nom"><b>${esc(l.p.nom)}</b><small>${eur(l.p.prix)}</small></div>
-    <div class="stock"><button class="btn leger rond" data-qte-b="${l.id}:-1" aria-label="Moins">−</button><b>${l.q}</b><button class="btn leger rond" data-qte-b="${l.id}:1" aria-label="Plus">+</button></div><b class="prix">${eur(l.p.prix*l.q)}</b></div>`).join("")}</div>
+  return `<div class="carte">${ls.map(l=>`<div class="ligne-panier"><div class="mini">${imageProduit(l.p,true)}</div><div class="nom"><b>${esc(l.p.nom)}</b>${l.p.parfums?(parfumManquant(l)?`<small class="manque-parfum">Parfum ${esc(parfumDe(l.p,l.parfum)?.nom||"")} ${parfumDe(l.p,l.parfum)?"épuisé":"à choisir"} : <button type="button" class="lien" data-retirer-ligne-b="${l.i}" data-produit-b="${l.id}">choisir un autre parfum</button></small>`:`<small>Parfum : ${esc(parfumDe(l.p,l.parfum).nom)}</small>`):""}<small>${eur(l.p.prix)}</small></div>
+    <div class="stock"><button class="btn leger rond" data-qte-b="${l.i}:-1" aria-label="Moins">−</button><b>${l.q}</b><button class="btn leger rond" data-qte-b="${l.i}:1" aria-label="Plus">+</button></div><b class="prix">${eur(l.p.prix*l.q)}</b></div>`).join("")}</div>
   <form class="carte" id="fCommande"><b>Pour recevoir ta commande</b>
     <div class="ligne"><label class="champ">Prénom et nom<input type="text" id="cNom" required maxlength="80" autocomplete="name" value="${esc(cl.nom||"")}"></label>
      <label class="champ">Téléphone<input type="tel" id="cTel" required maxlength="30" autocomplete="tel" value="${esc(cl.tel||"")}"></label></div>
@@ -822,7 +848,8 @@ function vPanier(){
     <label class="champ">Un message pour Mel (facultatif)<textarea id="cMessage" rows="2" maxlength="1000" placeholder="Un parfum préféré, une date, un cadeau…"></textarea></label>
     <div class="total-cmd">${frais?`<div>Bougies : ${eur(st)}</div><div>Livraison : ${eur(frais)}</div>`:""}<div><b>Total : ${eur(st+frais)}</b></div><div class="aide">💶 ${esc(b.paiement||"Paiement à la livraison.")} Rien n’est à payer en ligne.</div></div>
     <p class="aide">Tes coordonnées servent uniquement à Mel pour préparer et te remettre ta commande.</p>
-    <button class="btn" ${envoiCmd?"disabled":""}>${envoiCmd?"Envoi…":"Envoyer ma commande"}</button></form>${pieds()}`;
+    ${ls.some(parfumManquant)?`<p class="aide" style="color:var(--alerte)">Un parfum de ton panier n’est plus disponible : choisis-en un autre avant d’envoyer.</p>`:""}
+    <button class="btn" ${envoiCmd||ls.some(parfumManquant)?"disabled":""}>${envoiCmd?"Envoi…":"Envoyer ma commande"}</button></form>${pieds()}`;
 }
 function frise(st){if(st==="annulee")return`<span class="pill-statut annulee">Annulée</span>`;const i=ETAPES_CMD.indexOf(st);return`<div class="frise">${ETAPES_CMD.map((e,k)=>`<span class="${k<=i?"fait":""}">${STATUTS_CMD[e][0]}</span>`).join("")}</div>`}
 function vMesCommandes(){
@@ -830,7 +857,7 @@ function vMesCommandes(){
   return `${derniereCmd?`<div class="carte merci"><img src="mel-avatar.png" alt=""><div><b>Merci ! Ta commande ${esc(derniereCmd)} est envoyée.</b><p class="aide">Mel va la confirmer. Tu peux suivre son avancement ici.</p></div></div>`:""}
   ${l.length?l.map(c=>`<div class="carte"><div class="ligne" style="justify-content:space-between"><b>Commande ${esc(c.ref)}</b><small class="aide">${new Date(c.cree).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</small></div>
     ${frise(c.statut)}<p class="aide" style="margin:6px 0">${STATUTS_CMD[c.statut]?.[1]||""}</p>
-    <div>${(c.lignes||[]).map(x=>`${x.q} × ${esc(x.nom)}`).join(" · ")}</div><div class="aide">${c.mode==="livraison"?"🚚 Livraison":"🏠 Retrait"} · <b>${eur(c.total)}</b> à régler ${c.mode==="livraison"?"à la livraison":"au retrait"}</div></div>`).join("")
+    <div>${(c.lignes||[]).map(x=>`${x.q} × ${esc(x.nom)}${x.parfum?` <small>(${esc(x.parfum)})</small>`:""}`).join(" · ")}</div><div class="aide">${c.mode==="livraison"?"🚚 Livraison":"🏠 Retrait"} · <b>${eur(c.total)}</b> à régler ${c.mode==="livraison"?"à la livraison":"au retrait"}</div></div>`).join("")
    :`<div class="vide"><p>Tu n’as pas encore passé de commande.</p><button class="btn" data-aller="b-catalogue">Voir les bougies</button></div>`}${pieds()}`;
 }
 async function envoyerCommande(){
@@ -843,7 +870,7 @@ async function envoyerCommande(){
     const r=await fetch("api/commande",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({client,lignes:panier})});const d=await r.json();
     if(!r.ok)throw new Error(d.erreur||"La commande n’a pas pu partir.");
     mesCommandes.push(d.commande);LSJ.set("boutique.commandes",mesCommandes);panier=[];savePanier();derniereCmd=d.commande.ref;envoiCmd=false;aller("b-commandes");
-  }catch(e){envoiCmd=false;rendre();toast(e.message);if(/plus en vente/.test(e.message))chargerCatalogue()}
+  }catch(e){envoiCmd=false;rendre();toast(e.message);if(/plus en vente|parfum/i.test(e.message))chargerCatalogue()}
 }
 async function entrerAtelier(code){
   try{const r=await fetch("api/atelier/entrer",{method:"POST",headers:{"content-type":"application/json","x-code-mel":code},body:"{}"});
@@ -862,7 +889,7 @@ async function chargerCommandesAtelier(){
   try{const d=await appelCarnet("atelier/commandes",{});
     const vues=new Set(LSJ.get("atelier.cmdVues",[])),nouvelles=d.commandes.filter(c=>c.statut==="nouvelle"&&!vues.has(c.numero));
     CMD=d;cmdErreur="";
-    if(nouvelles.length&&vue!=="commandes"){const c=nouvelles[0];annoncer("cmd",`<b>${nouvelles.length>1?`${nouvelles.length} nouvelles commandes !`:`Nouvelle commande de ${esc(c.client.nom)} !`}</b><p>${nouvelles.length>1?"Tes clients t’attendent.":`${esc(c.ref)} · ${c.lignes.map(l=>`${l.q} × ${esc(l.nom)}`).join(", ")} · ${eur(c.total)}`}</p><div class="ligne"><button class="btn petit" data-act="voirCommandes">Voir les commandes</button><button class="btn leger petit" data-act="okCmd">Plus tard</button></div>`)}
+    if(nouvelles.length&&vue!=="commandes"){const c=nouvelles[0];annoncer("cmd",`<b>${nouvelles.length>1?`${nouvelles.length} nouvelles commandes !`:`Nouvelle commande de ${esc(c.client.nom)} !`}</b><p>${nouvelles.length>1?"Tes clients t’attendent.":`${esc(c.ref)} · ${c.lignes.map(l=>`${l.q} × ${esc(l.nom)}${l.parfum?` (${esc(l.parfum)})`:""}`).join(", ")} · ${eur(c.total)}`}</p><div class="ligne"><button class="btn petit" data-act="voirCommandes">Voir les commandes</button><button class="btn leger petit" data-act="okCmd">Plus tard</button></div>`)}
     if(vue==="commandes")LSJ.set("atelier.cmdVues",d.commandes.map(c=>c.numero));
     nav();if(vue==="commandes")rendre();
   }catch(e){cmdErreur=e.message}
@@ -878,7 +905,7 @@ function vCommandes(){
   <div class="puces" style="margin:12px 0"><button class="puce ${filtreCmd==="atraiter"?"on":""}" data-filtre-cmd="atraiter">À traiter (${CMD.commandes.filter(c=>!["livree","annulee"].includes(c.statut)).length})</button><button class="puce ${filtreCmd==="toutes"?"on":""}" data-filtre-cmd="toutes">Toutes (${CMD.commandes.length})</button><button class="btn leger petit" data-act="rafraichirCmd" style="margin-left:auto">↻</button></div>
   ${l.length?l.map(c=>`<div class="carte commande ${c.statut}"><div class="ligne" style="justify-content:space-between"><b>${esc(c.ref)} · ${esc(c.client.nom)}</b><small class="aide">${quand(c.cree)}</small></div>
     ${frise(c.statut)}
-    <ul class="lignes-cmd">${c.lignes.map(x=>`<li>${x.q} × ${esc(x.nom)} <small>(${eur(x.prix)})</small></li>`).join("")}</ul>
+    <ul class="lignes-cmd">${c.lignes.map(x=>`<li>${x.q} × ${esc(x.nom)}${x.parfum?` · <b>parfum ${esc(x.parfum)}</b>`:""} <small>(${eur(x.prix)})</small></li>`).join("")}</ul>
     <div><b>${eur(c.total)}</b>${c.frais?` <small class="aide">dont livraison ${eur(c.frais)}</small>`:""} · à encaisser ${c.mode==="livraison"?"à la livraison":"au retrait"}</div>
     <div class="contact"><a href="tel:${esc(c.client.tel.replace(/[^+\d]/g,""))}">📞 ${esc(c.client.tel)}</a>${c.client.email?` · <a href="mailto:${esc(c.client.email)}">✉️ ${esc(c.client.email)}</a>`:""}</div>
     <div class="aide">${c.mode==="livraison"?`🚚 Livraison : ${esc(c.client.adresse)}`:"🏠 Retrait"}</div>
@@ -1103,7 +1130,9 @@ function vEditer(){
    <div class="carte vente"><label class="ligne" style="gap:8px;font-weight:600"><input type="checkbox" data-b="enVente" ${r.enVente?"checked":""}> 🛍️ Vente en boutique</label>
     <p class="aide" style="margin:4px 0 8px">Tes clients voient le nom, la photo, le prix et la description. Jamais tes ingrédients ni tes notes.</p>
     <div class="ligne"><label class="champ" style="flex:none;width:140px">Prix (€)<input type="number" inputmode="decimal" min="0" step="0.5" data-b="prix" value="${esc(r.prix??"")}" placeholder="18"></label>
-     <label class="champ">Description pour les clients<textarea data-b="descVente" rows="2" maxlength="600" placeholder="Parfum, taille, durée de combustion…">${esc(r.descVente||"")}</textarea></label></div></div>
+     <label class="champ">Description pour les clients<textarea data-b="descVente" rows="2" maxlength="600" placeholder="Parfum, taille, durée de combustion…">${esc(r.descVente||"")}</textarea></label></div>
+    <label class="ligne" style="gap:8px;margin-top:8px"><input type="checkbox" data-b="choixParfum" ${r.choixParfum?"checked":""}> Le client choisit son parfum</label>
+    <p class="aide" style="margin:2px 0 0">Il voit tous tes parfums de l’inventaire, en direct : ceux qui n’ont plus assez de stock pour cette bougie s’affichent « épuisé ».</p></div>
    <div class="carte"><label class="champ">Notes (température, temps de prise, astuces…)<textarea data-b="notes" rows="4" maxlength="3000" placeholder="Couler à 65 °C, attendre 40 min entre les couches…">${esc(r.notes)}</textarea></label></div>
    <div class="barre-enreg"><button class="btn" data-act="enregistrer">Enregistrer la recette</button><button class="btn leger" data-act="annuler">Annuler</button></div>
   </div></div>`;
@@ -1739,6 +1768,8 @@ function rendreSyncBandeau(){
     <div class="ligne"><input type="password" id="codeSync" placeholder="Code" autocomplete="current-password" style="flex:1;min-width:100px"><button class="btn petit">Valider</button><button type="button" class="btn leger petit" data-act="fermerSyncBandeau">Plus tard</button></div></form>`);
 }
 setInterval(()=>{if(document.hidden)return;if(boutique){suivreCommandes();if(vue==="b-catalogue")chargerCatalogue()}else{synchroniser();chargerCommandesAtelier()}},60000);
+// Disponibilité des parfums en direct sur la fiche d'une bougie et dans le panier
+setInterval(()=>{if(!document.hidden&&enBoutique()&&(vue==="b-produit"||vue==="b-panier"))chargerCatalogue()},20000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)planifierSync(500)});
 
 /* ---------- Historique des coulées : chaque « J’ai coulé » est noté, avec ce qu’il a retiré du stock ---------- */
@@ -1893,6 +1924,7 @@ function rendreCalque(){
     <label class="champ">Unité<select id="pUnite">${UNITES.map(([k,l])=>`<option value="${k}" ${p.unite===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
    <div class="ligne" style="align-items:flex-end"><label class="champ" style="flex:none">Couleur<input type="color" id="pCouleur" value="${p.couleur||"#f3e6cf"}"></label><label class="ligne" style="gap:6px;font-size:.9rem;color:var(--doux);flex:1"><input type="checkbox" id="pAvecCouleur" ${p.couleur?"checked":""}> Utiliser cette couleur dans le dessin (colorants, cires teintées…)</label></div>
    <div class="ligne"><label class="champ">Stock actuel (facultatif)<input type="number" inputmode="decimal" step="any" min="0" id="pStock" value="${esc(p.stock??"")}"></label><label class="champ">M’alerter sous (facultatif)<input type="number" inputmode="decimal" step="any" min="0" id="pAlerte" value="${esc(p.alerte??"")}"></label></div>
+   <label class="ligne" style="gap:8px;font-size:.92rem"><input type="checkbox" id="pBoutique" ${p.horsBoutique?"":"checked"}> Parfum : le proposer aux clients dans la boutique</label>
    <label class="champ">Note (marque, fournisseur, prix…)<input type="text" id="pNote" maxlength="120" value="${esc(p.note||"")}"></label>
    <div class="ligne" style="margin-top:6px"><button class="btn">Enregistrer</button><button type="button" class="btn leger" data-fermer>Annuler</button>${p.id?`<button type="button" class="btn leger" data-act="supprimerProduit" style="margin-left:auto">Supprimer</button>`:""}</div></form></div>`;
   if(!p.id)setTimeout(()=>document.getElementById("pNom")?.focus(),50);
@@ -1902,7 +1934,7 @@ function fermerCalque(){if(!calque)return;calque=null;rendreCalque();if(history.
 
 /* ---------- Actions ---------- */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-produit-b],[data-ajout-b],[data-sel-affiche],[data-opt-affiche],[data-qte-b],[data-mode-b],[data-statut-cmd],[data-filtre-cmd],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
+  const t=e.target.closest("[data-aller],[data-voir],[data-act],[data-mult],[data-contenant],[data-produit],[data-stock],[data-filtre],[data-fermer],[data-theme-choix],[data-tourner],[data-livre-aller],[data-livre-filtre],[data-mode-choix],[data-filtre-acc],[data-question-mel],[data-fiche-mel],[data-image-mel],[data-photo-recette],[data-sel-pdf],[data-onglet-inv],[data-coulee],[data-retirer-ligne-b],[data-parfum-b],[data-produit-b],[data-ajout-b],[data-sel-affiche],[data-opt-affiche],[data-qte-b],[data-mode-b],[data-statut-cmd],[data-filtre-cmd],[data-annuler-memo],[data-retirer-photo],[data-corriger],[data-oublier],#retour,#logo,#bascule");
   if(!t)return;const d=t.dataset;
   if(d.fermer!==undefined){if(e.target===t||t.tagName==="BUTTON")fermerCalque();return}
   if(t.id==="retour"){history.back();return}
@@ -1924,9 +1956,11 @@ document.addEventListener("click",e=>{
   if(d.selAffiche||d.optAffiche){const o=calque&&calque.affiche;if(!o)return;o.titre=document.getElementById("afTitre")?.value??o.titre;
     if(d.optAffiche)o[d.optAffiche]=!o[d.optAffiche];else{const i=o.ids.indexOf(d.selAffiche);if(i>=0)o.ids.splice(i,1);else o.ids.push(d.selAffiche)}
     rendreCalque();return}
+  if(d.retirerLigneB!=null){panier.splice(+d.retirerLigneB,1);savePanier();produitOuvert=d.produitB;aller("b-produit");return}
   if(d.produitB){produitOuvert=d.produitB;aller("b-produit");return}
   if(d.ajoutB){ajouterPanier(d.ajoutB);return}
-  if(d.qteB){const[id,k]=d.qteB.split(":");const l=panier.find(x=>x.id===id);if(l){l.q+=+k;if(l.q<=0)panier=panier.filter(x=>x!==l);if(l.q>50)l.q=50;savePanier();rendre()}return}
+  if(d.parfumB){const[pid,fid]=d.parfumB.split("|");parfumChoisi[pid]=fid;rendre();return}
+  if(d.qteB){const[i,k]=d.qteB.split(":");const l=panier[+i];if(l){l.q+=+k;if(l.q<=0)panier=panier.filter(x=>x!==l);if(l.q>50)l.q=50;savePanier();rendre()}return}
   if(d.modeB){const cl=LSJ.get("boutique.client",{});["cNom","cTel","cEmail","cAdresse"].forEach(id=>{const e=document.getElementById(id);if(e)cl[{cNom:"nom",cTel:"tel",cEmail:"email",cAdresse:"adresse"}[id]]=e.value});cl.mode=d.modeB;LSJ.set("boutique.client",cl);const msg=document.getElementById("cMessage")?.value||"";rendre();const m=document.getElementById("cMessage");if(m)m.value=msg;return}
   if(d.statutCmd){const[n,st]=d.statutCmd.split(":");const c=CMD&&CMD.commandes.find(x=>x.numero===+n);
     const faire=()=>appelCarnet("atelier/commande",{numero:+n,statut:st}).then(()=>{if(c){c.statut=st;c.maj=new Date().toISOString()}rendre();toast(`${c?c.ref:"Commande"} : ${STATUTS_CMD[st][0].toLowerCase()}`)}).catch(e=>toast(e.message));
@@ -2061,7 +2095,7 @@ document.addEventListener("submit",e=>{
   if(e.target.id==="fCodeSync"||e.target.id==="fCodeSyncReglages"){const v=(document.getElementById("codeSync")||document.getElementById("codeSyncR")).value.trim();if(!v)return;try{localStorage.setItem("carnet.codeMel",v)}catch(x){}syncEtat.codeRequis=false;rendreSyncBandeau();synchroniser();return}
   if(e.target.id!=="fProduit")return;
   const g=id=>document.getElementById(id).value;
-  const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim()};
+  const p={...calque.p,nom:g("pNom").trim(),type:g("pType"),unite:g("pUnite"),couleur:document.getElementById("pAvecCouleur").checked?g("pCouleur"):"",stock:g("pStock")===""?null:+g("pStock"),alerte:g("pAlerte")===""?null:+g("pAlerte"),note:g("pNote").trim(),horsBoutique:!document.getElementById("pBoutique").checked};
   if(!p.nom)return;
   if(!p.id){p.id=nouvelId();D.produits.push(p)}else D.produits[D.produits.findIndex(x=>x.id===p.id)]=p;
   const retour=calque.retour;sauver();fermerCalque();
@@ -2095,7 +2129,7 @@ addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toas
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.6";
+const VERSION="4.7";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
