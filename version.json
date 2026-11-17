@@ -1,8 +1,8 @@
 {
-  "version": "4.3",
+  "version": "4.4",
   "date": "2026-11-17",
   "notes": [
-    "Affiche de tes créations à imprimer ou partager (photos, prix, QR code)",
-    "Nouvelles petites icônes dans l’esprit Mel d’antan"
+    "Affiche : toutes les créations que tu coches tiennent sur la même feuille A4",
+    "Boutons « Tout cocher » et « Tout décocher » pour choisir vite"
   ]
 }
