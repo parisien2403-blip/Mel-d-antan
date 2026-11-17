@@ -1,8 +1,7 @@
 {
-  "version": "4.5",
+  "version": "4.6",
   "date": "2026-11-17",
   "notes": [
-    "Affiche : les noms des créations s’écrivent en entier (sur deux lignes si besoin)",
-    "Affiche : l’aperçu ne passe plus sous les boutons"
+    "Affiche : images bien plus grandes (en-tête et QR code plus compacts)"
   ]
 }

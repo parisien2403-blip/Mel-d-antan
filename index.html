@@ -1265,33 +1265,38 @@ async function dessinerAffiche(o){
   const recs=o.ids.map(R).filter(Boolean).sort((a,b)=>nomAffiche(a).localeCompare(nomAffiche(b),"fr"));if(!recs.length)throw new Error("Choisis au moins une création");
   const W=2480,H=3508,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
   x.fillStyle="#f3e9d6";x.fillRect(0,0,W,H);x.strokeStyle="#88502f";x.lineWidth=18;x.strokeRect(60,60,W-120,H-120);x.lineWidth=5;x.strokeRect(100,100,W-200,H-200);
-  const logo=await chargerImage("logo-rond.png");x.drawImage(logo,W/2-230,170,460,460);
-  x.textAlign="center";x.fillStyle="#88502f";x.font="italic bold 140px Georgia, serif";x.fillText(o.titre||"Les créations de Mel d’antan",W/2,790);
-  x.fillStyle="#3b2f23";x.font="64px Georgia, serif";x.fillText(o.sousTitre||"Bougies gourmandes coulées et décorées à la main",W/2,890);
-  // Grille : toutes les créations choisies tiennent sur la feuille, le nombre de colonnes donnant les plus grandes images
-  const n=recs.length,haut=o.qr?2900:3250,zoneH=haut-990,gx=180,zoneW=W-2*gx,gap=n>12?34:60;
-  const mesure=cols=>{const rows=Math.ceil(n/cols),cw=(zoneW-gap*(cols-1))/cols,fs=Math.max(24,Math.min(80,cw/8.5)),noms=recs.map(r=>nomLignes(x,nomAffiche(r),fs,cw*.9)),nomH=Math.max(fs*1.12,...noms.map(m=>m.l.length*m.f*1.12)),texteH=fs*.35+nomH+(o.prix?fs*1.15:0)+(o.desc?fs*1.45:0)+fs*.45,ch=Math.min(cw+texteH,(zoneH-gap*(rows-1))/rows);return{cols,rows,cw,fs,noms,nomH,texteH,ch,img:Math.min(cw,ch-texteH)}};
-  // On garde le nombre de colonnes donnant les plus grandes images carrées, puis on les allonge (jusqu'à 1,35) si la hauteur le permet
-  let g=mesure(1);for(let k=2;k<=Math.min(n,10);k++){const m=mesure(k);if(m.img>g.img)g=m}
-  const{cols,rows,cw,fs,noms,nomH,texteH,img}=g,marge=Math.max(8,img*.03);
-  const imgH=Math.min(img*1.35,(zoneH-gap*(rows-1))/rows-texteH),ch=imgH+texteH;
+  // Beaucoup de créations : en-tête et pied de page compacts pour laisser la place aux images
+  const n=recs.length,compact=n>6,logo=await chargerImage("logo-rond.png"),titre=o.titre||"Les créations de Mel d’antan",sous=o.sousTitre||"Bougies gourmandes coulées et décorées à la main";
+  let haut;
+  if(compact){x.drawImage(logo,170,150,330,330);x.textAlign="left";x.fillStyle="#88502f";let tf=124;x.font=`italic bold ${tf}px Georgia, serif`;while(x.measureText(titre).width>W-560-170&&tf>70){tf-=4;x.font=`italic bold ${tf}px Georgia, serif`}
+    x.fillText(titre,560,315);x.fillStyle="#3b2f23";x.font="58px Georgia, serif";x.fillText(sous,560,415);haut=540}
+  else{x.drawImage(logo,W/2-230,170,460,460);x.textAlign="center";x.fillStyle="#88502f";x.font="italic bold 140px Georgia, serif";x.fillText(titre,W/2,790);
+    x.fillStyle="#3b2f23";x.font="64px Georgia, serif";x.fillText(sous,W/2,890);haut=990}
+  x.textAlign="center";
+  const qrCote=compact?300:380,qy=H-150-qrCote-(compact?0:60),bas=o.qr?qy-50:H-170;
+  // Grille : toutes les créations choisies tiennent sur la feuille ; on garde le nombre de colonnes qui donne les plus grandes images
+  const zoneH=bas-haut,gx=150,zoneW=W-2*gx,gap=n>12?30:50;
+  const mesure=cols=>{const rows=Math.ceil(n/cols),cw=(zoneW-gap*(cols-1))/cols,fs=Math.max(24,Math.min(76,cw/8.5)),noms=recs.map(r=>nomLignes(x,nomAffiche(r),fs,cw*.9)),nomH=Math.max(fs*1.12,...noms.map(m=>m.l.length*m.f*1.12)),texteH=fs*.3+nomH+(o.prix?fs*1.15:0)+(o.desc?fs*1.45:0)+fs*.4;
+    const place=(zoneH-gap*(rows-1))/rows-texteH,imgH=Math.min(cw*1.4,place),imgW=Math.min(cw,imgH/.8);return{cols,rows,cw,fs,noms,nomH,texteH,imgH,imgW,score:imgH>0?imgW*imgH:0}};
+  let g=mesure(1);for(let k=2;k<=Math.min(n,10);k++){const m=mesure(k);if(m.score>g.score)g=m}
+  const{cols,rows,cw,fs,noms,nomH,texteH,imgH,imgW}=g,ch=imgH+texteH,marge=Math.max(6,imgW*.025);
   for(let i=0;i<n;i++){
     const r0=recs[i],col=i%cols,row=Math.floor(i/cols),dans=row===rows-1?n-row*cols:cols;
-    const x0=gx+(zoneW-(dans*cw+(dans-1)*gap))/2+col*(cw+gap),y0=990+row*(ch+gap)+((zoneH-(rows*ch+(rows-1)*gap))/2);
-    x.fillStyle="#fbf6ec";x.shadowColor="rgba(70,40,20,.22)";x.shadowBlur=30;x.shadowOffsetY=10;x.beginPath();x.roundRect?x.roundRect(x0,y0,cw,ch,Math.min(36,cw*.07)):x.rect(x0,y0,cw,ch);x.fill();x.shadowColor="transparent";
-    const v=await vignetteCreation(r0,(imgH-2*marge)/(img-2*marge)),ix=x0+(cw-img)/2+marge,iy=y0+marge,is=img-2*marge,ih=imgH-2*marge;
+    const x0=gx+(zoneW-(dans*cw+(dans-1)*gap))/2+col*(cw+gap),y0=haut+row*(ch+gap)+((zoneH-(rows*ch+(rows-1)*gap))/2);
+    x.fillStyle="#fbf6ec";x.shadowColor="rgba(70,40,20,.22)";x.shadowBlur=24;x.shadowOffsetY=8;x.beginPath();x.roundRect?x.roundRect(x0,y0,cw,ch,Math.min(36,cw*.07)):x.rect(x0,y0,cw,ch);x.fill();x.shadowColor="transparent";
+    const is=imgW-2*marge,ih=imgH-2*marge,v=await vignetteCreation(r0,ih/is),ix=x0+(cw-imgW)/2+marge,iy=y0+marge;
     x.save();x.beginPath();x.roundRect?x.roundRect(ix,iy,is,ih,Math.min(26,is*.06)):x.rect(ix,iy,is,ih);x.clip();x.drawImage(v,ix,iy,is,ih);x.restore();
     const nm=noms[i],haut0=iy+ih+marge;x.fillStyle="#3b2f23";x.font=`italic bold ${nm.f}px Georgia, serif`;
     // Noms d'une ligne centrés dans la place prévue pour deux
-    const dec=(nomH-nm.l.length*nm.f*1.12)/2;nm.l.forEach((l,k)=>x.fillText(l,x0+cw/2,haut0+fs*.35+dec+nm.f*.95+k*nm.f*1.12));
-    let ty=haut0+fs*.35+nomH;
+    const dec=(nomH-nm.l.length*nm.f*1.12)/2;nm.l.forEach((l,k)=>x.fillText(l,x0+cw/2,haut0+fs*.3+dec+nm.f*.95+k*nm.f*1.12));
+    let ty=haut0+fs*.3+nomH;
     if(o.desc&&r0.descVente){x.fillStyle="#7a6a58";x.font=`${fs*.55}px Georgia, serif`;for(const l of lignesTexte(x,r0.descVente,cw*.88,2)){ty+=fs*.68;x.fillText(l,x0+cw/2,ty)}}
     if(o.prix&&+r0.prix>0){x.fillStyle="#88502f";x.font=`bold ${fs*.9}px Georgia, serif`;x.fillText(eur(r0.prix),x0+cw/2,ty+fs*1.0)}
   }
-  if(o.qr){await chargerQR();const q=qrObjet(lienBoutique()),m=q.getModuleCount(),cell=Math.floor(380/(m+4)),cote=cell*(m+4),qx=W/2-cote-60,qy=2990;
+  if(o.qr){await chargerQR();const q=qrObjet(lienBoutique()),m=q.getModuleCount(),cell=Math.floor(qrCote/(m+4)),cote=cell*(m+4),qx=W/2-cote-60;
     x.fillStyle="#fff";x.fillRect(qx,qy,cote,cote);x.fillStyle="#3b2f23";for(let i=0;i<m;i++)for(let j=0;j<m;j++)if(q.isDark(i,j))x.fillRect(qx+(j+2)*cell,qy+(i+2)*cell,cell+.5,cell+.5);
-    x.textAlign="left";x.fillStyle="#88502f";x.font="bold 70px Georgia, serif";x.fillText("Commande ta bougie",W/2,qy+130);
-    x.fillStyle="#3b2f23";x.font="50px Georgia, serif";x.fillText("Scanne le QR code",W/2,qy+210);x.font="44px Georgia, serif";x.fillText(lienBoutique().replace(/^https?:\/\//,"").replace(/\/$/,""),W/2,qy+285)}
+    x.textAlign="left";x.fillStyle="#88502f";const k=cote/380;x.font=`bold ${70*k}px Georgia, serif`;x.fillText("Commande ta bougie",W/2,qy+130*k);
+    x.fillStyle="#3b2f23";x.font=`${50*k}px Georgia, serif`;x.fillText("Scanne le QR code",W/2,qy+210*k);x.font=`${44*k}px Georgia, serif`;x.fillText(lienBoutique().replace(/^https?:\/\//,"").replace(/\/$/,""),W/2,qy+285*k)}
   return c;
 }
 async function exporterAffiche(format){
@@ -2090,7 +2095,7 @@ addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toas
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.5";
+const VERSION="4.6";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
