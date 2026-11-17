@@ -86,7 +86,7 @@ nav.bas svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.
 .carte{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:16px;box-shadow:var(--ombre);margin-bottom:16px}
 .aide{color:var(--doux);font-size:.9rem;margin:4px 0 0}
 label.champ{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--doux);flex:1;min-width:0}
-input[type=text],input[type=number],input[type=search],select,textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:var(--fond);color:var(--encre);min-width:0}
+input[type=text],input[type=number],input[type=search],input[type=tel],input[type=email],input[type=password],select,textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:var(--fond);color:var(--encre);min-width:0}
 textarea{resize:vertical;min-height:80px}
 input[type=color]{width:44px;height:40px;border:1px solid var(--ligne);border-radius:10px;padding:2px;background:var(--fond);flex:none}
 .puces{display:flex;gap:8px;flex-wrap:wrap}
@@ -414,6 +414,8 @@ nav.bas .badge-cmd{position:absolute;margin:-4px 0 0 18px}nav.bas button{positio
 .lien-boutique{text-align:center;font-weight:700;color:var(--cafe);word-break:break-all;margin:6px 0}
 .installer-b{display:flex;align-items:center;gap:12px;background:var(--carte);border:1.5px dashed var(--cafe);border-radius:16px;padding:10px 14px;margin-bottom:16px}
 .installer-b img{width:46px;height:46px;border-radius:12px}.installer-b div{flex:1;min-width:0}.installer-b small{display:block;color:var(--doux)}
+svg.ic{width:1.45em;height:1.45em;vertical-align:-.32em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block}
+.b-accueil .aide svg.ic{color:var(--cafe)}
 /* Question de Mel (confirmation) */
 .dialogue-mel{z-index:40;align-items:center}
 /* Mel en entier, la question dans sa bulle */
@@ -940,7 +942,7 @@ function rendre(){
   const a=document.getElementById("app");
   if(enBoutique()&&!vue.startsWith("b-"))vue="b-catalogue";
   if(!enBoutique()&&vue.startsWith("b-"))vue="recettes";
-  a.innerHTML=vue==="b-catalogue"?vCatalogue():vue==="b-produit"?vProduitB():vue==="b-panier"?vPanier():vue==="b-commandes"?vMesCommandes():vue==="commandes"?vCommandes():vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes();
+  a.innerHTML=(vue==="b-catalogue"?vCatalogue():vue==="b-produit"?vProduitB():vue==="b-panier"?vPanier():vue==="b-commandes"?vMesCommandes():vue==="commandes"?vCommandes():vue==="voir"?vVoir():vue==="livre"?vLivre():vue==="mel"?vMel():vue==="editer"?vEditer():vue==="inventaire"?vInventaire():vue==="sauvegarde"?vReglages():vRecettes());iconiser(a);
   rendreCalque();rendreVolet();remettreSaisie(s);
 }
 function aller(v,extra={}){vue=v;if(extra.id!==undefined)courant=extra.id;history.pushState({vue:v,id:courant},"");rendre();scrollTo(0,0)}
@@ -966,6 +968,38 @@ function demander(titre,texte,{oui="Oui",non="Annuler",danger=false}={}){
   });
 }
 const quitterEditeur=()=>!(vue==="editer"&&brouillon&&modifie())?Promise.resolve(true):demander("Quitter sans enregistrer ?","Tes changements sur cette recette seront perdus.",{oui:"Quitter",non:"Rester",danger:true});
+/* Icônes Mel d'antan : petits dessins au trait, couleur de la page, à la place des émojis */
+const ICONES={
+  "🏠":'<path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/><path d="M16 7V4.5h2v4"/><path d="M8.5 13h-1M16.5 13h-1"/>',
+  "🚚":'<path d="M2.5 16.5V8.5a1 1 0 0 1 1-1h10v9"/><path d="M13.5 10.5h4l3 3.5v2.5h-1.5"/><circle cx="7" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/><path d="M8.8 16.5h6.4"/><path d="M5 10.5c1.5-1 3-1 4.5 0"/>',
+  "💶":'<ellipse cx="10" cy="15" rx="6.5" ry="2.5"/><path d="M3.5 15v2.5c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V15"/><ellipse cx="14" cy="8" rx="6.5" ry="2.5"/><path d="M7.5 8v3c0 .8 1 1.5 2.5 2M20.5 8v3c0 1-1.6 1.9-4 2.3"/>',
+  "📲":'<rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M12 7v7.5M9 11.8l3 3 3-3"/><path d="M10.5 18.5h3"/>',
+  "📞":'<path d="M5 4.5c1.2-.9 2.4-.7 3 .4l1.4 2.6c.4.8.2 1.5-.5 2l-1.2.8c.9 2 2.5 3.6 4.5 4.6l.9-1.2c.5-.7 1.3-.9 2-.5l2.6 1.4c1.1.6 1.3 1.8.4 3-1.3 1.6-3.3 2.1-5.2 1.2C8.8 17.3 6.6 15.2 5 11.6c-.9-2.1-.8-5.2 0-7.1z"/>',
+  "✉️":'<rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="m3.5 6.5 8.5 7 8.5-7"/><circle cx="12" cy="15.8" r="1.6"/>',
+  "🛍️":'<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/><path d="M10 13c.6 1.2 3.4 1.2 4 0"/>',
+  "🕯️":'<path d="M8.5 11h7v9.5h-7z"/><path d="M12 11V8.5"/><path d="M12 3c1.6 1.8 1.6 3.4 0 4.6-1.6-1.2-1.6-2.8 0-4.6z"/><path d="M8.5 13.5c1.2.8 2.3-.6 3.5.2s2.3.6 3.5-.2"/><path d="M6.5 20.5h11"/>',
+  "👁":'<path d="M2.5 12c2.3-4 5.7-6 9.5-6s7.2 2 9.5 6c-2.3 4-5.7 6-9.5 6s-7.2-2-9.5-6z"/><circle cx="12" cy="12" r="3"/>',
+  "📌":'<path d="M8 3.5h8l-1.3 5.5 3.3 3H6l3.3-3z"/><path d="M12 12v8.5"/>',
+  "📷":'<path d="M3.5 8.5a1.5 1.5 0 0 1 1.5-1.5h2.5l1.5-2h6l1.5 2H19a1.5 1.5 0 0 1 1.5 1.5v9.5A1.5 1.5 0 0 1 19 19.5H5A1.5 1.5 0 0 1 3.5 18z"/><circle cx="12" cy="13" r="3.5"/>',
+  "🎤":'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v3.5M9 21h6"/>',
+  "🔊":'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9c1.2 1.6 1.2 4.4 0 6M18 6.5c2.5 3 2.5 8 0 11"/>',
+  "🔈":'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 10 4 4M20 10l-4 4"/>',
+  "✨":'<path d="M10 3.5c.6 3.6 2.4 5.4 6 6-3.6.6-5.4 2.4-6 6-.6-3.6-2.4-5.4-6-6 3.6-.6 5.4-2.4 6-6z"/><path d="M18 14.5c.3 1.6 1 2.3 2.5 2.5-1.5.3-2.2 1-2.5 2.5-.3-1.5-1-2.2-2.5-2.5 1.5-.2 2.2-.9 2.5-2.5z"/>',
+  "🌙":'<path d="M19 15.5A8 8 0 0 1 9 4.5a8 8 0 1 0 10 11z"/><path d="M15.5 5.5v2M14.5 6.5h2"/>',
+  "🔔":'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M12 3v2"/>',
+  "🔕":'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M4 4l16 16"/>',
+  "▦":'<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5M20.5 14v6.5h-6.5M17.5 17.5h.01"/>',
+  "⛶":'<path d="M3.5 9V3.5H9M15 3.5h5.5V9M20.5 15v5.5H15M9 20.5H3.5V15"/>'
+};
+const RE_ICONES=new RegExp(Object.keys(ICONES).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"g");
+// Seulement dans le texte affiché (jamais dans les champs ni les attributs)
+function iconiser(racine){
+  if(!racine)return;const w=document.createTreeWalker(racine,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentNode&&/^(TEXTAREA|SCRIPT|STYLE|OPTION)$/.test(n.parentNode.nodeName)||!new RegExp(RE_ICONES.source).test(n.nodeValue)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const l=[];while(w.nextNode())l.push(w.currentNode);
+  for(const n of l){const f=document.createElement("span");f.innerHTML=n.nodeValue.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])).replace(RE_ICONES,k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONES[k]}</svg>`);n.replaceWith(...f.childNodes)}
+}
+// Tout ce qui s'affiche ensuite (fenêtres, volet de Mel, annonces) est converti aussi
+new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)iconiser(n);else if(n.nodeType===3&&n.parentNode)iconiser(n.parentNode)}).observe(document.documentElement,{childList:true,subtree:true});
 function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
 
 /* ---------- Accueil : bonjour et chiffres de l'atelier, logo, astuce de Mel ---------- */
@@ -1969,7 +2003,7 @@ addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toas
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.1";
+const VERSION="4.2";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
