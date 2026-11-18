@@ -490,8 +490,9 @@ async function boutique(env, request, chemin) {
       const ligne = { id: p.id, nom: p.nom, prix: p.prix, q };
       if (p.parfums) {
         const pf = p.parfums.find(x => x.id === l.parfum);
-        if (!pf) return json({ erreur: l.parfum ? `Un parfum de ton panier n’est plus proposé : choisis-en un autre pour « ${p.nom} ».` : `Choisis un parfum pour « ${p.nom} ».`, parfum: true }, 409);
-        ligne.parfum = pf.nom; ligne.parfumId = pf.id;
+        // Parfum absent (ancienne version de l'appli chez le client) ou retiré entre-temps : la commande passe quand même,
+        // Mel voit qu'elle doit demander le parfum au client
+        if (pf) { ligne.parfum = pf.nom; ligne.parfumId = pf.id; } else ligne.parfum = "à demander au client";
       }
       lignes.push(ligne);
     }

@@ -1,8 +1,8 @@
 {
-  "version": "4.8",
-  "date": "2026-11-17",
+  "version": "4.9",
+  "date": "2026-11-18",
   "notes": [
-    "Boutique : tes clients voient tous tes parfums, sans jamais voir ton stock ni « épuisé »",
-    "Commandes : Mel te prévient quand il faut racheter le parfum choisi par un client"
+    "Commandes : la liste se met à jour dès que tu l’ouvres, et te prévient si elle n’y arrive pas",
+    "Boutique : l’appli de tes clients se met à jour toute seule, et une commande n’est plus jamais refusée faute de parfum (« à demander au client »)"
   ]
 }

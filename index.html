@@ -905,15 +905,17 @@ async function entrerAtelier(code){
 let CMD=null,cmdErreur="",filtreCmd="atraiter";
 const BOUTIQUE_VIDE={ouverte:true,accueil:"",retrait:true,retraitInfos:"",livraison:true,livraisonFrais:0,livraisonInfos:"",paiement:"Paiement en espèces à la livraison ou au retrait.",mentions:""};
 const nbCmdNouvelles=()=>(CMD&&CMD.commandes||[]).filter(c=>c.statut==="nouvelle").length;
+let cmdCharge=0;
 async function chargerCommandesAtelier(){
   if(enBoutique()||!syncPossible())return;
+  cmdCharge=Date.now();
   try{const d=await appelCarnet("atelier/commandes",{});
     const vues=new Set(LSJ.get("atelier.cmdVues",[])),nouvelles=d.commandes.filter(c=>c.statut==="nouvelle"&&!vues.has(c.numero));
     CMD=d;cmdErreur="";
     if(nouvelles.length&&vue!=="commandes"){const c=nouvelles[0];annoncer("cmd",`<b>${nouvelles.length>1?`${nouvelles.length} nouvelles commandes !`:`Nouvelle commande de ${esc(c.client.nom)} !`}</b><p>${nouvelles.length>1?"Tes clients t’attendent.":`${esc(c.ref)} · ${c.lignes.map(l=>`${l.q} × ${esc(l.nom)}${l.parfum?` (${esc(l.parfum)})`:""}`).join(", ")} · ${eur(c.total)}`}</p><div class="ligne"><button class="btn petit" data-act="voirCommandes">Voir les commandes</button><button class="btn leger petit" data-act="okCmd">Plus tard</button></div>`)}
     if(vue==="commandes")LSJ.set("atelier.cmdVues",d.commandes.map(c=>c.numero));
     nav();if(vue==="commandes")rendre();
-  }catch(e){cmdErreur=e.message}
+  }catch(e){cmdErreur=e.message||"Les commandes n’ont pas pu se charger.";if(vue==="commandes")rendre()}
 }
 // Parfum choisi par un client : pas assez en stock pour cette ligne de commande → « à racheter »
 function aRacheter(x){
@@ -922,11 +924,13 @@ function aRacheter(x){
   return +pf.stock<Math.max(besoin,.01)?` <span class="a-racheter">⚠ ${+pf.stock>0?`plus que ${nb(+pf.stock)} ${esc(unite(pf))} de ${esc(pf.nom)}`:`${esc(pf.nom)} épuisé`} : pense à en racheter</span>`:"";
 }
 function vCommandes(){
-  if(!CMD){chargerCommandesAtelier();return`<p class="aide">${cmdErreur?esc(cmdErreur):"Chargement des commandes…"}</p>`}
+  if(!CMD){if(Date.now()-cmdCharge>5000)chargerCommandesAtelier();return`<p class="aide">${cmdErreur?esc(cmdErreur):"Chargement des commandes…"}</p>`}
+  // Toujours à jour quand on ouvre l'onglet
+  if(Date.now()-cmdCharge>15000)setTimeout(chargerCommandesAtelier,0);
   LSJ.set("atelier.cmdVues",CMD.commandes.map(c=>c.numero));annoncer("cmd",null);
   const l=CMD.commandes.filter(c=>filtreCmd==="toutes"||!["livree","annulee"].includes(c.statut)),b=CMD.boutique||{};
   const lien=location.origin+location.pathname;
-  return `<div class="carte b-outils"><div><b>Ta boutique ${b.ouverte?"est ouverte":"est fermée"}</b><p class="aide" style="margin:2px 0 0">Le lien à donner à tes clients : <b>${esc(lien.replace(/^https?:\/\//,""))}</b></p></div>
+  return `${cmdErreur?`<div class="carte" style="border-color:var(--alerte)"><b>Les commandes n’ont pas pu se mettre à jour</b><p class="aide" style="margin:2px 0 0">${esc(cmdErreur)} · touche ↻ pour réessayer.</p></div>`:""}<div class="carte b-outils"><div><b>Ta boutique ${b.ouverte?"est ouverte":"est fermée"}</b><p class="aide" style="margin:2px 0 0">Le lien à donner à tes clients : <b>${esc(lien.replace(/^https?:\/\//,""))}</b></p></div>
     <div class="ligne"><button class="btn leger petit" data-act="affiche">🕯️ Affiche</button><button class="btn leger petit" data-act="qrBoutique">▦ QR code</button><button class="btn leger petit" data-act="partagerBoutique">Partager le lien</button><button class="btn leger petit" data-act="apercuBoutique">👁 Voir ma boutique</button><button class="btn petit" data-act="reglagesBoutique">Réglages de la boutique</button></div></div>
   <p class="aide">Pour mettre une bougie en vente : ouvre la recette › Modifier › « Vente en boutique ». Les clients ne voient jamais tes ingrédients.</p>
   <div class="puces" style="margin:12px 0"><button class="puce ${filtreCmd==="atraiter"?"on":""}" data-filtre-cmd="atraiter">À traiter (${CMD.commandes.filter(c=>!["livree","annulee"].includes(c.statut)).length})</button><button class="puce ${filtreCmd==="toutes"?"on":""}" data-filtre-cmd="toutes">Toutes (${CMD.commandes.length})</button><button class="btn leger petit" data-act="rafraichirCmd" style="margin-left:auto">↻</button></div>
@@ -2167,7 +2171,7 @@ addEventListener("appinstalled",()=>{invite=null;installable=false;rendre();toas
 async function installer(){if(!invite)return;invite.prompt();await invite.userChoice;invite=null;installable=false;rendre()}
 /* ---------- Version de l'appli et mises à jour ---------- */
 // À chaque publication : même numéro ici, dans sw.js et dans version.json (avec les nouveautés)
-const VERSION="4.8";
+const VERSION="4.9";
 let regSW=null,swAttente=null,majInfo=null,majDemandee=false,majPlusTard=false;
 const notifMaj=()=>{try{return localStorage.getItem("carnet.notifMaj")==="1"&&"Notification" in window&&Notification.permission==="granted"}catch(e){return false}};
 if("serviceWorker"in navigator&&location.protocol!=="file:"){
@@ -2182,7 +2186,9 @@ if("serviceWorker"in navigator&&location.protocol!=="file:"){
   navigator.serviceWorker.addEventListener("controllerchange",()=>{if(majDemandee){majDemandee=false;location.reload()}});
 }
 async function nouvelleVersion(w){
-  swAttente=w;let info={version:"",notes:[]};
+  swAttente=w;
+  // Clients de la boutique : la nouvelle version s'installe toute seule (sauf pendant qu'ils tapent ou envoient une commande)
+  if(boutique&&!apercu){const go=()=>{if(saisieEnCours()||envoiCmd)return setTimeout(go,5000);majDemandee=true;w.postMessage("activer")};go();return}let info={version:"",notes:[]};
   try{const r=await fetch("version.json",{cache:"no-store"});if(r.ok)info=await r.json()}catch(e){}
   majInfo=info;majPlusTard=false;rendreMaj();
   if(regSW&&notifMaj()&&(document.hidden||!document.hasFocus()))
